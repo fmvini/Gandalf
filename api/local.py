@@ -14,7 +14,7 @@ from app.main import create_app
 ROOT = Path(__file__).resolve().parent
 
 
-def local_settings(data_dir: Path | None = None) -> Settings:
+def local_settings(data_dir: Path | None = None, *, online: bool = False) -> Settings:
     directory = (data_dir or ROOT / ".local").resolve()
     directory.mkdir(parents=True, exist_ok=True)
     secret_file = directory / "jwt-secret"
@@ -24,10 +24,11 @@ def local_settings(data_dir: Path | None = None) -> Settings:
     except FileExistsError:
         pass
     return Settings(
-        _env_file=None,
+        _env_file=ROOT / ".env" if online else None,
         database_url="sqlite:///" + (directory / "gandalf.db").as_posix(),
         jwt_secret=secret_file.read_text(encoding="utf-8").strip(),
-        book_provider="local",
+        book_provider="open_library" if online else "local",
+        online_catalog=online,
         cors_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     )
 
@@ -50,11 +51,12 @@ if __name__ == "__main__":
     settings = local_settings(
         Path(os.environ["GANDALF_LOCAL_DATA"])
         if os.environ.get("GANDALF_LOCAL_DATA")
-        else None
+        else None,
+        online=os.environ.get("GANDALF_ONLINE") == "1",
     )
     prepare(settings)
     uvicorn.run(
         create_app(settings=settings),
-        host="127.0.0.1",
+        host=os.environ.get("GANDALF_HOST", "127.0.0.1"),
         port=int(os.environ.get("GANDALF_PORT", "8000")),
     )

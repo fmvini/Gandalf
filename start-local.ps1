@@ -1,4 +1,4 @@
-﻿param([switch]$Install)
+﻿param([switch]$Install, [switch]$Online)
 $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 $python = Join-Path $projectRoot 'api/.venv/Scripts/python.exe'
@@ -28,7 +28,11 @@ foreach ($port in @(8000, 5173)) {
         throw "A porta $port já está em uso. Encerre a instância anterior antes de iniciar."
     }
 }
-$apiProcess = Start-Process -FilePath $python -ArgumentList 'local.py' -WorkingDirectory (Join-Path $projectRoot 'api') -WindowStyle Hidden -PassThru
+$previousOnline = $env:GANDALF_ONLINE
+try {
+    $env:GANDALF_ONLINE = if ($Online) { '1' } else { '0' }
+    $apiProcess = Start-Process -FilePath $python -ArgumentList 'local.py' -WorkingDirectory (Join-Path $projectRoot 'api') -WindowStyle Hidden -PassThru
+} finally { $env:GANDALF_ONLINE = $previousOnline }
 try {
     $ready = $false
     for ($attempt = 0; $attempt -lt 30; $attempt++) {
@@ -39,7 +43,8 @@ try {
         } catch { Start-Sleep -Milliseconds 500 }
     }
     if (-not $ready) { throw 'A API não ficou pronta. Execute api/.venv/Scripts/python.exe api/local.py para ver o erro.' }
-    Write-Host 'Gandalf: http://127.0.0.1:5173 — modo local gratuito. Ctrl+C para encerrar.'
+    $mode = if ($Online) { 'catálogos externos e IA Groq; sem GPU local' } else { 'catálogo local offline' }
+    Write-Host "Gandalf: http://127.0.0.1:5173 — $mode. Ctrl+C para encerrar."
     Push-Location (Join-Path $projectRoot 'frontend')
     try {
         $previousApiUrl = $env:VITE_API_BASE_URL

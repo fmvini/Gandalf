@@ -1,1 +1,33 @@
 .impeccable/
+
+# Credentials and private local configuration (examples remain versioned).
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+.secrets/
+secrets*.json
+
+# Runtime data can contain accounts, tokens and search history.
+.local/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.log
+logs/
+
+# Local tooling and generated files.
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+dist/
+*.tsbuildinfo

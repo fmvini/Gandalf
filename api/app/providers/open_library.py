@@ -95,7 +95,13 @@ class OpenLibraryProvider:
         self._last_request_at = 0.0
 
     async def search(self, title: str, limit: int) -> BookSearchResponse:
-        user_agent = "Gandalf/0.1.0"
+        return await self._search({"title": title}, limit)
+
+    async def discover(self, subject: str, limit: int) -> BookSearchResponse:
+        return await self._search({"subject": subject[:180]}, limit)
+
+    async def _search(self, query: dict, limit: int) -> BookSearchResponse:
+        user_agent = "Gandalf/0.2.0 (https://github.com/fmvini/Gandalf)"
         if self.contact_email:
             user_agent += f" ({self.contact_email})"
         async with self._lock:
@@ -106,7 +112,7 @@ class OpenLibraryProvider:
             try:
                 response = await self.client.get(
                     f"{self.base_url}/search.json",
-                    params={"title": title, "limit": limit, "fields": SEARCH_FIELDS},
+                    params={**query, "limit": limit, "fields": SEARCH_FIELDS},
                     headers={"User-Agent": user_agent},
                 )
             except httpx.TimeoutException as exc:

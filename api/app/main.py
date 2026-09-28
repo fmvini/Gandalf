@@ -4,7 +4,6 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from time import perf_counter
 from uuid import UUID, uuid4
 
-import httpx
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,17 +13,24 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.ai.groq import GroqClient
 from app.core.config import Settings
 from app.core.exceptions import AppError
+from app.core.http import external_client
 from app.core.rate_limit import RateLimiter
 from app.database.session import make_engine
 from app.providers.base import BookProvider
 from app.providers.local_catalog import LocalBookProvider
+from app.providers.musicbrainz import MusicBrainzProvider
 from app.providers.open_library import OpenLibraryProvider
 from app.routes.auth import router as auth_router
 from app.routes.books import router as books_router
+from app.routes.music import router as music_router
 from app.routes.recommendations import router as recommendations_router
 from app.services.book_service import BookService
+from app.services.hybrid_books import HybridBookService
+from app.services.online_recommendations import OnlineRecommendationService
+from app.services.online_store import OnlineStore
 from app.services.recommendation_service import RANKING_VERSION, RecommendationService
 
 logger = logging.getLogger("gandalf.api")
@@ -62,12 +68,18 @@ def create_app(
                 else None
             )
             provider = book_provider
-            if provider is None and config.book_provider == "local":
+            client = None
+            if config.online_catalog or (
+                provider is None and config.book_provider != "local"
+            ):
+                client = await stack.enter_async_context(external_client())
+            if (
+                provider is None
+                and config.book_provider == "local"
+                and not config.online_catalog
+            ):
                 provider = LocalBookProvider()
             if provider is None:
-                client = await stack.enter_async_context(
-                    httpx.AsyncClient(timeout=httpx.Timeout(5.0))
-                )
                 provider = OpenLibraryProvider(
                     client,
                     base_url=config.open_library_base_url,
@@ -79,6 +91,21 @@ def create_app(
                 application.state.session_factory,
             )
             application.state.recommendation_service = RecommendationService()
+            store = OnlineStore(application.state.session_factory)
+            application.state.online_store = store
+            application.state.music_provider = None
+            if config.online_catalog:
+                application.state.book_service = HybridBookService(
+                    application.state.book_service
+                )
+                music = MusicBrainzProvider(
+                    client, store, config.external_cache_ttl_seconds
+                )
+                ai = GroqClient(client, store, config)
+                application.state.music_provider = music
+                application.state.recommendation_service = OnlineRecommendationService(
+                    ai, application.state.book_service, music
+                )
             try:
                 yield
             finally:
@@ -214,6 +241,21 @@ def create_app(
     application.include_router(books_router)
     application.include_router(auth_router)
     application.include_router(recommendations_router)
+    application.include_router(music_router)
+
+    @application.get("/api/v1/system/status", tags=["health"])
+    async def system_status():
+        return {
+            "catalog": "online" if config.online_catalog else "local",
+            "ai": {
+                "provider": "groq" if config.online_catalog else None,
+                "configured": config.online_catalog
+                and bool(config.groq_api_key.get_secret_value()),
+                "model": config.groq_model if config.online_catalog else None,
+            },
+            "gpu_used": False,
+        }
+
     return application
 
 

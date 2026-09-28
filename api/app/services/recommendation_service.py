@@ -81,6 +81,12 @@ class RecommendationService:
         # and are bounded to avoid retaining unbounded user queries in memory.
         self.results: OrderedDict[str, tuple[float, dict]] = OrderedDict()
 
+    async def recommend(self, kind, body):
+        return self.discover(kind, body)
+
+    async def soundtrack(self, book, body):
+        return self.reading(book, body)
+
     def discover(self, kind: str, body: DiscoveryRequest) -> dict:
         positive, negative = interpret(body.query)
         text = normalize(body.query)
@@ -165,13 +171,15 @@ class RecommendationService:
     ):
         candidates = []
         for item in source:
-            tags = set(item.get("tags", item.get("genres", [])))
+            tags = set(
+                item.get("matching_tags", item.get("tags", item.get("genres", [])))
+            )
             if tags & negative or item["id"] in reference_ids:
                 continue
             if "has_vocals" in item:
-                if filters.vocals == "none" and item["has_vocals"]:
+                if filters.vocals == "none" and item["has_vocals"] is not False:
                     continue
-                if filters.vocals == "required" and not item["has_vocals"]:
+                if filters.vocals == "required" and item["has_vocals"] is not True:
                     continue
                 if filters.energy and item["energy"] != filters.energy:
                     continue
@@ -240,6 +248,9 @@ class RecommendationService:
                 else "Nenhuma opção no catálogo local para esse pedido. Tente fantasia, mistério, calma, aventura ou amplie os filtros.",
             },
         }
+        return self.remember(result)
+
+    def remember(self, result):
         self._prune()
         self.results[result["recommendation_id"]] = (monotonic() + 3600, result)
         while len(self.results) > 256:

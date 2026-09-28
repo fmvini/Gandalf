@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
 
 @router.post("/music")
 async def music(request: Request, body: DiscoveryRequest):
-    return request.app.state.recommendation_service.discover("music", body)
+    return await request.app.state.recommendation_service.recommend("music", body)
 
 
 @router.post("/books")
@@ -22,7 +22,7 @@ async def books(request: Request, body: DiscoveryRequest):
             "VALIDATION_ERROR",
             "Filtros de voz e energia se aplicam apenas a músicas.",
         )
-    return request.app.state.recommendation_service.discover("books", body)
+    return await request.app.state.recommendation_service.recommend("books", body)
 
 
 @router.post("/read-with-music")
@@ -30,7 +30,7 @@ async def reading(request: Request, body: ReadingRequest):
     book = await run_in_threadpool(
         request.app.state.book_service.get_by_id, body.book_id
     )
-    return request.app.state.recommendation_service.reading(book, body)
+    return await request.app.state.recommendation_service.soundtrack(book, body)
 
 
 @router.get("/{recommendation_id}/items/{item_id}/explanation")
