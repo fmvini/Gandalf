@@ -9,7 +9,37 @@ from app.core.exceptions import UpstreamError, UpstreamRateLimited, UpstreamTime
 from app.schemas.book import BookItem, BookSearchResponse
 
 WORK_KEY = re.compile(r"(?:/works/)?(OL\d+W)")
-SEARCH_FIELDS = "key,title,author_name,first_publish_year,cover_i"
+SEARCH_FIELDS = "key,title,author_name,first_publish_year,cover_i,subject,description"
+MAX_DESCRIPTION_LENGTH = 2000
+MAX_SUBJECTS = 12
+MAX_SUBJECT_LENGTH = 120
+
+
+def normalize_description(raw: object) -> str | None:
+    if isinstance(raw, dict):
+        raw = raw.get("value")
+    if not isinstance(raw, str):
+        return None
+    description = raw.strip()
+    return description[:MAX_DESCRIPTION_LENGTH] or None
+
+
+def normalize_subjects(raw: object) -> list[str]:
+    if not isinstance(raw, list):
+        return []
+    subjects: list[str] = []
+    seen: set[str] = set()
+    for value in raw:
+        if not isinstance(value, str):
+            continue
+        subject = value.strip()[:MAX_SUBJECT_LENGTH].strip()
+        key = subject.casefold()
+        if subject and key not in seen:
+            subjects.append(subject)
+            seen.add(key)
+        if len(subjects) == MAX_SUBJECTS:
+            break
+    return subjects
 
 
 def normalize_book(raw: object) -> BookItem | None:
@@ -36,6 +66,8 @@ def normalize_book(raw: object) -> BookItem | None:
         publication_year=year
         if isinstance(year, int) and not isinstance(year, bool) and year > 0
         else None,
+        description=normalize_description(raw.get("description")),
+        subjects=normalize_subjects(raw.get("subject")),
         cover_url=f"https://covers.openlibrary.org/b/id/{cover_id}-M.jpg"
         if isinstance(cover_id, int) and not isinstance(cover_id, bool) and cover_id > 0
         else None,

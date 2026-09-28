@@ -1,5 +1,32 @@
 # Registro de desenvolvimento
 
+## 2026-09-28 — Metadados de descrição e assuntos na busca de livros
+
+### Implementado
+- A busca Open Library solicita descrição e assuntos junto dos campos bibliográficos e normaliza esses dados no `BookItem`.
+- Descrições são limitadas a 2.000 caracteres; até 12 assuntos únicos são mantidos, com até 120 caracteres cada. O catálogo existente persiste esses campos e o detalhe por ID os devolve.
+- Testes cobrem o contrato do provider, limites de tamanho e leitura dos metadados persistidos.
+
+### Arquivos principais alterados
+- `api/app/providers/open_library.py`
+- `api/tests/test_books.py`
+- `api/README.md`
+- `docs/05-API-Specification.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Os campos são obtidos na mesma chamada de busca, evitando consultas adicionais por obra. Valores ausentes ou inválidos permanecem vazios; `genres` não é inferido a partir de assuntos.
+- Os limites de tamanho controlam o volume de resposta e de dados armazenados. O cache de consultas externas continua em memória por processo.
+
+### Estado atual
+- Busca e detalhe retornam descrição e assuntos quando a Open Library os fornece. `pytest` passou com 19 testes; Ruff e formatação passaram.
+- Docker Engine continua indisponível neste ambiente; a migração e a persistência em PostgreSQL com pgvector ainda não foram validadas.
+
+### Próximos passos
+- Em ambiente com Docker, subir `api/compose.yaml`, executar `alembic upgrade head` e `downgrade base` em banco descartável e validar busca e detalhe no PostgreSQL.
+- Avaliar cache persistente com TTL para consultas externas e medir a latência da busca com os novos campos em uma consulta real.
+- Prosseguir com o spike e a implementação do provider musical conforme `docs/adr/0012-music-provider-selection.md`, incluindo normalização, cache e endpoints de busca musical.
+
 ## 2026-09-28 — Catálogo persistente de livros
 
 ### Implementado

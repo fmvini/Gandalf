@@ -347,6 +347,7 @@ Comportamento idêntico a `POST /recommendations/music` (§6.1). Mantido para co
 **Response `200`:** `{ "items": [ BookItem ], "total": n }`.
 
 Quando o banco está configurado, os itens retornados também são inseridos ou atualizados no catálogo local. Sem banco, a busca externa continua disponível, mas seus resultados não ficam persistidos.
+Na implementação Open Library, `description` é opcional e limitado a 2.000 caracteres; `subjects` contém até 12 assuntos de até 120 caracteres cada. O provider atual não classifica `genres`, portanto esse campo permanece vazio.
 
 ### 5.2 `GET /books/{id}`
 

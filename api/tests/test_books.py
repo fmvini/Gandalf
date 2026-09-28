@@ -13,7 +13,7 @@ from app.core.config import Settings
 from app.core.exceptions import UpstreamTimeout
 from app.main import create_app
 from app.models import Book
-from app.providers.open_library import OpenLibraryProvider
+from app.providers.open_library import OpenLibraryProvider, normalize_book
 from app.schemas.book import BookItem, BookSearchResponse
 
 
@@ -33,6 +33,8 @@ class FakeBookProvider:
                     id=UUID("b66cf776-340a-48ca-8fbd-235d183dbde7"),
                     title=self.title,
                     authors=["Frank Herbert"],
+                    description="Uma jornada em Arrakis.",
+                    subjects=["Ficção científica", "Deserto"],
                     external_url="https://openlibrary.org/works/OL893415W",
                     external_id="OL893415W",
                 )
@@ -91,6 +93,8 @@ def test_search_persists_catalog_and_detail_reads_from_database(
     assert detail.status_code == 200
     assert detail.json()["title"] == "Duna edição atualizada"
     assert detail.json()["external_id"] == "OL893415W"
+    assert detail.json()["description"] == "Uma jornada em Arrakis."
+    assert detail.json()["subjects"] == ["Ficção científica", "Deserto"]
     assert missing.status_code == 404
     engine = create_engine(database_url)
     with Session(engine) as session:
@@ -158,6 +162,8 @@ def test_open_library_provider_normalizes_real_response_shape() -> None:
                         "author_name": ["J. R. R. Tolkien"],
                         "first_publish_year": 1954,
                         "cover_i": 258027,
+                        "description": "  Uma jornada pela Terra-média.  ",
+                        "subject": ["Fantasia", " Aventura ", "fantasia", None],
                     },
                     {"key": "/books/OL123M", "title": "Entrada inválida"},
                 ],
@@ -177,9 +183,28 @@ def test_open_library_provider_normalizes_real_response_shape() -> None:
     assert book.external_url == "https://openlibrary.org/works/OL27448W"
     assert book.cover_url == "https://covers.openlibrary.org/b/id/258027-M.jpg"
     assert book.publication_year == 1954
+    assert book.description == "Uma jornada pela Terra-média."
+    assert book.subjects == ["Fantasia", "Aventura"]
     assert requests[0].url.params["title"] == "O Senhor dos Anéis"
     assert requests[0].url.params["limit"] == "6"
+    assert "subject" in requests[0].url.params["fields"]
+    assert "description" in requests[0].url.params["fields"]
     assert requests[0].headers["User-Agent"].startswith("Gandalf/")
+
+
+def test_open_library_metadata_accepts_work_description_and_limits_size() -> None:
+    book = normalize_book(
+        {
+            "key": "/works/OL27448W",
+            "title": "O Senhor dos Anéis",
+            "description": {"type": "/type/text", "value": "x" * 2100},
+            "subject": ["Tema muito longo " * 12] + [f"Tema {i}" for i in range(20)],
+        }
+    )
+    assert book is not None
+    assert len(book.description or "") == 2000
+    assert len(book.subjects) == 12
+    assert all(len(subject) <= 120 for subject in book.subjects)
 
 
 def test_open_library_timeout_is_mapped_to_domain_error() -> None:

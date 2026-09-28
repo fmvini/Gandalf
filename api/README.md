@@ -33,7 +33,7 @@ Para habilitar autenticação, configure `JWT_SECRET` em `.env` com pelo menos 3
 | POST | `/api/v1/auth/logout` | Revoga o refresh token da conta autenticada |
 | GET | `/api/v1/auth/me` | Retorna usuário do Bearer token |
 
-A busca usa uma chamada por vez por processo, intervalo mínimo de 1 segundo e cache em memória por 5 minutos. O ID de cada livro é um UUID determinístico derivado do ID da obra na Open Library. Com o banco configurado e migrado, os itens são persistidos em `books` e podem ser consultados por ID; sem banco, a busca segue disponível e não persiste resultados. Timeouts e falhas do provider retornam erros padronizados, sem resultados inventados.
+A busca usa uma chamada por vez por processo, intervalo mínimo de 1 segundo e cache em memória por 5 minutos. O ID de cada livro é um UUID determinístico derivado do ID da obra na Open Library. A resposta da busca inclui descrição quando disponível (até 2.000 caracteres) e até 12 assuntos por livro (até 120 caracteres cada); `genres` continua vazio até haver classificação de gêneros. Com o banco configurado e migrado, os itens são persistidos em `books` e podem ser consultados por ID; sem banco, a busca segue disponível e não persiste resultados. Timeouts e falhas do provider retornam erros padronizados, sem resultados inventados.
 
 Login e refresh retornam `access_token` (15 minutos) e `refresh_token` (7 dias) em JSON. O cliente deve manter ambos somente em memória e descartá-los no logout; o refresh anterior deixa de valer após a rotação. A sessão termina ao recarregar a página. O limite inicial de auth é de 10 requisições por minuto por IP/rota e, para login/registro, também por e-mail; ele fica em memória por processo e não substitui um limite compartilhado em produção.
 
