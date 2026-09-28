@@ -16,9 +16,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import Settings
 from app.core.exceptions import AppError
+from app.core.rate_limit import RateLimiter
 from app.database.session import make_engine
 from app.providers.base import BookProvider
 from app.providers.open_library import OpenLibraryProvider
+from app.routes.auth import router as auth_router
 from app.routes.books import router as books_router
 from app.services.book_service import BookService
 
@@ -78,6 +80,8 @@ def create_app(
     application = FastAPI(
         title=config.app_name, version=config.app_version, lifespan=lifespan
     )
+    application.state.settings = config
+    application.state.auth_limiter = RateLimiter(config.auth_rate_limit_per_minute)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=config.cors_origins,
@@ -194,6 +198,7 @@ def create_app(
         }
 
     application.include_router(books_router)
+    application.include_router(auth_router)
     return application
 
 

@@ -1,5 +1,44 @@
 # Registro de desenvolvimento
 
+## 2026-09-28 — Autenticação da API com refresh rotativo
+
+### Implementado
+- Criadas as rotas `POST /api/v1/auth/register`, `/login`, `/refresh`, `/logout` e `GET /api/v1/auth/me` com validação de entrada e erros padronizados.
+- Senhas usam Argon2id; access tokens usam JWT HS256 de 15 minutos; refresh tokens opacos de 7 dias são armazenados como hash SHA-256, rotacionados a cada uso e revogados por família quando há reuso.
+- Adicionado limite em memória por IP/rota e por e-mail em login/registro. Testes cobrem cadastro, login genérico, expiração e adulteração do JWT, rotação, reuso, logout, ownership e `429`.
+- Alinhados contrato de entrega dos tokens e decisões de segurança no ADR-0006 e nas especificações de API e segurança.
+
+### Arquivos principais alterados
+- `api/app/routes/auth.py`
+- `api/app/services/auth_service.py`
+- `api/app/core/security.py`
+- `api/app/core/rate_limit.py`
+- `api/app/core/config.py`
+- `api/app/schemas/auth.py`
+- `api/app/main.py`
+- `api/tests/test_auth.py`
+- `api/pyproject.toml`
+- `api/.env.example`
+- `api/README.md`
+- `docs/adr/0006-jwt-authentication-strategy.md`
+- `docs/05-API-Specification.md`
+- `docs/09-security-specification.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- O cliente recebe access e refresh tokens em JSON e os mantém somente em memória. Cookie `HttpOnly` exige definição futura de domínios e CSRF; recarregar a página encerra a sessão atual.
+- `JWT_SECRET` de pelo menos 32 bytes é exigido ao usar auth. Sem ele, essas rotas respondem `503`, preservando a busca pública de livros.
+- A rotação bloqueia a linha do token no banco; o limitador atual é local ao processo. Ambos precisam de validação ou substituição adequada antes de escalar a API.
+
+### Estado atual
+- Os testes de API passam em SQLite com migrações Alembic e transporte HTTP local. Registro, login, refresh, logout e consulta ao usuário estão implementados.
+- O Docker Engine segue indisponível nesta máquina. Migrações, auth e concorrência de refresh ainda não foram testadas em PostgreSQL com pgvector. O frontend ainda não consome as rotas de auth e não mantém sessão.
+
+### Próximos passos
+- Em ambiente com Docker, iniciar `api/compose.yaml`, executar `alembic upgrade head` e validar fluxos de auth e refresh concorrente em PostgreSQL; testar `downgrade base` em banco descartável.
+- Integrar registro/login/refresh/logout no frontend mantendo tokens em memória, incluindo estados de sessão expirada e uso de `/auth/me`.
+- Prosseguir no backend com catálogo local persistido e `GET /books/{id}`; depois implementar os providers e endpoints de recomendações previstos no roadmap. Antes de escalar horizontalmente, migrar o rate limit de auth para armazenamento compartilhado.
+
 ## 2026-09-28 — Base relacional e migrações
 
 ### Implementado

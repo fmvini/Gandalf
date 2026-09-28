@@ -51,7 +51,7 @@ Definir os requisitos, controles e práticas de segurança da plataforma: autent
 
 | Categoria | Ameaça | Exemplo | Controles principais |
 |-----------|--------|---------|---------------------|
-| **S**poofing | Assumir identidade | Credential stuffing; roubo de token | Argon2id/bcrypt, rate limit de login, tokens curtos, rotação de refresh, HttpOnly cookies |
+| **S**poofing | Assumir identidade | Credential stuffing; roubo de token | Argon2id, rate limit de login, tokens curtos, rotação de refresh |
 | **T**ampering | Alterar dados | Adulterar JWT; IDOR para editar preferências de outro usuário | Assinatura JWT forte, verificação de ownership, validação Pydantic, ORM parametrizado |
 | **R**epudiation | Negar ações | Ação sem rastreio | Logs estruturados de eventos de segurança com `user_id` e `request_id` |
 | **I**nformation disclosure | Vazamento | Enumeração de contas; stack traces; dados de outro usuário; segredos em logs/repositório | Mensagens genéricas, handler global de erros, ownership checks, *secret scanning* |
@@ -83,7 +83,7 @@ Definir os requisitos, controles e práticas de segurança da plataforma: autent
 
 - Mensagem de erro **genérica** ("E-mail ou senha inválidos") para usuário inexistente e senha errada.
 - Tempo de resposta equalizado (executar hash *dummy* quando o usuário não existe) para reduzir enumeração por *timing*.
-- **Rate limiting** por IP e por conta (ex.: 5 tentativas/min/conta, com *backoff* progressivo e bloqueio temporário após N falhas; cuidado com bloqueio como vetor de DoS contra vítimas — preferir atraso progressivo).
+- **Rate limiting** inicial por IP/rota e por e-mail normalizado em login/registro (10 requisições/minuto). *Backoff* progressivo e limites compartilhados entre instâncias ficam para a etapa de endurecimento operacional.
 - Registrar eventos: login OK/falha (sem senha), IP, user-agent resumido, `request_id`.
 
 ### 5.4 Tokens (JWT — seção 25 do escopo)
@@ -91,17 +91,17 @@ Definir os requisitos, controles e práticas de segurança da plataforma: autent
 | Item | Especificação |
 |------|---------------|
 | **Access token** | JWT assinado, expiração curta (**15 min**), claims mínimos: `sub` (user id), `iat`, `exp`, `jti`, `type=access` |
-| **Refresh token** | Opaco ou JWT, expiração longa (**7–30 dias**), **rotação a cada uso**, armazenado **hasheado** no banco |
-| **Algoritmo** | `HS256` com segredo forte (≥ 256 bits) *ou* `RS256/EdDSA` com par de chaves. **Fixar o algoritmo na verificação** (rejeitar `none` e troca de algoritmo) |
+| **Refresh token** | Opaco, expiração de **7 dias**, **rotação a cada uso**, armazenado **hasheado** no banco |
+| **Algoritmo** | `HS256` com segredo aleatório forte (≥ 256 bits), fixado na verificação (rejeitar `none` e troca de algoritmo) |
 | **Validação** | Verificar assinatura, `exp`, `iat`, `type`, e existência/estado do usuário; tolerância de relógio mínima |
-| **Segredos** | `JWT_SECRET` via ambiente; rotacionável (suporte a `kid` para rotação) |
+| **Segredos** | `JWT_SECRET` via ambiente; rotação com `kid` ainda não implementada |
 
-**Armazenamento no cliente (recomendação):**
+**Armazenamento no cliente (decisão inicial, ADR-0006):**
 
 - **Access token:** em **memória** (estado da aplicação).
-- **Refresh token:** cookie `HttpOnly; Secure; SameSite=Lax` (ou `Strict`), escopo restrito ao path `/auth/refresh`.
+- **Refresh token:** corpo JSON de login/refresh e memória da aplicação; a sessão se perde ao recarregar a página.
 - Evitar `localStorage` para tokens (exposição a XSS).
-- Se o frontend e a API estiverem em domínios distintos, avaliar `SameSite=None; Secure` com **proteção CSRF** explícita no endpoint de refresh (token CSRF ou verificação de `Origin`).
+- Cookie `HttpOnly; Secure; SameSite` é uma evolução possível. Antes de adotá-lo, definir domínios, escopo do cookie e proteção CSRF; se houver domínios distintos, avaliar `SameSite=None; Secure` com verificação de `Origin` ou token CSRF.
 
 **Rotação e reuso de refresh token:**
 
@@ -109,9 +109,9 @@ Definir os requisitos, controles e práticas de segurança da plataforma: autent
 2. Se um refresh **já usado** for reapresentado (indício de roubo), **revogar toda a família de tokens** da sessão e exigir novo login.
 3. Tabela `refresh_tokens`: `id`, `user_id`, `token_hash`, `family_id`, `expires_at`, `revoked_at`, `replaced_by`, `created_at`, `user_agent`, `ip` (opcional).
 
-**Logout:** revoga o refresh token atual (e limpa o cookie). Access token expira naturalmente (curta duração); opcional: *denylist* por `jti` se necessário.
+**Logout:** revoga o refresh token informado e o cliente descarta ambos os tokens em memória. Access token expira naturalmente (curta duração); opcional: *denylist* por `jti` se necessário.
 
-**Recuperação de sessão:** `GET /auth/me` com access token; se expirado, o cliente chama `/auth/refresh` transparentemente.
+**Recuperação de sessão:** `GET /auth/me` com access token; se expirado e ainda houver refresh token em memória, o cliente chama `/auth/refresh` transparentemente.
 
 ### 5.5 Recuperação de senha e verificação de e-mail (recomendado; pode ser pós-MVP)
 
@@ -182,7 +182,7 @@ Seção 62 do escopo: *rate limiting*. Especificação:
 
 | Escopo | Limite inicial (ajustável) |
 |--------|---------------------------|
-| Login / registro / refresh | 5–10 req/min por IP e por conta/e-mail |
+| Login / registro / refresh | 10 req/min por IP/rota; login e registro também por e-mail normalizado |
 | Endpoints de recomendação — **anônimo** | 5–10 req/min e cota diária por IP (ex.: 30–50) |
 | Endpoints de recomendação — **autenticado** | 20–30 req/min; cota diária maior |
 | Explicação de recomendação (LLM) | 10 req/min; cache por item |
@@ -191,9 +191,9 @@ Seção 62 do escopo: *rate limiting*. Especificação:
 
 Implementação:
 
-- Biblioteca como `slowapi` (memória) no MVP; **Redis** para limites distribuídos quando houver múltiplas instâncias (seção 60 do escopo — Redis opcional).
+- Limitador em memória por processo implementado nas rotas de auth; **Redis** ou equivalente para limites distribuídos quando houver múltiplas instâncias (seção 60 do escopo — Redis opcional).
 - Respostas `429` com `Retry-After`; frontend mostra mensagem amigável (doc 08 §8.3).
-- Chave de limite: usuário autenticado quando houver; caso contrário IP (**atenção a proxies:** confiar em `X-Forwarded-For` apenas do proxy conhecido).
+- Chave atual de auth: IP e rota; login/registro também usam hash do e-mail normalizado. Nas demais rotas futuras, preferir usuário autenticado ou IP (**atenção a proxies:** confiar em `X-Forwarded-For` apenas do proxy conhecido).
 - **Orçamento diário de custo de IA** (doc 06 §10): ao esgotar, modo degradado (sem LLM) em vez de falha total.
 - **CAPTCHA** ou desafio leve como evolução caso haja abuso no registro.
 
@@ -501,7 +501,7 @@ Detalhamento em doc 10 (Testing Strategy). Casos mínimos automatizados:
 - [ ] Hash de senha com Argon2id/bcrypt; política de senha aplicada
 - [ ] Access token curto (≈15 min) + refresh com rotação e detecção de reuso
 - [ ] Algoritmo JWT fixado; segredos fortes via ambiente
-- [ ] Cookie de refresh `HttpOnly; Secure; SameSite`
+- [ ] Tokens mantidos somente em memória no cliente; avaliar cookie de refresh quando houver plano de CSRF
 - [ ] Mensagens de erro de login genéricas; rate limit de login
 
 **Autorização**
@@ -556,12 +556,12 @@ Detalhamento em doc 10 (Testing Strategy). Casos mínimos automatizados:
 
 | # | Decisão | Opções |
 |---|---------|--------|
-| SEC-01 | Algoritmo de hash | Argon2id (preferido) vs. bcrypt |
-| SEC-02 | Assinatura de JWT | HS256 vs. RS256/EdDSA |
-| SEC-03 | Armazenamento de tokens no cliente | Access em memória + refresh em cookie HttpOnly (recomendado) |
+| SEC-01 | Algoritmo de hash | Argon2id adotado na API inicial |
+| SEC-02 | Assinatura de JWT | HS256 adotado na API inicial; rotação de chaves futura |
+| SEC-03 | Armazenamento de tokens no cliente | Access e refresh em memória, conforme ADR-0006; cookie futuro condicionado a CSRF |
 | SEC-04 | Enumeração no registro | Resposta uniforme vs. aviso + rate limit |
 | SEC-05 | Verificação de e-mail no MVP | Sim/Não |
-| SEC-06 | Rate limiting | `slowapi` em memória vs. Redis |
+| SEC-06 | Rate limiting | Limitador local adotado em auth; armazenamento compartilhado antes de escalar |
 | SEC-07 | Retenção de histórico | Prazo padrão |
 | SEC-08 | Provedor de LLM e política de dados | Escolher com base em retenção/treinamento |
 

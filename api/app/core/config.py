@@ -14,3 +14,7 @@ class Settings(BaseSettings):
     open_library_contact_email: str = ""
     book_search_cache_ttl_seconds: int = Field(default=300, ge=0, le=3600)
     database_url: str | None = None
+    jwt_secret: str = ""
+    access_token_minutes: int = Field(default=15, ge=1, le=60)
+    refresh_token_days: int = Field(default=7, ge=1, le=30)
+    auth_rate_limit_per_minute: int = Field(default=10, ge=1, le=100)

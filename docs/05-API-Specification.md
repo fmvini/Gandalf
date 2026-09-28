@@ -105,7 +105,8 @@ Resposta:
 | Escopo | Limite |
 |---|---|
 | Global por IP | 120 req/min |
-| `/auth/login`, `/auth/register` | 10 req/min por IP |
+| `/auth/login`, `/auth/register` | 10 req/min por IP/rota e por e-mail normalizado |
+| `/auth/refresh` | 10 req/min por IP/rota |
 | `/recommendations/*` (geração) | 20 req/min por usuário; 5 req/min visitante |
 | `/…/explanation` | 30 req/hora por usuário |
 
@@ -278,7 +279,7 @@ Resposta:
 }
 ```
 
-> Estratégia de entrega do refresh token (corpo vs. cookie `HttpOnly`) definida em ADR-0006.
+> Nesta implementação, os dois tokens são entregues no corpo JSON e devem ficar somente em memória no cliente. A sessão não persiste após recarregar a página; consulte o ADR-0006.
 
 **Erros:** `401 INVALID_CREDENTIALS`, `429 RATE_LIMITED`.
 
