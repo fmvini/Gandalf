@@ -14,6 +14,7 @@ from app.core.exceptions import AppError
 from app.models.book import Book
 from app.models.external_search_cache import ExternalSearchCache
 from app.providers.base import BookProvider
+from app.providers.local_catalog import LocalBookProvider
 from app.schemas.book import BookItem, BookSearchResponse
 
 
@@ -62,6 +63,11 @@ class BookService:
             return result
 
     def get_by_id(self, book_id: UUID) -> BookItem:
+        if isinstance(self.provider, LocalBookProvider):
+            local = self.provider.get_by_id(book_id)
+            if local is not None:
+                return local
+            raise AppError(404, "NOT_FOUND", "Livro não encontrado no catálogo local.")
         if self.session_factory is None:
             raise AppError(
                 503, "SERVICE_UNAVAILABLE", "O catálogo de livros não está configurado."

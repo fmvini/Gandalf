@@ -1,5 +1,60 @@
 # Registro de desenvolvimento
 
+## 2026-09-28 — Fluxos públicos funcionais em modo local gratuito
+
+### Implementado
+- Implementados os três endpoints usados pela interface: descoberta de músicas, descoberta de livros e trilha de leitura, com explicações dos critérios reais.
+- Catálogo de 18 livros e 25 músicas, busca de título/autor, ranking por temas, referências, exclusões simples, filtros de voz/energia e diversidade por criador. Nenhuma chamada a LLM ou serviço pago.
+- `api/local.py` aplica migrações SQLite e mantém banco/segredo em `api/.local`; `start-local.ps1` inicia API e frontend, verifica portas/prontidão e oferece instalação explícita de dependências gratuitas.
+- Readiness valida todas as tabelas e aceita SQLite sem pgvector. Open Library/PostgreSQL continuam opcionais.
+- Interface informa catálogo local e duração estimada. Links musicais são buscas externas, sem áudio ou duração de gravação inventados.
+- Testes de recomendações sem rede, filtros, exclusões, expiração, validação e persistência após reinício; E2E com API real, SQLite temporário e recursos externos do navegador bloqueados.
+
+### Arquivos principais alterados
+- `api/app/providers/local_catalog.py`
+- `api/app/services/recommendation_service.py`
+- `api/app/schemas/recommendation.py`
+- `api/app/routes/recommendations.py`
+- `api/app/services/book_service.py`
+- `api/app/routes/books.py`
+- `api/app/core/config.py`
+- `api/app/main.py`
+- `api/local.py`
+- `api/.env.example`
+- `api/.gitignore`
+- `api/tests/test_recommendations.py`
+- `api/tests/test_local.py`
+- `api/tests/test_books.py`
+- `api/tests/test_migrations.py`
+- `frontend/src/lib/api.ts`
+- `frontend/src/pages/Discovery.tsx`
+- `frontend/src/pages/ReadWithMusic.tsx`
+- `frontend/tests/live.mjs`
+- `frontend/package.json`
+- `start-local.ps1`
+- `README.md`
+- `api/README.md`
+- `docs/adr/0013-free-local-mode.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Modalidade local sem Docker, chaves externas, embeddings ou LLM, conforme a restrição de custo. Catálogo editorial limitado, sem prometer interpretação semântica avançada.
+- Iniciador isola banco/provider de configurações externas; dados/segredo são ignorados pelo Git. Migrações usam conexão explícita para não atingir `DATABASE_URL` externo.
+- Resultados anônimos ficam em memória por uma hora, até 256 buscas por processo; explicações usam o resultado armazenado.
+- Trilhas estimam cinco minutos por faixa, não repetem itens para completar duração e avisam quando a seleção fica curta. “Poucos vocais” usa instrumentais conservadoramente.
+
+### Estado atual
+- 34 testes de backend, smoke/E2E do frontend com API real e build passaram. Verificação visual desktop/celular sem overflow; detector da skill de interface sem achados nas alterações.
+- Iniciador completo verificado: frontend em `127.0.0.1:5173`, API em `127.0.0.1:8000`, readiness 200 e CORS correto. A checagem de portas respeita uma instância existente em IPv6 sem bloqueá-la ou encerrá-la.
+- Os três fluxos públicos funcionam sem rede após instalação. Auth funciona na API com persistência, sem tela de conta. Histórico pessoal, feedback, salvos, reprodução/exportação de playlists e deploy público continuam pendentes.
+- PostgreSQL/pgvector e concorrência de refresh entre processos permanecem sem validação real. Links de terceiros exigem conexão, mas não são necessários para gerar sugestões.
+
+### Próximos passos
+- Expandir `api/app/providers/local_catalog.py` e criar consultas de avaliação de relevância, exclusões e cobertura do parser antes de prometer compreensão mais ampla.
+- Para ampliar catálogo pela rede, concluir ADR-0012 e validar provider sem contratar serviços; preservar modo offline e testes sem rede.
+- Para personalização, integrar auth à interface e persistir recomendações/feedback com isolamento por usuário, migrações e testes antes de expor histórico ou salvos.
+- Antes de deploy, validar PostgreSQL real, migrações reversas, concorrência de refresh e rate limiting compartilhado; configuração local não é destinada a múltiplas instâncias públicas.
+
 ## 2026-09-28 — Cache persistente de busca externa de livros
 
 ### Implementado

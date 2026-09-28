@@ -1,0 +1,32 @@
+from typing import Literal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class MusicFilters(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    vocals: Literal["none", "required", "optional"] | None = None
+    energy: Literal["low", "medium", "high"] | None = None
+
+
+class DiscoveryRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    query: str = Field(min_length=3, max_length=1000)
+    filters: MusicFilters = Field(default_factory=MusicFilters)
+    limit: int = Field(default=10, ge=1, le=25)
+
+
+class ReadingRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    book_id: UUID
+    mode: Literal["FOCUS", "IMMERSIVE", "CINEMATIC", "CALM", "CUSTOM"] = "FOCUS"
+    context: str = Field(default="", max_length=500)
+    vocals: Literal["INSTRUMENTAL", "MINIMAL", "ANY"] = "INSTRUMENTAL"
+    target_duration_min: int = Field(default=60, ge=15, le=120)
+
+    @model_validator(mode="after")
+    def custom_needs_context(self):
+        if self.mode == "CUSTOM" and not self.context:
+            raise ValueError("Descreva a atmosfera para o modo personalizado.")
+        return self

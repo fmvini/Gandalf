@@ -18,7 +18,7 @@ export type Recommendation<T> = {
   parsed_query?: Record<string, unknown>
   items: RankedItem<T>[]
   meta?: { hint?: string; degraded?: boolean }
-  playlist?: { total_duration_ms: number; tracks_count: number }
+  playlist?: { total_duration_ms: number; tracks_count: number; duration_estimated?: boolean }
 }
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '')
@@ -50,6 +50,7 @@ export function musicDestination(item: MusicItem) {
   if (item.links?.spotify) return { href: item.links.spotify, label: 'Ouvir no Spotify' }
   if (item.links?.youtube) return { href: item.links.youtube, label: 'Ouvir no YouTube' }
   if (item.links?.provider) return { href: item.links.provider, label: 'Ver fonte' }
+  if (item.links?.search) return { href: item.links.search, label: 'Buscar no YouTube' }
   return {
     href: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' ' + item.artist),
     label: 'Buscar no YouTube',

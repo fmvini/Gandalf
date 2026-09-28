@@ -32,11 +32,11 @@ def test_migrations_upgrade_and_downgrade_on_sqlite(
 
     with TestClient(create_app(settings=Settings(database_url=database_url))) as client:
         readiness = client.get("/health/ready")
-        assert readiness.status_code == 503
+        assert readiness.status_code == 200
         assert readiness.json()["components"] == {
             "database": "ok",
             "schema": "ok",
-            "pgvector": "down",
+            "pgvector": "not_required",
         }
 
     command.downgrade(config, "base")

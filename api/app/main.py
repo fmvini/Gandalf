@@ -19,10 +19,13 @@ from app.core.exceptions import AppError
 from app.core.rate_limit import RateLimiter
 from app.database.session import make_engine
 from app.providers.base import BookProvider
+from app.providers.local_catalog import LocalBookProvider
 from app.providers.open_library import OpenLibraryProvider
 from app.routes.auth import router as auth_router
 from app.routes.books import router as books_router
+from app.routes.recommendations import router as recommendations_router
 from app.services.book_service import BookService
+from app.services.recommendation_service import RANKING_VERSION, RecommendationService
 
 logger = logging.getLogger("gandalf.api")
 
@@ -59,6 +62,8 @@ def create_app(
                 else None
             )
             provider = book_provider
+            if provider is None and config.book_provider == "local":
+                provider = LocalBookProvider()
             if provider is None:
                 client = await stack.enter_async_context(
                     httpx.AsyncClient(timeout=httpx.Timeout(5.0))
@@ -73,6 +78,7 @@ def create_app(
                 config.book_search_cache_ttl_seconds,
                 application.state.session_factory,
             )
+            application.state.recommendation_service = RecommendationService()
             try:
                 yield
             finally:
@@ -173,8 +179,14 @@ def create_app(
                 with engine.connect() as connection:
                     connection.execute(text("SELECT 1"))
                     components["database"] = "ok"
-                    if inspect(connection).has_table("users"):
+                    from app.database.base import Base
+
+                    if set(Base.metadata.tables) <= set(
+                        inspect(connection).get_table_names()
+                    ):
                         components["schema"] = "ok"
+                    if connection.dialect.name == "sqlite":
+                        components["pgvector"] = "not_required"
                     if connection.dialect.name == "postgresql":
                         has_vector = connection.scalar(
                             text(
@@ -185,7 +197,7 @@ def create_app(
                             components["pgvector"] = "ok"
             except SQLAlchemyError:
                 pass
-        ready = all(status == "ok" for status in components.values())
+        ready = all(status in {"ok", "not_required"} for status in components.values())
         return JSONResponse(
             status_code=200 if ready else 503,
             content={"status": "ok" if ready else "down", "components": components},
@@ -196,11 +208,12 @@ def create_app(
         return {
             "app": config.app_name,
             "version": config.app_version,
-            "ranking_version": None,
+            "ranking_version": RANKING_VERSION,
         }
 
     application.include_router(books_router)
     application.include_router(auth_router)
+    application.include_router(recommendations_router)
     return application
 
 
