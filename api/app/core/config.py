@@ -13,3 +13,4 @@ class Settings(BaseSettings):
     open_library_base_url: str = "https://openlibrary.org"
     open_library_contact_email: str = ""
     book_search_cache_ttl_seconds: int = Field(default=300, ge=0, le=3600)
+    database_url: str | None = None

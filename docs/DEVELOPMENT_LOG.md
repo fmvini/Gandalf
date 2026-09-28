@@ -1,5 +1,42 @@
 # Registro de desenvolvimento
 
+## 2026-09-28 — Base relacional e migrações
+
+### Implementado
+- Adicionado Compose de PostgreSQL 18 com pgvector e configuração de conexão em `api/.env.example`.
+- Criados modelos SQLAlchemy para usuários, refresh tokens, preferências, interações e histórico de busca, com Alembic para extensões e tabelas.
+- `GET /health/ready` agora verifica conexão, schema e extensão pgvector.
+
+### Arquivos principais alterados
+- `api/compose.yaml`
+- `api/alembic.ini`
+- `api/alembic/env.py`
+- `api/alembic/versions/0001_extensions.py`
+- `api/alembic/versions/0002_accounts.py`
+- `api/app/models/account.py`
+- `api/app/database/session.py`
+- `api/app/main.py`
+- `api/app/core/config.py`
+- `api/tests/test_migrations.py`
+- `api/pyproject.toml`
+- `api/README.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- As extensões `citext` e `vector` são habilitadas apenas em PostgreSQL; os mesmos scripts migram SQLite para testes locais.
+- `recommendation_id` fica sem chave estrangeira até a tabela de recomendações existir. A integridade será adicionada na migração dessa etapa.
+- O Compose usa uma imagem versionada do pgvector e porta local 5433 para não conflitar com o PostgreSQL já instalado nesta máquina.
+
+### Estado atual
+- Upgrade e downgrade do Alembic passam em SQLite; o Compose passa na validação de configuração.
+- O Docker Engine não está disponível nesta máquina; o PostgreSQL local pede credenciais e não tem pgvector. A migração PostgreSQL ainda não foi executada aqui.
+- A API de livros continua funcional sem banco. Readiness só responderá 200 após PostgreSQL, pgvector e schema estarem disponíveis.
+
+### Próximos passos
+- Implementar registro, login, refresh rotativo, logout e `GET /auth/me` sobre os novos modelos, com Argon2id e JWT HS256; testar expiração, reuso e revogação de família.
+- Validar `alembic upgrade head` e `downgrade base` em um PostgreSQL com pgvector, por exemplo com `cd api; docker compose up -d db` onde o Docker Engine estiver disponível.
+- Depois da autenticação, implementar rate limiting de auth e persistir cache/catálogo de livros.
+
 ## 2026-09-28 — Primeira fatia da API e busca de livros
 
 ### Implementado

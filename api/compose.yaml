@@ -1,0 +1,19 @@
+services:
+  db:
+    image: pgvector/pgvector:0.8.6-pg18
+    environment:
+      POSTGRES_DB: gandalf
+      POSTGRES_USER: gandalf
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in api/.env}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - gandalf_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gandalf -d gandalf"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  gandalf_pgdata:

@@ -9,10 +9,14 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import inspect, text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session, sessionmaker
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import Settings
 from app.core.exceptions import AppError
+from app.database.session import make_engine
 from app.providers.base import BookProvider
 from app.providers.open_library import OpenLibraryProvider
 from app.routes.books import router as books_router
@@ -45,6 +49,13 @@ def create_app(
     @asynccontextmanager
     async def lifespan(application: FastAPI):
         async with AsyncExitStack() as stack:
+            engine = make_engine(config.database_url) if config.database_url else None
+            application.state.engine = engine
+            application.state.session_factory = (
+                sessionmaker(engine, expire_on_commit=False, class_=Session)
+                if engine is not None
+                else None
+            )
             provider = book_provider
             if provider is None:
                 client = await stack.enter_async_context(
@@ -58,7 +69,11 @@ def create_app(
             application.state.book_service = BookService(
                 provider, config.book_search_cache_ttl_seconds
             )
-            yield
+            try:
+                yield
+            finally:
+                if engine is not None:
+                    engine.dispose()
 
     application = FastAPI(
         title=config.app_name, version=config.app_version, lifespan=lifespan
@@ -144,11 +159,30 @@ def create_app(
         return {"status": "ok"}
 
     @application.get("/health/ready", tags=["health"])
-    async def readiness() -> JSONResponse:
-        # Ainda não há banco configurado: a aplicação não está pronta para o MVP completo.
+    def readiness() -> JSONResponse:
+        engine = application.state.engine
+        components = {"database": "down", "schema": "down", "pgvector": "down"}
+        if engine is not None:
+            try:
+                with engine.connect() as connection:
+                    connection.execute(text("SELECT 1"))
+                    components["database"] = "ok"
+                    if inspect(connection).has_table("users"):
+                        components["schema"] = "ok"
+                    if connection.dialect.name == "postgresql":
+                        has_vector = connection.scalar(
+                            text(
+                                "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')"
+                            )
+                        )
+                        if has_vector:
+                            components["pgvector"] = "ok"
+            except SQLAlchemyError:
+                pass
+        ready = all(status == "ok" for status in components.values())
         return JSONResponse(
-            status_code=503,
-            content={"status": "down", "components": {"database": "down"}},
+            status_code=200 if ready else 503,
+            content={"status": "ok" if ready else "down", "components": components},
         )
 
     @application.get("/version", tags=["health"])
