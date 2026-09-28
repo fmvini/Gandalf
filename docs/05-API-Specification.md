@@ -347,6 +347,7 @@ Comportamento idêntico a `POST /recommendations/music` (§6.1). Mantido para co
 **Response `200`:** `{ "items": [ BookItem ], "total": n }`.
 
 Quando o banco está configurado, os itens retornados também são inseridos ou atualizados no catálogo local. Sem banco, a busca externa continua disponível, mas seus resultados não ficam persistidos.
+Com o banco migrado, as respostas de busca também são guardadas em `external_search_cache` pelo TTL configurado (padrão: 300 segundos), sobrevivendo a reinícios da API. Sem banco, o cache permanece em memória por processo. `BOOK_SEARCH_CACHE_TTL_SECONDS=0` desabilita o cache.
 Na implementação Open Library, `description` é opcional e limitado a 2.000 caracteres; `subjects` contém até 12 assuntos de até 120 caracteres cada. O provider atual não classifica `genres`, portanto esse campo permanece vazio.
 
 ### 5.2 `GET /books/{id}`

@@ -454,13 +454,17 @@ Tabela única polimórfica para vetores de conteúdo.
 
 ### 4.14 Tabelas de Infraestrutura
 
-**`provider_cache`** (opcional, se não usar Redis)
+**`external_search_cache`** (implementado na revisão `0004` para buscas de livros)
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
-| `key` | `text` PK | Hash (`provider` + operação + parâmetros normalizados) |
-| `payload` | `jsonb` | Resposta normalizada |
-| `expires_at` | `timestamptz` | TTL |
+| `id` | `integer` PK | Identificador interno |
+| `entity_type`, `provider` | `varchar` | Tipo de entidade e fonte externa |
+| `query`, `result_limit` | `text`, `integer` | Consulta normalizada e limite; compõem a chave única com tipo e fonte |
+| `response` | `jsonb` | Resposta normalizada, incluindo resultados vazios |
+| `expires_at` | `bigint` | Instante de expiração em milissegundos Unix; indexado |
+
+O cache só é lido enquanto válido. Entradas expiradas são removidas durante novas gravações. A tabela está preparada para outros tipos, mas somente buscas de livros a utilizam atualmente. SQLite usa JSON para os testes.
 
 **`intent_cache`**
 
@@ -530,19 +534,17 @@ v_new = normalize( v_old * (1 - α) + α * sign * v_item )
 
 ## 8. Migrações (Alembic)
 
-Ordem sugerida das revisões iniciais:
+Revisões implementadas e próximas entidades planejadas:
 
 | # | Revisão |
 |---|---|
-| 001 | Extensões: `pgcrypto`/`uuid-ossp`, `citext`, `vector` |
-| 002 | `users`, `refresh_tokens` |
+| 001 | Extensões: `citext`, `vector` no PostgreSQL |
+| 002 | `users`, `refresh_tokens`, `user_preferences`, `interactions`, `search_history` |
 | 003 | `books` (catálogo local inicial; busca textual será adicionada depois) |
-| 004 | `music` e `embeddings` (+ índices GIN/HNSW) |
-| 005 | `user_preferences`, `interactions` |
-| 006 | `recommendations`, `recommendation_items`, `explanations` |
-| 007 | `provider_cache`, `intent_cache` |
-| 008 | `playlists`, `playlist_tracks` (P2) |
-| 009 | `user_vectors` (P2) |
+| 004 | `external_search_cache` (buscas externas) |
+| Pendente | `music`, `embeddings` e índices de busca |
+| Pendente | `recommendations`, `recommendation_items`, `explanations`, `intent_cache` |
+| P2 | `playlists`, `playlist_tracks`, `user_vectors` |
 
 **Boas práticas:** migrações reversíveis (`downgrade`), uma responsabilidade por revisão, dados de exemplo apenas em *seed* separado, teste de migração em CI (`upgrade head` → `downgrade base`).
 

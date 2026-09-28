@@ -1,5 +1,42 @@
 # Registro de desenvolvimento
 
+## 2026-09-28 — Cache persistente de busca externa de livros
+
+### Implementado
+- Criada a migração `0004_external_search_cache` com chave por tipo, provider, consulta normalizada e limite, resposta JSON e expiração em milissegundos Unix.
+- A busca de livros reutiliza respostas válidas entre reinícios da API quando há banco configurado. Novas buscas persistem catálogo e cache na mesma transação; entradas vencidas são removidas nas gravações. Sem banco, o cache em memória continua ativo.
+- Testes cobrem reutilização após reinício, separação por limite, resposta vazia, expiração, upgrade/downgrade SQLite e geração SQL PostgreSQL.
+- Iniciada a avaliação do provider musical no ADR-0012 com documentação oficial e uma pequena amostra real da API MusicBrainz.
+
+### Arquivos principais alterados
+- `api/alembic/versions/0004_external_search_cache.py`
+- `api/app/models/external_search_cache.py`
+- `api/app/models/__init__.py`
+- `api/app/providers/base.py`
+- `api/app/services/book_service.py`
+- `api/tests/test_books.py`
+- `api/tests/test_migrations.py`
+- `api/README.md`
+- `docs/04-Data-Model.md`
+- `docs/05-API-Specification.md`
+- `docs/12-development-roadmap.md`
+- `docs/adr/0012-music-provider-selection.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- A tabela suporta múltiplos tipos de entidade, mas a integração atual é só de livros. O TTL é o mesmo do cache em memória (`BOOK_SEARCH_CACHE_TTL_SECONDS`); valor zero desabilita ambos.
+- Respostas normalizadas são armazenadas após o upsert do catálogo na mesma transação. O cache persistente evita novas chamadas ao provider e não prolonga sua validade ao ser lido.
+- O MusicBrainz ainda não foi escolhido como fonte definitiva: a amostra mostrou campos de duração e tags incompletos, e falta comparar Last.fm com chave e avaliar licenças e cobertura para G1.
+
+### Estado atual
+- A busca de livros funciona com cache persistente em banco migrado e com cache em memória sem banco. Os testes em SQLite, lint e formatação passam.
+- O caminho PostgreSQL/pgvector e a concorrência entre processos não foram validados neste ambiente. O provider musical permanece em avaliação, sem endpoints musicais implementados.
+
+### Próximos passos
+- Em ambiente com Docker, rodar `alembic upgrade head` e `downgrade base` em PostgreSQL com pgvector descartável; testar reutilização e expiração do cache com duas instâncias da API.
+- Completar a matriz do ADR-0012: obter chave de desenvolvimento Last.fm, medir amostra de estilos variados, cobertura de tags/gêneros/duração e latência, e confirmar obrigações de licença/atribuição para os campos usados.
+- Após fechar G1, implementar `MusicProvider`, catálogo de músicas e `GET /music/search`/`GET /music/{id}` com normalização e testes de contrato.
+
 ## 2026-09-28 — Metadados de descrição e assuntos na busca de livros
 
 ### Implementado

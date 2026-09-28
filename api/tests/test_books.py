@@ -12,12 +12,14 @@ from alembic import command
 from app.core.config import Settings
 from app.core.exceptions import UpstreamTimeout
 from app.main import create_app
-from app.models import Book
+from app.models import Book, ExternalSearchCache
 from app.providers.open_library import OpenLibraryProvider, normalize_book
 from app.schemas.book import BookItem, BookSearchResponse
 
 
 class FakeBookProvider:
+    name = "open_library"
+
     def __init__(self, error: Exception | None = None) -> None:
         self.calls: list[tuple[str, int]] = []
         self.error = error
@@ -100,6 +102,66 @@ def test_search_persists_catalog_and_detail_reads_from_database(
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(Book)) == 1
     engine.dispose()
+
+
+def test_search_cache_survives_restart_and_expires(tmp_path, monkeypatch) -> None:
+    database_url = f"sqlite:///{tmp_path / 'cache.db'}"
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    command.upgrade(config, "head")
+    settings = Settings(database_url=database_url, book_search_cache_ttl_seconds=60)
+    first_provider = FakeBookProvider()
+    with TestClient(
+        create_app(settings=settings, book_provider=first_provider)
+    ) as client:
+        first = client.get("/api/v1/books/search", params={"q": "Duna", "limit": 6})
+        different_limit = client.get(
+            "/api/v1/books/search", params={"q": "Duna", "limit": 7}
+        )
+    assert first.status_code == different_limit.status_code == 200
+    assert first_provider.calls == [("Duna", 6), ("Duna", 7)]
+
+    second_provider = FakeBookProvider(UpstreamTimeout())
+    with TestClient(
+        create_app(settings=settings, book_provider=second_provider)
+    ) as client:
+        cached = client.get("/api/v1/books/search", params={"q": " dUnA ", "limit": 6})
+        assert cached.json() == first.json()
+        assert second_provider.calls == []
+        engine = create_engine(database_url)
+        with Session(engine) as session:
+            record = session.query(ExternalSearchCache).filter_by(result_limit=6).one()
+            record.expires_at = 0
+            session.commit()
+        engine.dispose()
+        expired = client.get("/api/v1/books/search", params={"q": "Duna", "limit": 6})
+    assert expired.status_code == 504
+    assert second_provider.calls == [("Duna", 6)]
+
+
+def test_empty_search_response_is_cached_with_database(tmp_path, monkeypatch) -> None:
+    class EmptyBookProvider(FakeBookProvider):
+        async def search(self, title: str, limit: int) -> BookSearchResponse:
+            self.calls.append((title, limit))
+            return BookSearchResponse(items=[], total=0)
+
+    database_url = f"sqlite:///{tmp_path / 'empty-cache.db'}"
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    command.upgrade(config, "head")
+    settings = Settings(database_url=database_url)
+    with TestClient(
+        create_app(settings=settings, book_provider=EmptyBookProvider())
+    ) as client:
+        response = client.get("/api/v1/books/search", params={"q": "Inexistente"})
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "total": 0}
+
+    provider = FakeBookProvider(UpstreamTimeout())
+    with TestClient(create_app(settings=settings, book_provider=provider)) as client:
+        cached = client.get("/api/v1/books/search", params={"q": "Inexistente"})
+    assert cached.json() == response.json()
+    assert provider.calls == []
 
 
 def test_book_detail_requires_configured_catalog() -> None:

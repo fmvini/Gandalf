@@ -1,9 +1,9 @@
 import asyncio
 from collections import OrderedDict
-from time import monotonic
+from time import monotonic, time
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import SQLAlchemyError
@@ -12,6 +12,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.core.exceptions import AppError
 from app.models.book import Book
+from app.models.external_search_cache import ExternalSearchCache
 from app.providers.base import BookProvider
 from app.schemas.book import BookItem, BookSearchResponse
 
@@ -45,9 +46,14 @@ class BookService:
             if cached and cached[0] > monotonic():
                 self._cache.move_to_end(cache_key)
                 return cached[1]
+            result = None
+            if self.session_factory is not None and self.cache_ttl_seconds:
+                result = await run_in_threadpool(self._load_cached, cache_key)
+            if result is not None:
+                return result
             result = await self.provider.search(title, limit)
             if self.session_factory is not None:
-                result = await run_in_threadpool(self._persist, result)
+                result = await run_in_threadpool(self._persist, result, cache_key)
             if self.cache_ttl_seconds:
                 self._cache[cache_key] = (monotonic() + self.cache_ttl_seconds, result)
                 self._cache.move_to_end(cache_key)
@@ -71,10 +77,36 @@ class BookService:
                 503, "SERVICE_UNAVAILABLE", "O catálogo de livros está indisponível."
             ) from exc
 
-    def _persist(self, result: BookSearchResponse) -> BookSearchResponse:
+    def _load_cached(self, cache_key: tuple[str, int]) -> BookSearchResponse | None:
         assert self.session_factory is not None
         try:
             with self.session_factory() as session:
+                record = session.scalar(
+                    select(ExternalSearchCache).where(
+                        ExternalSearchCache.entity_type == "BOOK",
+                        ExternalSearchCache.provider == self.provider.name,
+                        ExternalSearchCache.query == cache_key[0],
+                        ExternalSearchCache.result_limit == cache_key[1],
+                        ExternalSearchCache.expires_at > int(time() * 1000),
+                    )
+                )
+                return (
+                    BookSearchResponse.model_validate(record.response)
+                    if record is not None
+                    else None
+                )
+        except SQLAlchemyError as exc:
+            raise AppError(
+                503, "SERVICE_UNAVAILABLE", "O cache de buscas está indisponível."
+            ) from exc
+
+    def _persist(
+        self, result: BookSearchResponse, cache_key: tuple[str, int]
+    ) -> BookSearchResponse:
+        assert self.session_factory is not None
+        try:
+            with self.session_factory() as session:
+                dialect = session.get_bind().dialect.name
                 for item in result.items:
                     values = {
                         "title": item.title,
@@ -87,7 +119,6 @@ class BookService:
                         "external_url": item.external_url,
                     }
                     update_values = {**values, "updated_at": func.now()}
-                    dialect = session.get_bind().dialect.name
                     if dialect == "postgresql":
                         statement = pg_insert(Book).values(
                             id=item.id,
@@ -141,6 +172,53 @@ class BookService:
                     )
                     if record is not None:
                         item.id = record.id
+                if self.cache_ttl_seconds:
+                    now_ms = int(time() * 1000)
+                    session.execute(
+                        delete(ExternalSearchCache).where(
+                            ExternalSearchCache.expires_at <= now_ms
+                        )
+                    )
+                    cache_values = {
+                        "entity_type": "BOOK",
+                        "provider": self.provider.name,
+                        "query": cache_key[0],
+                        "result_limit": cache_key[1],
+                        "response": result.model_dump(mode="json"),
+                        "expires_at": now_ms + self.cache_ttl_seconds * 1000,
+                    }
+                    if dialect == "postgresql":
+                        statement = pg_insert(ExternalSearchCache).values(
+                            **cache_values
+                        )
+                        statement = statement.on_conflict_do_update(
+                            constraint="uq_external_search_cache_key",
+                            set_={
+                                "response": statement.excluded.response,
+                                "expires_at": statement.excluded.expires_at,
+                            },
+                        )
+                    elif dialect == "sqlite":
+                        statement = sqlite_insert(ExternalSearchCache).values(
+                            **cache_values
+                        )
+                        statement = statement.on_conflict_do_update(
+                            index_elements=[
+                                ExternalSearchCache.entity_type,
+                                ExternalSearchCache.provider,
+                                ExternalSearchCache.query,
+                                ExternalSearchCache.result_limit,
+                            ],
+                            set_={
+                                "response": statement.excluded.response,
+                                "expires_at": statement.excluded.expires_at,
+                            },
+                        )
+                    else:
+                        raise AppError(
+                            503, "SERVICE_UNAVAILABLE", "Banco de dados não suportado."
+                        )
+                    session.execute(statement)
                 session.commit()
                 return result
         except SQLAlchemyError as exc:

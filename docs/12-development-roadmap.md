@@ -127,7 +127,7 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 - [ ] **Spike de provider musical** (comparar candidatos por disponibilidade, limites, metadados, estabilidade e termos de uso) → **ADR-012**
 - [ ] Implementação do provider musical escolhido
 - [ ] Normalização para modelos internos (`Music`, `Book`) — livros implementados parcialmente; falta música e enriquecimento dos metadados
-- [ ] Cache de respostas externas com TTL (tabela no Postgres no MVP)
+- [ ] Cache de respostas externas com TTL (tabela no Postgres no MVP) — implementado para livros em `external_search_cache` e testado em SQLite; falta música e validação em PostgreSQL
 - [ ] Tratamento de erros: indisponibilidade, timeout, rate limit, *backoff*
 - [ ] Endpoints `GET /music/search`, `GET /music/{id}`, `GET /books/search`, `GET /books/{id}` — endpoints de livros concluídos; falta música
 - [ ] Fixtures gravadas + testes de contrato dos providers

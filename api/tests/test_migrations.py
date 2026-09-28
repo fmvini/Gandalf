@@ -25,6 +25,7 @@ def test_migrations_upgrade_and_downgrade_on_sqlite(
         "interactions",
         "search_history",
         "books",
+        "external_search_cache",
         "alembic_version",
     } <= set(inspect(engine).get_table_names())
     engine.dispose()
@@ -42,6 +43,7 @@ def test_migrations_upgrade_and_downgrade_on_sqlite(
     engine = create_engine(database_url)
     assert "users" not in inspect(engine).get_table_names()
     assert "books" not in inspect(engine).get_table_names()
+    assert "external_search_cache" not in inspect(engine).get_table_names()
     engine.dispose()
 
 
@@ -58,3 +60,4 @@ def test_postgresql_migration_generates_extensions_and_tables(
     assert "CREATE EXTENSION IF NOT EXISTS citext" in script
     assert "CREATE EXTENSION IF NOT EXISTS vector" in script
     assert "CREATE TABLE users" in script
+    assert "CREATE TABLE external_search_cache" in script
