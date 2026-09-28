@@ -69,7 +69,9 @@ def create_app(
                     contact_email=config.open_library_contact_email,
                 )
             application.state.book_service = BookService(
-                provider, config.book_search_cache_ttl_seconds
+                provider,
+                config.book_search_cache_ttl_seconds,
+                application.state.session_factory,
             )
             try:
                 yield

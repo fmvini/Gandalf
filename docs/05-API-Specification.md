@@ -346,9 +346,11 @@ Comportamento idêntico a `POST /recommendations/music` (§6.1). Mantido para co
 **Query params:** `q` (≥ 2), `limit` (1–50, padrão 20), `provider` (opcional).
 **Response `200`:** `{ "items": [ BookItem ], "total": n }`.
 
+Quando o banco está configurado, os itens retornados também são inseridos ou atualizados no catálogo local. Sem banco, a busca externa continua disponível, mas seus resultados não ficam persistidos.
+
 ### 5.2 `GET /books/{id}`
 
-**Response `200`** → `BookItem`. **Erros:** `404 NOT_FOUND`.
+Busca o UUID no catálogo local; não faz uma consulta externa por identificador. **Response `200`** → `BookItem`. **Erros:** `404 NOT_FOUND` (ID ausente), `503 SERVICE_UNAVAILABLE` (banco ou catálogo não configurado).
 
 ---
 

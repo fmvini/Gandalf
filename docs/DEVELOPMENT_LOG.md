@@ -1,5 +1,43 @@
 # Registro de desenvolvimento
 
+## 2026-09-28 — Catálogo persistente de livros
+
+### Implementado
+- Criada a migração Alembic `0003_books_catalog` e o modelo `Book`, com unicidade por provider/ID externo e índice por título.
+- A busca Open Library persiste ou atualiza os itens no catálogo quando PostgreSQL/SQLite estiver configurado; sem banco, a busca continua disponível sem persistência.
+- Implementado `GET /api/v1/books/{id}` para consultar livros já catalogados, com 404 para IDs ausentes e 503 quando o catálogo não está configurado ou acessível.
+
+### Arquivos principais alterados
+- `api/alembic/versions/0003_books_catalog.py`
+- `api/app/models/book.py`
+- `api/app/models/__init__.py`
+- `api/app/models/account.py`
+- `api/app/services/book_service.py`
+- `api/app/routes/books.py`
+- `api/app/main.py`
+- `api/tests/test_books.py`
+- `api/tests/test_migrations.py`
+- `api/README.md`
+- `docs/04-Data-Model.md`
+- `docs/05-API-Specification.md`
+- `docs/DEVELOPMENT_LOG.md`
+- `docs/12-development-roadmap.md`
+
+### Decisões técnicas
+- A chave única é `(provider, external_id)`; upsert nativo de PostgreSQL/SQLite deixa as atualizações idempotentes e o ID público determinístico da Open Library é preservado.
+- A persistência síncrona usa o pool de threads do Starlette para não bloquear o event loop da rota assíncrona.
+- O detalhe lê somente do catálogo local. Não chama provider por ID porque essa operação ainda não faz parte do contrato de `BookProvider`.
+- Descrição, gêneros e assuntos ficam preparados no schema para enriquecimento futuro; o provider atual ainda não preenche esses campos.
+
+### Estado atual
+- Busca e detalhe são cobertos com migração e SQLite; `pytest` passou com 18 testes e Ruff/formatação passaram.
+- PostgreSQL com pgvector ainda não foi executado neste ambiente por indisponibilidade do Docker Engine. A busca textual do catálogo e os índices GIN permanecem pendentes.
+
+### Próximos passos
+- Validar upgrade/downgrade da migração `0003` e persistência no PostgreSQL com pgvector em ambiente com Docker.
+- Enriquecer o provider Open Library com descrição e assuntos de forma limitada, e avaliar cache persistente de consultas externas.
+- Continuar Fase 2 do roadmap com provider musical, normalização e os endpoints de busca musical; em seguida avançar ao parser e ranking previstos nas Fases 3 e 4.
+
 ## 2026-09-28 — Autenticação da API com refresh rotativo
 
 ### Implementado

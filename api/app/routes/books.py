@@ -1,8 +1,9 @@
 from typing import Annotated, Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
 
-from app.schemas.book import BookSearchResponse
+from app.schemas.book import BookItem, BookSearchResponse
 
 router = APIRouter(prefix="/api/v1/books", tags=["books"])
 
@@ -17,3 +18,8 @@ async def search_books(
     # O parâmetro é parte do contrato; existe apenas um provider nesta etapa.
     _ = provider
     return await request.app.state.book_service.search(q, limit)
+
+
+@router.get("/{book_id}", response_model=BookItem)
+def get_book(request: Request, book_id: UUID) -> BookItem:
+    return request.app.state.book_service.get_by_id(book_id)

@@ -24,6 +24,7 @@ def test_migrations_upgrade_and_downgrade_on_sqlite(
         "user_preferences",
         "interactions",
         "search_history",
+        "books",
         "alembic_version",
     } <= set(inspect(engine).get_table_names())
     engine.dispose()
@@ -40,6 +41,7 @@ def test_migrations_upgrade_and_downgrade_on_sqlite(
     command.downgrade(config, "base")
     engine = create_engine(database_url)
     assert "users" not in inspect(engine).get_table_names()
+    assert "books" not in inspect(engine).get_table_names()
     engine.dispose()
 
 

@@ -5,5 +5,13 @@ from app.models.account import (
     User,
     UserPreference,
 )
+from app.models.book import Book
 
-__all__ = ["Interaction", "RefreshToken", "SearchHistory", "User", "UserPreference"]
+__all__ = [
+    "Book",
+    "Interaction",
+    "RefreshToken",
+    "SearchHistory",
+    "User",
+    "UserPreference",
+]

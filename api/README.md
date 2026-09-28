@@ -25,14 +25,15 @@ Para habilitar autenticação, configure `JWT_SECRET` em `.env` com pelo menos 3
 | GET | `/health` | Liveness local |
 | GET | `/health/ready` | Verifica conexão, schema e extensão pgvector |
 | GET | `/version` | Versão da API; ranking ainda não implementado |
-| GET | `/api/v1/books/search?q=Duna&limit=6` | Busca textual de título na Open Library |
+| GET | `/api/v1/books/search?q=Duna&limit=6` | Busca Open Library e persiste itens quando o banco está ativo |
+| GET | `/api/v1/books/{id}` | Retorna um livro do catálogo local |
 | POST | `/api/v1/auth/register` | Cria conta com senha Argon2id |
 | POST | `/api/v1/auth/login` | Emite JWT HS256 e refresh token opaco |
 | POST | `/api/v1/auth/refresh` | Rotaciona refresh; reuso revoga a família |
 | POST | `/api/v1/auth/logout` | Revoga o refresh token da conta autenticada |
 | GET | `/api/v1/auth/me` | Retorna usuário do Bearer token |
 
-A busca usa uma chamada por vez por processo, intervalo mínimo de 1 segundo e cache em memória por 5 minutos. O ID de cada livro é um UUID determinístico derivado do ID da obra na Open Library; ainda não existe catálogo local persistido. Timeouts e falhas do catálogo retornam erros padronizados, sem resultados inventados.
+A busca usa uma chamada por vez por processo, intervalo mínimo de 1 segundo e cache em memória por 5 minutos. O ID de cada livro é um UUID determinístico derivado do ID da obra na Open Library. Com o banco configurado e migrado, os itens são persistidos em `books` e podem ser consultados por ID; sem banco, a busca segue disponível e não persiste resultados. Timeouts e falhas do provider retornam erros padronizados, sem resultados inventados.
 
 Login e refresh retornam `access_token` (15 minutos) e `refresh_token` (7 dias) em JSON. O cliente deve manter ambos somente em memória e descartá-los no logout; o refresh anterior deixa de valer após a rotação. A sessão termina ao recarregar a página. O limite inicial de auth é de 10 requisições por minuto por IP/rota e, para login/registro, também por e-mail; ele fica em memória por processo e não substitui um limite compartilhado em produção.
 
@@ -43,4 +44,4 @@ Login e refresh retornam `access_token` (15 minutos) e `refresh_token` (7 dias) 
 .\.venv\Scripts\python.exe -m ruff check app alembic tests
 ```
 
-Os testes usam um provider falso, transporte HTTP simulado e SQLite para subir e reverter as migrações e exercitar a autenticação. O caminho PostgreSQL/pgvector da migração e o bloqueio concorrente do refresh token ainda precisam ser validados com um banco real. Uma busca real precisa de acesso à Open Library e pode responder `504 UPSTREAM_TIMEOUT` quando ela exceder o timeout de 5 segundos. Recomendações e trilhas de leitura ainda serão implementadas.
+Os testes usam um provider falso, transporte HTTP simulado e SQLite para subir e reverter as migrações, persistir o catálogo e exercitar autenticação. O caminho PostgreSQL/pgvector da migração e o bloqueio concorrente do refresh token ainda precisam ser validados com um banco real. Uma busca real precisa de acesso à Open Library e pode responder `504 UPSTREAM_TIMEOUT` quando ela exceder o timeout de 5 segundos. Recomendações e trilhas de leitura ainda serão implementadas.

@@ -1,11 +1,18 @@
 import asyncio
+from pathlib import Path
 from uuid import UUID
 
 import httpx
+from alembic.config import Config
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, func, select
+from sqlalchemy.orm import Session
 
+from alembic import command
+from app.core.config import Settings
 from app.core.exceptions import UpstreamTimeout
 from app.main import create_app
+from app.models import Book
 from app.providers.open_library import OpenLibraryProvider
 from app.schemas.book import BookItem, BookSearchResponse
 
@@ -14,6 +21,7 @@ class FakeBookProvider:
     def __init__(self, error: Exception | None = None) -> None:
         self.calls: list[tuple[str, int]] = []
         self.error = error
+        self.title = "Duna"
 
     async def search(self, title: str, limit: int) -> BookSearchResponse:
         self.calls.append((title, limit))
@@ -23,7 +31,7 @@ class FakeBookProvider:
             items=[
                 BookItem(
                     id=UUID("b66cf776-340a-48ca-8fbd-235d183dbde7"),
-                    title="Duna",
+                    title=self.title,
                     authors=["Frank Herbert"],
                     external_url="https://openlibrary.org/works/OL893415W",
                     external_id="OL893415W",
@@ -58,6 +66,42 @@ def test_book_search_returns_contract_and_caches_repeated_queries() -> None:
     assert second.status_code == 200
     assert provider.calls == [("Duna", 6)]
     UUID(first.json()["items"][0]["id"])
+
+
+def test_search_persists_catalog_and_detail_reads_from_database(
+    tmp_path, monkeypatch
+) -> None:
+    database_url = f"sqlite:///{tmp_path / 'books.db'}"
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    command.upgrade(config, "head")
+    provider = FakeBookProvider()
+    settings = Settings(database_url=database_url)
+
+    with TestClient(create_app(settings=settings, book_provider=provider)) as client:
+        search = client.get("/api/v1/books/search", params={"q": "Duna"})
+        book_id = search.json()["items"][0]["id"]
+        provider.title = "Duna edição atualizada"
+        updated_search = client.get("/api/v1/books/search", params={"q": "Duna edição"})
+        detail = client.get(f"/api/v1/books/{book_id}")
+        missing = client.get("/api/v1/books/00000000-0000-0000-0000-000000000000")
+
+    assert search.status_code == 200
+    assert updated_search.status_code == 200
+    assert detail.status_code == 200
+    assert detail.json()["title"] == "Duna edição atualizada"
+    assert detail.json()["external_id"] == "OL893415W"
+    assert missing.status_code == 404
+    engine = create_engine(database_url)
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(Book)) == 1
+    engine.dispose()
+
+
+def test_book_detail_requires_configured_catalog() -> None:
+    with TestClient(create_app(book_provider=FakeBookProvider())) as client:
+        response = client.get("/api/v1/books/b66cf776-340a-48ca-8fbd-235d183dbde7")
+    assert response.status_code == 503
 
 
 def test_validation_and_upstream_error_have_standard_shape() -> None:

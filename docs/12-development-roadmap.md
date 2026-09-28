@@ -122,16 +122,16 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 
 **Entregas**
 
-- [ ] Interfaces `MusicProvider` e `BookProvider` (seção 31)
-- [ ] `OpenLibraryProvider` e/ou `GoogleBooksProvider` (avaliar por limites, metadados e termos)
+- [ ] Interfaces `MusicProvider` e `BookProvider` (seção 31) — `BookProvider` inicial concluído; falta interface musical
+- [x] `OpenLibraryProvider` inicial
 - [ ] **Spike de provider musical** (comparar candidatos por disponibilidade, limites, metadados, estabilidade e termos de uso) → **ADR-012**
 - [ ] Implementação do provider musical escolhido
-- [ ] Normalização para modelos internos (`Music`, `Book`)
+- [ ] Normalização para modelos internos (`Music`, `Book`) — livros implementados parcialmente; falta música e enriquecimento dos metadados
 - [ ] Cache de respostas externas com TTL (tabela no Postgres no MVP)
 - [ ] Tratamento de erros: indisponibilidade, timeout, rate limit, *backoff*
-- [ ] Endpoints `GET /music/search`, `GET /music/{id}`, `GET /books/search`, `GET /books/{id}`
+- [ ] Endpoints `GET /music/search`, `GET /music/{id}`, `GET /books/search`, `GET /books/{id}` — endpoints de livros concluídos; falta música
 - [ ] Fixtures gravadas + testes de contrato dos providers
-- [ ] Fake providers para testes
+- [x] Fake providers para testes
 
 **Critério de conclusão (G1):** buscas reais retornam dados normalizados e cacheados; trocar de provider exige alterar somente configuração + a implementação do provider.
 

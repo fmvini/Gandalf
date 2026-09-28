@@ -94,6 +94,8 @@ erDiagram
         text cover_url
         text external_url
         jsonb metadata
+        timestamptz created_at
+        timestamptz updated_at
     }
     EMBEDDING {
         uuid id PK
@@ -306,7 +308,7 @@ Exemplo: `('music_genre', 'fantasy soundtrack', 0.8, 'EXPLICIT')`.
 | `search_vector` | `tsvector` | GENERATED | |
 | `created_at` / `updated_at` | `timestamptz` | | |
 
-Índices: `UNIQUE(provider, external_id)`, `GIN(genres)`, `GIN(subjects)`, `GIN(authors)`, `GIN(search_vector)`.
+Índices previstos: `UNIQUE(provider, external_id)`, `GIN(genres)`, `GIN(subjects)`, `GIN(authors)`, `GIN(search_vector)`. A revisão `0003_books_catalog` implementa a unicidade e um índice B-tree em `title`; busca textual e índices GIN ficam para uma etapa posterior.
 
 > **Deduplicação entre providers:** um mesmo livro pode existir em `open_library` e `google_books`. Estratégia de *canonical key* (ISBN-13 / título+autor normalizados) fica em `metadata.canonical_key`, com índice, e é tratada pelo `CandidateRetriever`.
 
@@ -534,8 +536,8 @@ Ordem sugerida das revisões iniciais:
 |---|---|
 | 001 | Extensões: `pgcrypto`/`uuid-ossp`, `citext`, `vector` |
 | 002 | `users`, `refresh_tokens` |
-| 003 | `music`, `books` (+ índices GIN e `tsvector`) |
-| 004 | `embeddings` (+ índice HNSW) |
+| 003 | `books` (catálogo local inicial; busca textual será adicionada depois) |
+| 004 | `music` e `embeddings` (+ índices GIN/HNSW) |
 | 005 | `user_preferences`, `interactions` |
 | 006 | `recommendations`, `recommendation_items`, `explanations` |
 | 007 | `provider_cache`, `intent_cache` |
