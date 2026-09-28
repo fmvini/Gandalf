@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-28T13:34:10Z",
+  "title": "Design System: Gandalf",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Ametista acolhedora",
+        "canonical": "#ad8bd2",
+        "tonalRamp": ["#261a35", "#3d2a55", "#573b75", "#76559b", "#ad8bd2", "#c8aee1", "#e0d0ed", "#f3ebf8"]
+      },
+      "ink-plum": {
+        "role": "neutral",
+        "displayName": "Ameixa de fundo",
+        "canonical": "#171321",
+        "tonalRamp": ["#171321", "#2b2439", "#453950", "#65566f", "#897992", "#ada0b4", "#d3c8d7", "#f4eef5"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display editorial", "purpose": "Tese da Home e títulos de abertura." },
+      "body": { "displayName": "Corpo de interface", "purpose": "Pedidos, filtros, metadados e ajuda." }
+    },
+    "shadows": [
+      { "name": "search-depth", "value": "0 12px 38px rgba(7, 4, 15, .18)", "purpose": "Separar a busca principal do fundo." }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "200ms ease", "purpose": "Feedback de hover e seleção; reduzido por prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "tablet", "value": "1000px" },
+      { "name": "mobile", "value": "760px" },
+      { "name": "compact", "value": "520px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação dominante de cada formulário.",
+      "html": "<button class=\"ds-btn-primary\">Encontrar sugestões</button>",
+      "css": ".ds-btn-primary{background:#ad8bd2;color:#1c1427;border:0;border-radius:999px;padding:11px 20px;min-height:48px;font:700 14px 'DM Sans',sans-serif;cursor:pointer;transition:background .2s ease}.ds-btn-primary:hover{background:#b99cda}.ds-btn-primary:focus-visible{outline:2px solid #f4eef5;outline-offset:3px}"
+    },
+    {
+      "name": "Campo de busca",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Entrada livre que inicia a descoberta.",
+      "html": "<input class=\"ds-search\" placeholder=\"Descreva o que você procura\">",
+      "css": ".ds-search{background:#211b2e;color:#f4eef5;border:1px solid #544662;border-radius:999px;padding:18px 22px;min-height:64px;font:400 16px 'DM Sans',sans-serif}.ds-search::placeholder{color:#c5b7ca}.ds-search:focus-visible{outline:2px solid #ad8bd2;outline-offset:3px}"
+    },
+    {
+      "name": "Modo selecionado",
+      "kind": "chip",
+      "description": "Escolha do destino da busca.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Música</button>",
+      "css": ".ds-chip{background:#382b4b;color:#f4eef5;border:1px solid #ad8bd2;border-radius:999px;padding:9px 18px;min-height:44px;font:700 14px 'DM Sans',sans-serif;cursor:pointer}.ds-chip:hover{background:#45365d}.ds-chip:focus-visible{outline:2px solid #ad8bd2;outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Atlas de afinidades",
+    "overview": "O Gandalf trata o pedido em linguagem natural como o início de um percurso por sensações. O tema principal é escuro, roxo e cozy, como um atlas aberto em uma sala de leitura à noite.",
+    "keyCharacteristics": ["Tipografia editorial e controles fáceis de identificar.", "Fundo ameixa, superfícies tonais e acento violeta.", "Mapa autoral com rótulos em HTML.", "Espaço para pedidos, filtros e metadados reais."],
+    "rules": [
+      { "name": "The Atlas Rule", "body": "A ilustração abre a experiência; listas e formulários usam superfícies simples para deixar o conteúdo real em primeiro plano.", "section": "colors" }
+    ],
+    "dos": ["Iniciar a descoberta com um pedido livre e um destino explícito.", "Manter o tema escuro como padrão e oferecer o claro.", "Usar imagens de catálogo apenas quando vierem de provedores reais."],
+    "donts": ["Apresentar resultados demonstrativos como recomendações reais.", "Transformar o mapa em um controle confuso ou obrigatório.", "Usar brilho neon, gradiente roxo genérico ou cartões iguais para os três caminhos."]
+  }
+}
