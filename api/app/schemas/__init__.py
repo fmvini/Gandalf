@@ -1,0 +1,1 @@
+"""Contratos HTTP da API."""

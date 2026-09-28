@@ -1,0 +1,1 @@
+"""Aplicação FastAPI do Gandalf."""

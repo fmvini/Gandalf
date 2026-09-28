@@ -112,7 +112,7 @@ api → services → (recommendation, ai, providers, repositories) → models
 
 | Camada / Módulo | Responsabilidade | Não deve |
 |---|---|---|
-| `api/routes` | Validar entrada, chamar service, serializar saída, mapear exceções em HTTP | Conter regra de negócio |
+| `app/routes` | Validar entrada, chamar service, serializar saída, mapear exceções em HTTP | Conter regra de negócio |
 | `schemas` | Contratos Pydantic (request/response, DTOs) | Acessar DB |
 | `services` | Orquestrar caso de uso, transações, autorização | Implementar ranking/SQL |
 | `recommendation` | Pipeline, filtros, similaridade, ranking, perfil | Fazer chamadas HTTP/DB |
@@ -126,17 +126,16 @@ api → services → (recommendation, ai, providers, repositories) → models
 ## 5. Estrutura de Diretórios
 
 ```text
-backend/
+api/
 ├── app/
-│   ├── api/
-│   │   ├── deps.py
-│   │   └── routes/
-│   │       ├── auth.py
-│   │       ├── users.py
-│   │       ├── music.py
-│   │       ├── books.py
-│   │       ├── recommendations.py
-│   │       └── playlists.py
+│   ├── deps.py
+│   ├── routes/
+│   │   ├── auth.py
+│   │   ├── users.py
+│   │   ├── music.py
+│   │   ├── books.py
+│   │   ├── recommendations.py
+│   │   └── playlists.py
 │   ├── core/
 │   │   ├── config.py
 │   │   ├── security.py

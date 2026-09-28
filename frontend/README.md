@@ -21,7 +21,7 @@ No Windows PowerShell, use `Copy-Item .env.example .env`. A API deve estar dispo
 - Tema escuro padrão, alternância para claro, layout responsivo e navegação por teclado.
 - Teste de fumaça com respostas simuladas da API.
 
-O backend ainda não está neste repositório. Sem ele, as buscas mostram uma mensagem de conexão em vez de recomendações inventadas. Login, histórico, salvos e feedback persistido ficam para a próxima integração.
+A [API inicial](../api/README.md) já oferece a busca de títulos usada no seletor de livros. Os endpoints de recomendações e trilhas, assim como login, histórico, salvos e feedback persistido, ainda não foram implementados. Essas ações mostram um estado de erro até a próxima integração, sem recomendações inventadas.
 
 ## Verificar
 
