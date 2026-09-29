@@ -16,7 +16,7 @@ async def music(request: Request, body: DiscoveryRequest):
 
 @router.post("/books")
 async def books(request: Request, body: DiscoveryRequest):
-    if body.filters.model_dump(exclude_none=True):
+    if body.filters.model_dump(exclude_none=True, exclude_defaults=True):
         raise AppError(
             422,
             "VALIDATION_ERROR",

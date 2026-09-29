@@ -5,6 +5,7 @@ from app.ai.groq import Intent
 from app.core.exceptions import AppError
 from app.providers.local_catalog import BOOKS, MUSIC, normalize
 from app.schemas.recommendation import DiscoveryRequest, MusicFilters
+from app.services.music_filters import matches_music_filters, resolve_music_filters
 from app.services.recommendation_service import RecommendationService, interpret
 
 ENGLISH = {
@@ -50,6 +51,11 @@ class OnlineRecommendationService(RecommendationService):
 
     async def _online(self, kind, body):
         warnings = []
+        filters = (
+            resolve_music_filters(body.query, body.filters)
+            if kind == "music"
+            else body.filters.model_copy()
+        )
         positive, negative = interpret(body.query)
         interpreted_by_ai = False
         try:
@@ -71,24 +77,15 @@ class OnlineRecommendationService(RecommendationService):
         intent.excluded_themes = list(
             dict.fromkeys([*intent.excluded_themes, *sorted(negative)])
         )[:8]
-        filters = body.filters.model_copy()
         if kind == "music":
-            if not filters.vocals:
+            if filters.vocals is None:
                 filters.vocals = intent.vocals
-                text = normalize(body.query)
-                if any(
-                    value in text
-                    for value in (
-                        "instrumental",
-                        "instrumentais",
-                        "sem voz",
-                        "sem vocais",
-                    )
-                ):
-                    filters.vocals = "none"
-                elif "com voz" in text or "com vocais" in text:
-                    filters.vocals = "required"
-            if not filters.energy and intent.energy != "any":
+            if (
+                filters.energy is None
+                and not filters.excluded_energy
+                and "excluded_energy" not in body.filters.model_fields_set
+                and intent.energy != "any"
+            ):
                 filters.energy = intent.energy
         terms = [term[:120] for term in intent.search_terms if term.strip()][:2]
         if not terms:
@@ -168,11 +165,7 @@ class OnlineRecommendationService(RecommendationService):
                         )
                     if energy is None:
                         energy = None if choice.energy == "unknown" else choice.energy
-                    if filters.vocals == "none" and vocals is not False:
-                        continue
-                    if filters.vocals == "required" and vocals is not True:
-                        continue
-                    if filters.energy and energy != filters.energy:
+                    if not matches_music_filters(vocals, energy, filters):
                         continue
                     item.update(has_vocals=vocals, energy=energy)
                     if inferred:
@@ -242,6 +235,7 @@ class OnlineRecommendationService(RecommendationService):
             "parsed_query": {
                 **intent.model_dump(),
                 **filters.model_dump(exclude_none=True),
+                **({"energy": filters.energy or "any"} if kind == "music" else {}),
             },
             "items": rows,
             "meta": {

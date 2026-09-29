@@ -1,5 +1,44 @@
 # Registro de desenvolvimento
 
+## 2026-09-29 — Filtros musicais consistentes entre modo local e online
+
+### Implementado
+- Corrigidas consultas como `não quero instrumental` e `sem energia alta`; adicionados reconhecimento de energia média e aliases de voz/letras.
+- Criado resolvedor compartilhado de filtros e predicado aplicado ao ranking local, à seleção da IA e ao fallback online.
+- Adicionado `filters.excluded_energy`, com validação de níveis e conflitos. Filtros explícitos prevalecem por dimensão; conflitos textuais não resolvidos retornam 422 antes de chamadas externas.
+- Energia desconhecida é descartada quando há exclusões; `parsed_query` reflete os filtros efetivos, sem manter a energia originalmente sugerida pela IA quando foi substituída.
+- Atualizada versão do ranking local para `local-rules-v2`; documentado contrato atual separadamente dos exemplos planejados no roadmap.
+
+### Arquivos principais alterados
+- `api/app/services/music_filters.py`
+- `api/app/services/recommendation_service.py`
+- `api/app/services/online_recommendations.py`
+- `api/app/schemas/recommendation.py`
+- `api/app/routes/recommendations.py`
+- `api/tests/test_music_filters.py`
+- `api/tests/test_recommendations.py`
+- `api/tests/test_online.py`
+- `api/tests/test_books.py`
+- `docs/05-API-Specification.md`
+- `docs/eval-reports/2026-09-29-music-filters.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Excluir um nível de energia permite os outros níveis, sem inferir arbitrariamente um único valor oposto.
+- `energy` explícito não nulo ou presença de `excluded_energy` substitui as restrições textuais dessa dimensão; lista vazia permite limpá-las. Voz é resolvida independentemente.
+- Nenhuma nova dependência, migração ou serviço pago. Providers/IA foram testados com transporte simulado.
+- As regras dos modos de leitura permanecem próprias. Comparativos, dupla negação e listas abreviadas não fazem parte do vocabulário garantido do novo parser.
+
+### Estado atual
+- 119 testes da API passaram, incluindo 46 novos casos. Ruff e formatação aprovados.
+- Smoke/E2E com API real, SQLite e navegação offline passaram; build do frontend aprovado.
+- Permanece um aviso de depreciação da integração Starlette/httpx. Qualidade das classificações reais da IA e PostgreSQL não foram avaliados nesta etapa.
+
+### Próximos passos
+- Avaliar referências por título: correspondência por palavras completas, títulos negados e diferenças entre seleção da IA e fallback em `api/app/services/online_recommendations.py`.
+- Criar julgamentos independentes de relevância para pelo menos 15 consultas por módulo e medir Precision@K/nDCG e diversidade, incluindo os cinco modos de leitura.
+- Reconciliar os demais exemplos planejados da especificação e ADRs com o modo online antes de ampliar integrações; manter o modo local gratuito.
+
 ## 2026-09-29 — Exclusões coordenadas no parser de recomendações
 
 ### Implementado

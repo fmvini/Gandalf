@@ -8,8 +8,9 @@ from app.core.exceptions import AppError
 from app.providers.local_catalog import BOOKS, MUSIC, normalize
 from app.schemas.book import BookItem
 from app.schemas.recommendation import DiscoveryRequest, MusicFilters, ReadingRequest
+from app.services.music_filters import matches_music_filters, resolve_music_filters
 
-RANKING_VERSION = "local-rules-v1"
+RANKING_VERSION = "local-rules-v2"
 CATALOG_NOTE = "Catálogo local selecionado. Sugestões por temas e filtros, sem IA paga."
 ALIASES = {
     "calmo": (
@@ -120,24 +121,7 @@ class RecommendationService:
         positive -= negative
         filters = body.filters.model_copy()
         if kind == "music":
-            if filters.vocals is None:
-                if any(
-                    word in text
-                    for word in (
-                        "instrumental",
-                        "instrumentais",
-                        "sem voz",
-                        "sem vocais",
-                    )
-                ):
-                    filters.vocals = "none"
-                elif "com voz" in text or "com vocais" in text:
-                    filters.vocals = "required"
-            if filters.energy is None:
-                if "energia alta" in text or "alta energia" in text:
-                    filters.energy = "high"
-                elif "energia baixa" in text or "baixa energia" in text:
-                    filters.energy = "low"
+            filters = resolve_music_filters(body.query, body.filters)
         return self._rank(
             source, positive, negative, filters, body.limit, reference_ids, references
         )
@@ -189,13 +173,10 @@ class RecommendationService:
             )
             if tags & negative or item["id"] in reference_ids:
                 continue
-            if "has_vocals" in item:
-                if filters.vocals == "none" and item["has_vocals"] is not False:
-                    continue
-                if filters.vocals == "required" and item["has_vocals"] is not True:
-                    continue
-                if filters.energy and item["energy"] != filters.energy:
-                    continue
+            if "has_vocals" in item and not matches_music_filters(
+                item["has_vocals"], item.get("energy"), filters
+            ):
+                continue
             matched = tags & positive
             if not matched and positive:
                 continue
@@ -204,6 +185,7 @@ class RecommendationService:
                 and not negative
                 and not filters.vocals
                 and not filters.energy
+                and not filters.excluded_energy
             ):
                 continue
             score = len(matched) / max(len(positive), 1)
@@ -231,6 +213,13 @@ class RecommendationService:
                     + {"low": "baixa", "medium": "média", "high": "alta"}[
                         filters.energy
                     ]
+                    + "."
+                )
+            if filters.excluded_energy:
+                labels = {"low": "baixa", "medium": "média", "high": "alta"}
+                reasons += (
+                    " Exclui energia "
+                    + ", ".join(labels[value] for value in filters.excluded_energy)
                     + "."
                 )
             rows.append(

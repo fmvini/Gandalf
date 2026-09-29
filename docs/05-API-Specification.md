@@ -373,6 +373,28 @@ Busca o UUID no catálogo local; não faz uma consulta externa por identificador
 
 ### 6.1 `POST /recommendations/music`
 
+**Contrato implementado em 2026-09-29** (prefixo `/api/v1`):
+
+```json
+{
+  "query": "Músicas instrumentais sem energia alta",
+  "filters": { "vocals": "none", "excluded_energy": ["high"] },
+  "limit": 10
+}
+```
+
+- `query`: 3–1000 caracteres; `limit`: 1–25, padrão 10. `references` e `exclude_ids` estruturados ainda não são aceitos.
+- `filters.vocals`: `none`, `required`, `optional` ou `null`; `filters.energy`: `low`, `medium`, `high` ou `null`.
+- `filters.excluded_energy`: lista de até três níveis (`low`, `medium`, `high`), padrão `[]`. Não pode conter o mesmo nível de `energy`.
+- O texto reconhece voz/vocais/letras/instrumental e energia baixa/média/alta, incluindo exclusões simples. `não quero instrumental` pede voz; `sem energia alta` aceita baixa ou média, sem escolher arbitrariamente uma delas.
+- Filtro explícito de voz prevalece sobre o texto. `energy` não nulo ou presença de `excluded_energy` substitui as restrições textuais de energia; `excluded_energy: []` limpa essas restrições. Cada dimensão é independente.
+- Pedidos textuais contraditórios retornam `422 VALIDATION_ERROR` com orientação; um filtro explícito pode resolver a dimensão conflitante. A validação ocorre antes de chamadas externas.
+- As restrições são reaplicadas no backend tanto à seleção da IA quanto ao fallback. Energia desconhecida não satisfaz exclusões. No modo online, classificações podem ser estimadas pela IA e são identificadas como tal; não são medições.
+- `parsed_query` informa os filtros efetivamente usados. No modo local, `meta.ranking_version` é `local-rules-v2`; no online, energia sem valor único é `any`. Resultados têm UUID temporário, inclusive anônimos, e não constituem histórico persistente.
+- O parser é limitado: não promete interpretação de comparativos, dupla negação ou todas as construções em português. Esta mudança cobre descoberta musical; os modos de leitura mantêm suas próprias regras.
+
+**Contrato alvo do roadmap (exemplos abaixo ainda não implementados integralmente)**
+
 **Request**
 ```json
 {

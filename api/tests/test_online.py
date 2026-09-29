@@ -25,6 +25,8 @@ class Remote:
         self.bad_ai = False
         self.invalid_indices = False
         self.known_vocals = True
+        self.energy = "low"
+        self.intent_energy = "any"
         self.kind = "books"
 
     def __call__(self, request):
@@ -46,7 +48,7 @@ class Remote:
                     "excluded_themes": [],
                     "references": [],
                     "vocals": "optional",
-                    "energy": "any",
+                    "energy": self.intent_energy,
                 }
             else:
                 data = {
@@ -57,7 +59,7 @@ class Remote:
                             "vocals": "instrumental"
                             if self.known_vocals
                             else "unknown",
-                            "energy": "low",
+                            "energy": self.energy,
                         }
                     ]
                 }
@@ -323,3 +325,55 @@ def test_music_timeout_and_invalid_payload(online, monkeypatch):
         )
         with TestClient(create_app(settings=settings)) as client:
             assert client.get("/api/v1/music/search?q=anything").status_code == 503
+
+
+@pytest.mark.parametrize("ai_available", [True, False])
+@pytest.mark.parametrize("query", ["não quero instrumental", "sem energia baixa"])
+def test_online_respects_negative_constraints_including_fallback(
+    online, ai_available, query
+):
+    settings, remote = online
+    remote.kind = "music"
+    if not ai_available:
+        remote.ai_status = 503
+    with TestClient(create_app(settings=settings)) as client:
+        response = client.post("/api/v1/recommendations/music", json={"query": query})
+        assert response.status_code == 200
+        data = response.json()
+        # The fake AI selects an instrumental, low-energy track. It must be rejected.
+        if ai_available:
+            assert data["items"] == []
+        else:
+            assert data["items"]
+        for row in data["items"]:
+            if "instrumental" in query:
+                assert row["item"]["has_vocals"] is True
+            else:
+                assert row["item"]["energy"] in {"medium", "high"}
+
+
+@pytest.mark.parametrize("energy,expected", [("low", 1), ("high", 0), ("unknown", 0)])
+def test_online_exclusions_override_ai_intent_and_reject_unknown_energy(
+    online, energy, expected
+):
+    settings, remote = online
+    remote.kind, remote.energy, remote.intent_energy = "music", energy, "high"
+    with TestClient(create_app(settings=settings)) as client:
+        response = client.post(
+            "/api/v1/recommendations/music", json={"query": "sem energia alta"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == expected
+        assert data["parsed_query"]["excluded_energy"] == ["high"]
+        assert data["parsed_query"]["energy"] == "any"
+
+
+def test_online_conflicting_filters_fail_before_external_calls(online):
+    settings, remote = online
+    with TestClient(create_app(settings=settings)) as client:
+        response = client.post(
+            "/api/v1/recommendations/music", json={"query": "instrumental com voz"}
+        )
+        assert response.status_code == 422
+        assert remote.calls == []

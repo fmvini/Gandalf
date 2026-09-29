@@ -195,3 +195,64 @@ def test_catalog_integrity_and_negation():
     assert len({book.id for book in BOOKS}) == len(BOOKS)
     assert interpret("fantasia sem romance")[1] == {"romance"}
     assert interpret("sem tristeza mas calmo")[0] == {"calmo"}
+
+
+@pytest.mark.parametrize(
+    "query,vocals,allowed_energy",
+    [
+        ("não quero instrumental", True, {"low", "medium", "high"}),
+        ("sem letras", False, {"low", "medium", "high"}),
+        ("energia média", None, {"medium"}),
+        ("sem energia alta", None, {"low", "medium"}),
+        ("sem energia baixa", None, {"medium", "high"}),
+        ("sem energia alta nem energia média", None, {"low"}),
+        ("instrumental sem energia alta", False, {"low", "medium"}),
+    ],
+)
+def test_inferred_constraints_filter_actual_results(
+    client, query, vocals, allowed_energy
+):
+    response = client.post("/api/v1/recommendations/music", json={"query": query})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["items"]
+    for row in data["items"]:
+        assert row["item"]["energy"] in allowed_energy
+        if vocals is not None:
+            assert row["item"]["has_vocals"] is vocals
+        if data["parsed_query"]["excluded_energy"]:
+            assert "Exclui energia" in row["explanation"]
+
+
+def test_explicit_energy_exclusions_and_validation(client):
+    response = client.post(
+        "/api/v1/recommendations/music",
+        json={"query": "energia alta", "filters": {"excluded_energy": ["high"]}},
+    )
+    assert response.status_code == 200
+    assert response.json()["items"]
+    assert all(row["item"]["energy"] != "high" for row in response.json()["items"])
+    for filters in [
+        {"energy": "high", "excluded_energy": ["high"]},
+        {"excluded_energy": ["invalid"]},
+    ]:
+        assert (
+            client.post(
+                "/api/v1/recommendations/music",
+                json={"query": "música", "filters": filters},
+            ).status_code
+            == 422
+        )
+    assert (
+        client.post(
+            "/api/v1/recommendations/books",
+            json={"query": "fantasia", "filters": {"excluded_energy": ["high"]}},
+        ).status_code
+        == 422
+    )
+    assert (
+        client.post(
+            "/api/v1/recommendations/music", json={"query": "instrumental com voz"}
+        ).status_code
+        == 422
+    )

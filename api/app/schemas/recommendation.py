@@ -8,6 +8,15 @@ class MusicFilters(BaseModel):
     model_config = ConfigDict(extra="forbid")
     vocals: Literal["none", "required", "optional"] | None = None
     energy: Literal["low", "medium", "high"] | None = None
+    excluded_energy: list[Literal["low", "medium", "high"]] = Field(
+        default_factory=list, max_length=3
+    )
+
+    @model_validator(mode="after")
+    def consistent_energy(self):
+        if self.energy in self.excluded_energy:
+            raise ValueError("O nível de energia não pode ser solicitado e excluído.")
+        return self
 
 
 class DiscoveryRequest(BaseModel):
