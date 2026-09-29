@@ -1,5 +1,9 @@
 # Gandalf
 
+> **Estado atual (2026-09-29):** o guia abaixo descreve o modo local. Existe também um modo online experimental com MusicBrainz, Open Library e Groq opcional. Leia o [estado da implementação](docs/IMPLEMENTATION_STATUS.md) para distinguir recursos atuais, limites e funcionalidades planejadas. A [avaliação local](docs/eval-reports/2026-09-29-local-baseline.md) cobre 45 consultas, com baselines em K=5 e K=10.
+
+Para ativar explicitamente o modo online, use `./start-local.ps1 -Online`. A configuração opcional da IA fica em `api/.env` a partir de `api/.env.example`; não exponha a chave no frontend. O limite diário interno controla tentativas de chamadas, não faturamento. Sem `-Online`, o iniciador mantém o caminho local sem chamadas externas.
+
 Descubra m?sicas e livros pelo que voc? quer sentir e monte uma sele??o musical para acompanhar sua leitura.
 
 O modo local funciona **sem chave de API, assinatura, Docker ou servi?o pago**. Depois de instalar as depend?ncias, as buscas e recomenda??es funcionam sem internet. Os links para ouvir m?sicas e consultar livros precisam de conex?o.

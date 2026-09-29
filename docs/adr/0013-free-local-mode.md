@@ -15,7 +15,7 @@ O catálogo inicial contém 18 livros e 25 músicas reais, com descrições e et
 
 Duração de trilha é uma estimativa de cinco minutos por faixa. O catálogo não identifica gravações específicas, portanto não fornece duração exata das faixas. API e interface informam essa limitação.
 
-Manter Open Library e PostgreSQL opcionais. O ADR-0012 sobre provider musical externo permanece pendente e não bloqueia o modo local. Recomendações permanecem locais mesmo se a busca de livros usar Open Library.
+Manter Open Library e PostgreSQL opcionais. O ADR-0012 sobre provider musical externo permanece pendente e não bloqueia o modo local. Com `ONLINE_CATALOG=false`, recomendações permanecem locais mesmo se a busca usar Open Library. O modo online experimental é ativado separadamente por `-Online`/`GANDALF_ONLINE=1` no iniciador ou `ONLINE_CATALOG=true` na API; chamadas externas não fazem parte da garantia offline deste ADR. Ver [estado implementado](../IMPLEMENTATION_STATUS.md).
 
 ## Consequências
 

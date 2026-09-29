@@ -1,5 +1,7 @@
 # Development Roadmap
 
+> **Reconciliação de 2026-09-29:** consulte [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md) para o estado efetivo. O caminho local foi entregue por fatias verticais e possui [baseline de 45 consultas](eval-reports/2026-09-29-local-baseline.md). O modo online existe experimentalmente, sem fechar G1/G2; os gates completos não estão aprovados. Próxima etapa: diferenciar modos de leitura sem regredir os baselines, antes de expandir integrações/personalização. Checkboxes compostos permanecem abertos enquanto parte da entrega estiver pendente.
+
 > **Documento:** 12 de 15 — Documentação Técnica
 > **Projeto:** Plataforma Inteligente de Descoberta de Músicas e Livros
 > **Status:** Rascunho v1.0
@@ -100,15 +102,15 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 
 - [ ] Repositório Git (branch `main` protegida, templates de issue/PR)
 - [ ] Estrutura do backend conforme seção 34 do escopo
-- [ ] Configuração tipada (`core/config.py`) com Pydantic Settings e `.env.example`
+- [x] Configuração tipada (`core/config.py`) com Pydantic Settings e `.env.example`
 - [ ] Docker Compose com PostgreSQL + pgvector
 - [ ] SQLAlchemy + Alembic; **migração 0001** habilitando `vector`
-- [ ] Modelos: `User`, `UserPreference`, `Interaction`, `SearchHistory` (esqueleto dos demais)
-- [ ] Autenticação: registro, login, refresh, `GET /auth/me`, proteção de endpoints, hash seguro
-- [ ] Tratamento consistente de erros (`core/exceptions.py`) e formato de erro padronizado
-- [ ] `GET /health` e `GET /health/ready`
+- [x] Modelos: `User`, `UserPreference`, `Interaction`, `SearchHistory` (esqueleto dos demais)
+- [x] Autenticação: registro, login, refresh, `GET /auth/me`, proteção de endpoints, hash seguro — testada em SQLite; PostgreSQL pendente
+- [x] Tratamento consistente de erros (`core/exceptions.py`) e formato de erro padronizado
+- [x] `GET /health` e `GET /health/ready`
 - [ ] Lint (`ruff`), tipos (`mypy`), `pytest` e CI mínima
-- [ ] Logging estruturado com `request_id`
+- [x] Logging estruturado com `request_id`
 
 **Critério de conclusão:** usuário registra, faz login, acessa `/auth/me`; testes de autenticação e migração passam na CI.
 
@@ -125,11 +127,11 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 - [ ] Interfaces `MusicProvider` e `BookProvider` (seção 31) — `BookProvider` inicial concluído; falta interface musical
 - [x] `OpenLibraryProvider` inicial
 - [ ] **Spike de provider musical** (comparar candidatos por disponibilidade, limites, metadados, estabilidade e termos de uso) → **ADR-012**
-- [ ] Implementação do provider musical escolhido
-- [ ] Normalização para modelos internos (`Music`, `Book`) — livros implementados parcialmente; falta música e enriquecimento dos metadados
-- [ ] Cache de respostas externas com TTL (tabela no Postgres no MVP) — implementado para livros em `external_search_cache` e testado em SQLite; falta música e validação em PostgreSQL
+- [ ] Implementação do provider musical escolhido — MusicBrainz integrado experimentalmente; escolha final de G1 pendente
+- [ ] Normalização para modelos internos (`Music`, `Book`) — livros e música normalizados; contrato unificado/enriquecimento completos pendentes
+- [ ] Cache de respostas externas com TTL (tabela no Postgres no MVP) — livros, música e IA implementados/testados em SQLite; validação PostgreSQL pendente
 - [ ] Tratamento de erros: indisponibilidade, timeout, rate limit, *backoff*
-- [ ] Endpoints `GET /music/search`, `GET /music/{id}`, `GET /books/search`, `GET /books/{id}` — endpoints de livros concluídos; falta música
+- [x] Endpoints `GET /music/search`, `GET /music/{id}`, `GET /books/search`, `GET /books/{id}` — caminho local e integrações experimentais disponíveis
 - [ ] Fixtures gravadas + testes de contrato dos providers
 - [x] Fake providers para testes
 
@@ -152,7 +154,7 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 - [ ] Geração e persistência de embeddings de itens (Music/Book) e de consultas
 - [ ] Sanitização de entrada e defesa básica contra *prompt injection*
 - [ ] `FakeLLMClient` e `FakeEmbeddingService`
-- [ ] **Golden set inicial** (≥ 15 consultas por módulo) e script `ai_eval`
+- [ ] **Golden set inicial** (≥ 15 consultas por módulo) e script `ai_eval` — corpus editorial de 45 consultas e CLI offline concluídos; avaliação do LLM real pendente
 - [ ] ADRs de LLM e embeddings (modelo, dimensão)
 
 **Critério de conclusão (G2):** parser retorna JSON válido em ≥ 95% do golden set; falhas são tratadas sem exceções não capturadas.
@@ -172,11 +174,11 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 - [ ] `similarity.py` (cosseno; utilitários vetoriais)
 - [ ] `SemanticMatcher`, `PreferenceMatcher`, `ContextMatcher`
 - [ ] `RankingEngine` com pesos configuráveis e *score breakdown* (base para "Por que isso foi recomendado?")
-- [ ] Regras de **diversidade** (limite de repetição de artistas)
+- [x] Regras de **diversidade** (limite de repetição de artistas) — máximo de dois itens por criador
 - [ ] `RecommendationPipeline` orquestrando o fluxo da seção 19
 - [ ] Persistência de `Recommendation` e `RecommendationItem`
 - [ ] Testes unitários + propriedades (`hypothesis`) + integração do pipeline
-- [ ] **Baseline de qualidade** (Precision@K, nDCG, diversidade, existence rate)
+- [x] **Baseline de qualidade** (Precision@K, nDCG, diversidade, existence rate) — caminho local, 45 consultas, K=5/10; avaliação online permanece pendente
 - [ ] Documento *Recommendation Engine Specification* consistente com a implementação
 
 **Critério de conclusão (G3):** pipeline funciona com fakes e com dados reais; cobertura ≥ 90% em `recommendation/`; baseline registrado em `docs/eval-reports/`.
@@ -195,7 +197,7 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 - [ ] Descoberta por linguagem natural (humor, atmosfera, energia, vocais, contexto)
 - [ ] Descoberta **por referência** ("parecido com X, mas mais pesado") — seção 7
 - [ ] Links externos (Spotify/YouTube) por música — seção 14
-- [ ] Modo sem login funcional
+- [x] Modo sem login funcional
 - [ ] Histórico de busca salvo para usuários autenticados
 - [ ] Testes de integração e golden set de música
 

@@ -1,5 +1,7 @@
 # AI Architecture
 
+> **Estado em 2026-09-29:** o desenho abaixo é alvo. O código implementa `GroqClient` com interpretação e seleção pontuada de candidatos, timeout, cache e limite diário; não implementa embeddings nem interface provider-agnóstica de IA. A seleção diverge do ADR-0002. Consulte [estado implementado](IMPLEMENTATION_STATUS.md) e [baseline local](eval-reports/2026-09-29-local-baseline.md), que não mede a qualidade do LLM real.
+
 > Documento 06 de 15 — Plataforma Inteligente de Descoberta de Músicas e Livros
 > Status: Rascunho v1.0 · Escopo de referência: seções 2, 19, 27, 28, 29, 64, 65 e 78 do Escopo do Projeto
 

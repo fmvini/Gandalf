@@ -8,6 +8,8 @@
 
 ## 1. Propósito
 
+> **Estado em 2026-09-29:** este documento descreve o motor alvo. O código usa ranking local por temas e um modo online experimental no qual Groq também pontua candidatos; a independência do LLM descrita abaixo não vale para esse modo. Não há embeddings, personalização ou recomendações persistentes. Consulte [estado implementado](IMPLEMENTATION_STATUS.md) e [baseline local](eval-reports/2026-09-29-local-baseline.md). FOCUS/CALM ainda retornam listas idênticas nos três livros avaliados.
+
 Especificar o **motor de recomendação**: como candidatos reais são recuperados, filtrados, pontuados, diversificados e ordenados, e como playlists são montadas. Este é o núcleo técnico do projeto e o principal argumento de portfólio (seção 73 do escopo).
 
 O motor:

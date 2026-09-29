@@ -1,5 +1,39 @@
 # Registro de desenvolvimento
 
+## 2026-09-29 — Reconciliação da documentação com o modo online
+
+### Implementado
+- Criada matriz de implementação e gates, separando modo local, online experimental e desenho futuro.
+- Atualizados guias de execução, roadmap, índice de ADRs e notas nas arquiteturas de IA/recomendação.
+- Registrada a divergência entre ADR-0002 e seleção pontuada por Groq; MusicBrainz permanece experimental e G1 aberto.
+
+### Arquivos principais alterados
+- `README.md`
+- `api/README.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+- `docs/06-ai-architecture.md`
+- `docs/07-recommendation-engine-specification.md`
+- `docs/12-development-roadmap.md`
+- `docs/adr/README.md`
+- `docs/adr/0002-llm-interprets-backend-ranks.md`
+- `docs/adr/0012-music-provider-selection.md`
+- `docs/adr/0013-free-local-mode.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Preservar decisões arquiteturais como alvo, registrando divergências em vez de apresentar integração experimental como cumprimento dos gates.
+- Não afirmar gratuidade garantida de contas externas: o limite de chamadas do backend não controla faturamento. Nenhuma integração foi ativada nesta etapa.
+- Evidências históricas de providers permanecem datadas; não houve consulta externa nem nova validação de termos/licenças.
+
+### Estado atual
+- Documentação revisada contra código de inicialização, configuração, providers, cache, IA e endpoints. Baseline e testes permanecem os da etapa anterior; não houve mudança de comportamento.
+- README/guia da API ainda contêm trechos legados com acentuação corrompida; notas iniciais e matriz atual orientam o contrato efetivo.
+
+### Próximos passos
+- Implementar critérios distintos para FOCUS/CALM/CINEMATIC e registrar experimento sem alterar os baselines `local-v3-baseline-k5.json` e `local-v3-baseline-k10.json`.
+- Exigir que a comparação automática não indique regressões por módulo ou modo; ampliar teste de diferenciação sem otimizar julgamentos para os resultados.
+- Depois revisar consultas de baixa precisão/cobertura; manter G1/G2 e avaliação humana como pendências antes de expandir integrações/personalização.
+
 ## 2026-09-29 — Avaliação offline e baseline de relevância
 
 ### Implementado

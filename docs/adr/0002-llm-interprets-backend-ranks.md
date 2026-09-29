@@ -2,6 +2,8 @@
 
 **Estado:** Aceita no desenho; ainda não implementada.
 
+**Reconciliação em 2026-09-29:** continua sendo o alvo arquitetural. O ranking local é determinístico, mas o modo online adicionado em `7916989` permite que Groq selecione e pontue candidatos. É uma divergência experimental, não cumprimento nem substituição deste ADR. O backend mantém validação, filtros e diversidade. Consulte o [estado implementado](../IMPLEMENTATION_STATUS.md); o baseline local não avalia a ordenação online.
+
 ## Contexto
 
 O produto precisa recomendar obras reais, personalizadas e explicáveis. Uma lista livre gerada pelo LLM pode conter itens inventados e não oferece controle suficiente de filtros, preferência do usuário ou pesos do ranking.

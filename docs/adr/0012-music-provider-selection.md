@@ -1,6 +1,8 @@
 # ADR-0012 — Seleção do provedor musical
 
-**Estado:** Em avaliação na Fase 2; nenhum provedor foi selecionado.
+**Estado:** Em avaliação na Fase 2; MusicBrainz integrado experimentalmente, sem escolha definitiva para G1.
+
+**Reconciliação em 2026-09-29:** `api/app/providers/musicbrainz.py` implementa busca textual/por tags, normalização, cache persistente e catálogo por ID. Testes em `api/tests/test_online.py` usam transporte simulado. Isso não fecha a avaliação comparativa, licenças ou cobertura real. Energia/vocais são estimativas da IA identificadas na resposta, não metadados da fonte. Evidências e links datados abaixo são históricos; não houve nova consulta externa nesta revisão. MusicBrainz está em uso experimental; a escolha final permanece pendente.
 
 ## Contexto
 
