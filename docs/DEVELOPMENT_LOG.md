@@ -1,5 +1,35 @@
 # Registro de desenvolvimento
 
+## 2026-09-29 — Exclusões coordenadas no parser de recomendações
+
+### Implementado
+- Corrigida a interpretação de listas como `sem romance, terror e política`: todos os temas são excluídos.
+- Pontuação forte, quebras de linha, adversativas e retomadas explícitas de preferência delimitam a propagação da exclusão.
+- Adicionado corpus de 24 consultas e duas verificações de ranking/explicações sem rede; registrado relatório com escopo e limitações.
+- Corrigida captura de variável de loop apontada pelo Ruff em um teste online existente.
+
+### Arquivos principais alterados
+- `api/app/services/recommendation_service.py`
+- `api/tests/test_intent_rules.py`
+- `api/tests/test_online.py`
+- `docs/eval-reports/2026-09-29-local-intent.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Processar temas na ordem textual e preservar limites de frases antes de normalizar a consulta; propagar negação somente em listas coordenadas.
+- Manter o parser determinístico compartilhado pelos modos local e online, sem dependências ou chamadas externas adicionais.
+- Preservar a precedência de exclusões e a interpretação conservadora de `pouco`/`menos`; o corpus não equivale ao golden set completo do roadmap.
+
+### Estado atual
+- Corpus e ranking passaram; a suíte da API passou com 73 testes. Há um aviso de depreciação da integração Starlette/httpx.
+- O código já contém integração online Groq/MusicBrainz/Open Library adicionada no commit `7916989`, posterior ao registro anterior. Esta etapa valida seus testes com fakes, sem chamadas reais ou revisão completa dessa integração.
+- Não foram implementados histórico pessoal, feedback, salvos ou interface de conta nesta etapa.
+
+### Próximos passos
+- Ampliar o corpus em `api/tests/test_intent_rules.py` para referências e filtros de voz/energia; avaliar negações desses filtros separadamente dos temas.
+- Criar julgamentos de relevância para pelo menos 15 consultas por módulo e medir Precision@K/nDCG e diversidade, conforme `docs/12-development-roadmap.md`.
+- Reconciliar documentação e ADRs do modo online com `7916989` antes de ampliar essa integração; preservar o modo local gratuito.
+
 ## 2026-09-28 — Fluxos públicos funcionais em modo local gratuito
 
 ### Implementado

@@ -312,7 +312,7 @@ def test_music_timeout_and_invalid_payload(online, monkeypatch):
     settings, _ = online
     for invalid in [True, False]:
 
-        def broken(request):
+        def broken(request, invalid=invalid):
             if invalid:
                 return httpx.Response(200, json={"recordings": None})
             raise httpx.ReadTimeout("unavailable", request=request)

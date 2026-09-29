@@ -60,18 +60,31 @@ ALIASES = {
 
 
 def interpret(query: str) -> tuple[set[str], set[str]]:
-    text = normalize(query)
     positive, negative = set(), set()
-    for tag, aliases in ALIASES.items():
-        for alias in aliases:
-            for match in re.finditer(r"\b" + re.escape(alias) + r"\w*", text):
-                prefix = text[max(0, match.start() - 35) : match.start()]
-                prefix = re.split(r"\b(?:mas|porem|contudo)\b", prefix)[-1]
-                excluded = re.search(
-                    r"\b(sem|evitar|evite|nao quero|pouco|pouca|menos)(?: \w+){0,2} $",
-                    prefix,
+    # Preserve clause boundaries before normalization removes punctuation.
+    for clause in re.split(r"[.!?;:\n]+", query):
+        for text in re.split(r"\b(?:mas|porem|contudo)\b", normalize(clause)):
+            matches = sorted(
+                (match.start(), match.end(), tag)
+                for tag, aliases in ALIASES.items()
+                for alias in aliases
+                for match in re.finditer(r"\b" + re.escape(alias) + r"\w*", text)
+            )
+            last_end, last_excluded = 0, False
+            for start, end, tag in matches:
+                if start < last_end:
+                    continue
+                bridge = text[last_end:start].strip()
+                # Carry negation only across a list, never arbitrary intervening text.
+                continuation = re.fullmatch(r"(?:(?:e|ou|nem)\s*)*", bridge)
+                explicit = re.search(
+                    r"\b(?:sem|evitar|evite|nao quero|pouco|pouca|menos)"
+                    r"(?: \w+){0,2}$",
+                    bridge,
                 )
+                excluded = bool(explicit or (last_excluded and continuation))
                 (negative if excluded else positive).add(tag)
+                last_end, last_excluded = end, excluded
     return positive - negative, negative
 
 
