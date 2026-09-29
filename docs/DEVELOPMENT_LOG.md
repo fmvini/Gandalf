@@ -1,5 +1,38 @@
 # Registro de desenvolvimento
 
+## 2026-09-29 — Avaliação offline e baseline de relevância
+
+### Implementado
+- Dataset editorial versionado com 45 consultas: 15 por módulo, cobrindo os cinco modos de leitura.
+- CLI offline para Precision@K, nDCG@K, diversidade, preenchimento, cobertura, existência no catálogo e satisfação de restrições; relatórios reproduzíveis em K=5 e K=10.
+- Comparação de regressões por módulo e modo de leitura, integrada ao pytest. Hashes do dataset/catálogo e versão das métricas identificam o experimento.
+
+### Arquivos principais alterados
+- `api/app/evaluation/__init__.py`
+- `api/app/evaluation/metrics.py`
+- `api/app/evaluation/runner.py`
+- `api/evaluation/local-golden-v1.json`
+- `api/tests/test_evaluation.py`
+- `docs/eval-reports/local-v3-baseline-k5.json`
+- `docs/eval-reports/local-v3-baseline-k10.json`
+- `docs/eval-reports/2026-09-29-local-baseline.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Julgamentos são separados do ranking, mas produzidos editorialmente pelo assistente; não representam avaliação humana independente ou teste reservado.
+- Baselines são imutáveis para comparação; alterações de dataset exigem nova versão. K e hash diferentes não são comparáveis automaticamente.
+- Não ajustar ranking nesta etapa: registrar primeiro os limites existentes. Nenhuma chamada externa ou dependência nova.
+
+### Estado atual
+- 148 testes da API passaram; seis testes de avaliação verificam métricas, dados inválidos, reprodutibilidade sem rede e regressões. Ruff e formatação aprovados.
+- P@5: música 0,6933, livros 0,6533, leitura 0,8000. Restrições e IDs do catálogo avaliados: 100%.
+- FOCUS/CALM retornaram listas idênticas nos três livros; CINEMATIC teve menor precisão entre modos. Catálogo limita cobertura em K=10. Relatório detalha limites; gates do motor completo permanecem abertos.
+
+### Próximos passos
+- Reconciliar roadmap, especificação do motor e ADRs com o código online existente antes de ampliar integrações.
+- Após essa reconciliação, experimentar diferenciação FOCUS/CALM/CINEMATIC, preservando baselines e comparando ambos os valores de K.
+- Revisar casos de baixa precisão e submeter julgamentos a revisão humana antes de prometer qualidade geral.
+
 ## 2026-09-29 — Referências por título no ranking local e online
 
 ### Implementado
