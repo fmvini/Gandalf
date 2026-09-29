@@ -7,6 +7,7 @@ from app.providers.local_catalog import BOOKS, MUSIC, normalize
 from app.schemas.recommendation import DiscoveryRequest, MusicFilters
 from app.services.music_filters import matches_music_filters, resolve_music_filters
 from app.services.recommendation_service import RecommendationService, interpret
+from app.services.references import resolve_references
 
 ENGLISH = {
     "calmo": "ambient",
@@ -51,12 +52,20 @@ class OnlineRecommendationService(RecommendationService):
 
     async def _online(self, kind, body):
         warnings = []
+        local = (
+            MUSIC
+            if kind == "music"
+            else [book.model_dump(mode="json") for book in BOOKS]
+        )
+        local_references = resolve_references(body.query, local)
         filters = (
-            resolve_music_filters(body.query, body.filters)
+            resolve_music_filters(local_references.context, body.filters)
             if kind == "music"
             else body.filters.model_copy()
         )
-        positive, negative = interpret(body.query)
+        positive, negative = interpret(local_references.context)
+        positive.update(local_references.tags)
+        positive -= negative
         interpreted_by_ai = False
         try:
             intent = await self.ai.interpret(body.query, kind)
@@ -73,10 +82,6 @@ class OnlineRecommendationService(RecommendationService):
                 vocals="optional",
                 energy="any",
             )
-        intent.themes = list(dict.fromkeys([*intent.themes, *sorted(positive)]))[:8]
-        intent.excluded_themes = list(
-            dict.fromkeys([*intent.excluded_themes, *sorted(negative)])
-        )[:8]
         if kind == "music":
             if filters.vocals is None:
                 filters.vocals = intent.vocals
@@ -105,13 +110,26 @@ class OnlineRecommendationService(RecommendationService):
                     candidates.extend(data["items"])
             except AppError as exc:
                 warnings.append(exc.message)
-        local = (
-            MUSIC
-            if kind == "music"
-            else [book.model_dump(mode="json") for book in BOOKS]
+        references = resolve_references(body.query, [*local, *candidates])
+        positive, negative = interpret(references.context)
+        reference_tags, _ = interpret(" ".join(references.tags))
+        positive = (positive | reference_tags) - negative
+        intent.themes = sorted(
+            positive | (set(intent.themes) if interpreted_by_ai else set())
         )
-        # Keep a useful local fallback without overwhelming externally retrieved items.
-        local_ranked = self.discover(kind, body)["items"]
+        intent.excluded_themes = sorted(
+            negative | (set(intent.excluded_themes) if interpreted_by_ai else set())
+        )
+        # Keep a useful local fallback without treating words inside titles as genres.
+        local_ranked = self._rank(
+            local,
+            positive,
+            negative,
+            filters,
+            body.limit,
+            references.blocked_ids,
+            references.positive,
+        )["items"]
         candidates = candidates[:18]
         candidates.extend(row["item"] for row in local_ranked[:7])
         if not candidates:
@@ -147,10 +165,7 @@ class OnlineRecommendationService(RecommendationService):
                     continue
                 used.add(choice.index)
                 item = dict(candidates[choice.index])
-                if any(
-                    normalize(item["title"]) == normalize(reference)
-                    for reference in intent.references
-                ):
+                if str(item["id"]) in references.blocked_ids:
                     continue
                 known_tags = set(metadata_tags(item))
                 if known_tags & (set(intent.excluded_themes) | negative):
@@ -205,8 +220,8 @@ class OnlineRecommendationService(RecommendationService):
                 set(intent.excluded_themes) | negative,
                 filters,
                 body.limit,
-                set(),
-                intent.references,
+                references.blocked_ids,
+                references.positive,
             )
             rows = result["items"]
             for row in rows:
@@ -234,6 +249,8 @@ class OnlineRecommendationService(RecommendationService):
             "recommendation_id": str(uuid4()),
             "parsed_query": {
                 **intent.model_dump(),
+                "references": references.positive,
+                "excluded_references": references.negative,
                 **filters.model_dump(exclude_none=True),
                 **({"energy": filters.energy or "any"} if kind == "music" else {}),
             },

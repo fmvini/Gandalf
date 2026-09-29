@@ -28,6 +28,8 @@ class Remote:
         self.energy = "low"
         self.intent_energy = "any"
         self.kind = "books"
+        self.references = []
+        self.selection_failure = False
 
     def __call__(self, request):
         self.calls.append(request)
@@ -41,12 +43,14 @@ class Remote:
                     json={"error": "Do not expose provider response or credentials"},
                 )
             schema = body["response_format"]["json_schema"]["name"]
+            if schema == "Selection" and self.selection_failure:
+                return httpx.Response(503)
             if schema == "Intent":
                 data = {
                     "search_terms": ["fantasy" if self.kind == "books" else "ambient"],
                     "themes": ["fantasia" if self.kind == "books" else "calmo"],
                     "excluded_themes": [],
-                    "references": [],
+                    "references": self.references,
                     "vocals": "optional",
                     "energy": self.intent_energy,
                 }
@@ -377,3 +381,38 @@ def test_online_conflicting_filters_fail_before_external_calls(online):
         )
         assert response.status_code == 422
         assert remote.calls == []
+
+
+@pytest.mark.parametrize("mode", ["ai", "selection_failure", "unavailable"])
+@pytest.mark.parametrize(
+    "kind,title", [("books", "External Fantasy"), ("music", "External Ambient")]
+)
+def test_referenced_titles_never_reappear_in_any_ranking_path(
+    online, mode, kind, title
+):
+    settings, remote = online
+    remote.kind = kind
+    remote.selection_failure = mode == "selection_failure"
+    if mode == "unavailable":
+        remote.ai_status = 503
+    query = ("fantasia" if kind == "books" else "calma") + " sem " + title
+    with TestClient(create_app(settings=settings)) as client:
+        response = client.post(f"/api/v1/recommendations/{kind}", json={"query": query})
+        assert response.status_code == 200
+        data = response.json()
+        assert title in data["parsed_query"]["excluded_references"]
+        assert title not in data["parsed_query"]["references"]
+        assert all(row["item"]["title"] != title for row in data["items"])
+        if mode != "ai":
+            assert data["items"]
+
+
+def test_ai_cannot_invent_a_reference_to_hide_a_candidate(online):
+    settings, remote = online
+    remote.references = ["External Fantasy"]
+    with TestClient(create_app(settings=settings)) as client:
+        result = client.post(
+            "/api/v1/recommendations/books", json={"query": "fantasia"}
+        ).json()
+        assert result["items"][0]["item"]["title"] == "External Fantasy"
+        assert result["parsed_query"]["references"] == []

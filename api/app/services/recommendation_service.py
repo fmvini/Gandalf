@@ -9,8 +9,9 @@ from app.providers.local_catalog import BOOKS, MUSIC, normalize
 from app.schemas.book import BookItem
 from app.schemas.recommendation import DiscoveryRequest, MusicFilters, ReadingRequest
 from app.services.music_filters import matches_music_filters, resolve_music_filters
+from app.services.references import resolve_references
 
-RANKING_VERSION = "local-rules-v2"
+RANKING_VERSION = "local-rules-v3"
 CATALOG_NOTE = "Catálogo local selecionado. Sugestões por temas e filtros, sem IA paga."
 ALIASES = {
     "calmo": (
@@ -102,29 +103,29 @@ class RecommendationService:
         return self.reading(book, body)
 
     def discover(self, kind: str, body: DiscoveryRequest) -> dict:
-        positive, negative = interpret(body.query)
-        text = normalize(body.query)
         source = (
             MUSIC
             if kind == "music"
             else [book.model_dump(mode="json") for book in BOOKS]
         )
-        references = []
-        reference_ids = set()
-        for item in source:
-            if normalize(item["title"]) in text or (
-                kind == "books" and normalize(item["external_id"]) in text
-            ):
-                positive.update(item.get("tags", item.get("genres", [])))
-                references.append(item["title"])
-                reference_ids.add(item["id"])
+        references = resolve_references(body.query, source)
+        positive, negative = interpret(references.context)
+        positive.update(references.tags)
         positive -= negative
         filters = body.filters.model_copy()
         if kind == "music":
-            filters = resolve_music_filters(body.query, body.filters)
-        return self._rank(
-            source, positive, negative, filters, body.limit, reference_ids, references
+            filters = resolve_music_filters(references.context, body.filters)
+        result = self._rank(
+            source,
+            positive,
+            negative,
+            filters,
+            body.limit,
+            references.blocked_ids,
+            references.positive,
         )
+        result["parsed_query"]["excluded_references"] = references.negative
+        return result
 
     def reading(self, book: BookItem, body: ReadingRequest) -> dict:
         positive, negative = interpret(body.context)

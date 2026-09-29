@@ -1,5 +1,37 @@
 # Registro de desenvolvimento
 
+## 2026-09-29 — Referências por título no ranking local e online
+
+### Implementado
+- Resolvedor compartilhado de títulos com palavras completas, normalização de acentos/caixa, aliases locais e preferência pelo título mais longo em sobreposições.
+- Títulos negados removem a própria obra sem acrescentar seus temas; palavras dentro de títulos reconhecidos são mascaradas antes do parser determinístico de temas.
+- Referências são removidas também quando a seleção online falha e usa ranking por regras; referências inventadas pela IA não bloqueiam candidatos.
+- Adicionado `parsed_query.excluded_references` e atualizado ranking local para `local-rules-v3`.
+
+### Arquivos principais alterados
+- `api/app/services/references.py`
+- `api/app/services/recommendation_service.py`
+- `api/app/services/online_recommendations.py`
+- `api/tests/test_references.py`
+- `api/tests/test_online.py`
+- `api/tests/test_books.py`
+- `docs/05-API-Specification.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- A confirmação de referência depende de texto e catálogo, não exclusivamente da interpretação da IA. Homônimos recuperados são bloqueados por título; desambiguação por autoria permanece futura.
+- IDs externos só são aliases no catálogo editorial local, onde representam títulos originais; IDs Open Library não são títulos.
+- O fallback recalcula temas após conhecer os títulos externos, evitando transformar `sem External Fantasy` em exclusão do gênero fantasia.
+
+### Estado atual
+- 142 testes passaram, incluindo 23 novos casos de referências; Ruff e formatação aprovados. Mantido o aviso de depreciação Starlette/httpx.
+- Não há consulta externa por título para resolver referências ausentes dos candidatos. Vocabulário de negação continua limitado, sem compreensão semântica geral.
+
+### Próximos passos
+- Construir dataset editorial de relevância com pelo menos 15 consultas por módulo, incluindo os cinco modos de leitura; implementar avaliação reproduzível de Precision@K, nDCG, existência e diversidade.
+- Registrar o baseline antes de ajustar pesos; manter julgamentos separados do ranking e documentar limitações de cobertura do catálogo.
+- Reconciliar roadmap, especificação do motor e ADRs com o modo online após registrar o baseline.
+
 ## 2026-09-29 — Filtros musicais consistentes entre modo local e online
 
 ### Implementado
