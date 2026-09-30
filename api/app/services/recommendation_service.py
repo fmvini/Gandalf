@@ -11,7 +11,7 @@ from app.schemas.recommendation import DiscoveryRequest, MusicFilters, ReadingRe
 from app.services.music_filters import matches_music_filters, resolve_music_filters
 from app.services.references import resolve_references
 
-RANKING_VERSION = "local-rules-v6"
+RANKING_VERSION = "local-rules-v7"
 CATALOG_NOTE = "Catálogo local selecionado. Sugestões por temas e filtros, sem IA paga."
 BOOK_GENRE_THEMES = frozenset(
     {
@@ -22,6 +22,7 @@ BOOK_GENRE_THEMES = frozenset(
         "romance",
         "aventura",
         "cyberpunk",
+        "detetive",
     }
 )
 ALIASES = {
@@ -57,7 +58,9 @@ ALIASES = {
         "espaco",
         "futur",
     ),
-    "mistério": ("mister", "suspense", "detetive", "investig"),
+    "mistério": ("mister", "suspense", "investig"),
+    "detetive": ("detetiv", "detectiv"),
+    "piano": ("piano",),
     "sombrio": ("sombri", "escur", "dark"),
     "terror": ("terror", "horror", "medo"),
     "romance": ("romance", "romantic", "amor"),

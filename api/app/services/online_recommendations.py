@@ -19,6 +19,8 @@ ENGLISH = {
     "fantasia": "fantasy",
     "ficção científica": "science fiction",
     "mistério": "mystery",
+    "detetive": "detective fiction",
+    "piano": "piano",
     "sombrio": "dark ambient",
     "terror": "horror",
     "romance": "romance",

@@ -19,7 +19,9 @@ def normalize(value: str) -> str:
     )
 
 
-# Descriptions and classifications are editorial, not publisher metadata.
+# Descriptions and atmosphere classifications are editorial. New instrument
+# and detective-fiction tags have sources in docs/catalog-metadata.md;
+# they describe the work, not every recording/arrangement returned by a search.
 BOOK_ROWS = [
     (
         "Duna",
@@ -81,7 +83,7 @@ BOOK_ROWS = [
         "O Cão dos Baskervilles",
         "Arthur Conan Doyle",
         "The Hound of the Baskervilles",
-        "mistério,sombrio,aventura",
+        "mistério,sombrio,aventura,detetive",
         "Sherlock Holmes investiga uma morte cercada por uma antiga lenda.",
     ),
     (
@@ -168,9 +170,9 @@ BOOKS = [
 # Durations vary by recording. Five minutes per item is a planning estimate,
 # never presented as recording metadata. Links intentionally open a search.
 MUSIC_ROWS = [
-    ("Gymnopédie No. 1", "Erik Satie", "calmo,introspectivo,acolhedor", "low", False),
-    ("Clair de lune", "Claude Debussy", "calmo,atmosférico,acolhedor", "low", False),
-    ("Spiegel im Spiegel", "Arvo Pärt", "calmo,introspectivo,triste", "low", False),
+    ("Gymnopédie No. 1", "Erik Satie", "calmo,introspectivo,acolhedor,piano", "low", False),
+    ("Clair de lune", "Claude Debussy", "calmo,atmosférico,acolhedor,piano", "low", False),
+    ("Spiegel im Spiegel", "Arvo Pärt", "calmo,introspectivo,triste,piano", "low", False),
     (
         "On the Nature of Daylight",
         "Max Richter",
@@ -178,7 +180,7 @@ MUSIC_ROWS = [
         "low",
         False,
     ),
-    ("Ambre", "Nils Frahm", "calmo,acolhedor,introspectivo", "low", False),
+    ("Ambre", "Nils Frahm", "calmo,acolhedor,introspectivo,piano", "low", False),
     ("Saman", "Ólafur Arnalds", "calmo,atmosférico,introspectivo", "low", False),
     (
         "An Ending (Ascent)",
@@ -188,12 +190,12 @@ MUSIC_ROWS = [
         False,
     ),
     ("Weightless", "Marconi Union", "calmo,atmosférico,mistério", "low", False),
-    ("Avril 14th", "Aphex Twin", "calmo,introspectivo,acolhedor", "low", False),
-    ("River Flows in You", "Yiruma", "calmo,romance,esperançoso", "low", False),
+    ("Avril 14th", "Aphex Twin", "calmo,introspectivo,acolhedor,piano", "low", False),
+    ("River Flows in You", "Yiruma", "calmo,romance,esperançoso,piano", "low", False),
     (
         "Comptine d'un autre été, l'après-midi",
         "Yann Tiersen",
-        "calmo,acolhedor,cinematográfico",
+        "calmo,acolhedor,cinematográfico,piano",
         "low",
         False,
     ),
