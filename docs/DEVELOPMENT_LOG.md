@@ -1,5 +1,32 @@
 # Registro de desenvolvimento
 
+## 2026-09-30 — Gêneros explícitos no desempate de livros locais
+
+### Implementado
+- Diagnosticadas as consultas de detetive, romance introspectivo e piano, separando interpretação, ordenação e cobertura do catálogo.
+- Ranking `local-rules-v6`: livros com igual relevância favorecem os gêneros explicitamente pedidos antes do desempate por título; critério visível na interpretação, scores e explicação.
+- Registrados relatórios K=5/10 com comparação estrita e proteção contra perdas por caso no baseline v6.
+
+### Arquivos principais alterados
+- `api/app/services/recommendation_service.py`, `api/tests/test_recommendations.py`, `api/tests/test_books.py`, `api/tests/test_evaluation.py`
+- `api/README.md`, `docs/05-API-Specification.md`, `docs/IMPLEMENTATION_STATUS.md`
+- `docs/eval-reports/2026-09-30-explicit-book-genres.md`
+- `docs/eval-reports/local-v6-genres-k5.json`, `docs/eval-reports/local-v6-genres-k10.json`
+
+### Decisões técnicas
+- Gêneros herdados de referências não recebem prioridade extra. Contexto, exclusões e limite de autor continuam prevalecendo.
+- Nenhuma alteração de catálogo/corpus, chamada externa ou mudança no ranking musical, de leitura ou online.
+
+### Estado atual
+- 192 testes da API, Ruff e formatação aprovados. Nenhuma regressão por caso ou agregada contra v5 em K=5/10.
+- Romance introspectivo traz Jane Eyre e Orgulho e Preconceito primeiro; P@5 passa de 0,2 para 0,4. nDCG de livros melhora nos dois K.
+- Detetive ainda é interpretado apenas como mistério; piano não é reconhecido nem consta dos metadados. Gates e revisão humana permanecem abertos.
+
+### Próximos passos
+- Obter proveniência de instrumentos/subgêneros das obras existentes antes de enriquecer as classificações locais.
+- Experimentar interpretação de piano/detetive e medir impactos por caso contra v6, sem alterar julgamentos v1.
+- Preservar o visual aprovado; atualizar a instância local após mudanças do backend.
+
 ## 2026-09-30 — Comparação de avaliações por consulta
 
 ### Implementado

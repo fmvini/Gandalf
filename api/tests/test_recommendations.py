@@ -398,3 +398,111 @@ def test_cinematic_preference_never_overrides_excluded_theme(client):
     assert "cinematográfico" in result["parsed_query"]["excluded_themes"]
     assert result["items"]
     assert all(row["scores"]["reading_mode"] == 0 for row in result["items"])
+
+
+@pytest.mark.parametrize(
+    "query,genre,titles",
+    [
+        ("Romance introspectivo", "romance", ["Jane Eyre", "Orgulho e Preconceito"]),
+        ("Terror sombrio", "terror", ["Drácula", "Frankenstein"]),
+    ],
+)
+def test_explicit_book_genre_breaks_mood_ties_and_explains_preference(
+    client, query, genre, titles
+):
+    response = client.post(
+        "/api/v1/recommendations/books", json={"query": query, "limit": 5}
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert result["parsed_query"]["preferred_genres"] == [genre]
+    assert [row["item"]["title"] for row in result["items"][:2]] == titles
+    assert [row["scores"]["genre"] for row in result["items"][:2]] == [1, 1]
+    second = result["items"][1]["item"]
+    explanation = client.get(
+        f"/api/v1/recommendations/{result['recommendation_id']}/items/{second['id']}/explanation"
+    )
+    assert "gêneros pedidos explicitamente: " + genre in explanation.json()["text"]
+
+
+@pytest.mark.parametrize(
+    "query", ["Como Jane Eyre, algo introspectivo", "Introspectivo sem romance"]
+)
+def test_reference_and_excluded_genres_do_not_gain_explicit_priority(client, query):
+    result = client.post("/api/v1/recommendations/books", json={"query": query}).json()
+    assert result["items"]
+    assert "preferred_genres" not in result["parsed_query"]
+    assert all("genre" not in row["scores"] for row in result["items"])
+    if "sem" in query:
+        assert all("romance" not in row["item"]["genres"] for row in result["items"])
+    else:
+        assert "Jane Eyre" in result["parsed_query"]["references"]
+        assert all(row["item"]["title"] != "Jane Eyre" for row in result["items"])
+
+
+def test_genre_preference_is_not_applied_to_music_or_reading(client):
+    music = client.post(
+        "/api/v1/recommendations/music", json={"query": "romance introspectivo"}
+    ).json()
+    reading = client.post(
+        "/api/v1/recommendations/read-with-music",
+        json={"book_id": str(BOOKS[0].id), "context": "romance"},
+    ).json()
+    for result in (music, reading):
+        assert result["items"]
+        assert "preferred_genres" not in result["parsed_query"]
+        assert all("genre" not in row["scores"] for row in result["items"])
+
+
+def test_genre_tie_break_preserves_context_priority_exclusions_and_creator_limit():
+    source = [
+        {
+            "id": "mood",
+            "title": "A Mood",
+            "authors": ["A"],
+            "genres": ["introspectivo"],
+        },
+        {"id": "one", "title": "B Genre", "authors": ["B"], "genres": ["romance"]},
+        {"id": "third", "title": "C Genre", "authors": ["B"], "genres": ["fantasia"]},
+        {
+            "id": "blocked",
+            "title": "D Reference",
+            "authors": ["D"],
+            "genres": ["romance", "fantasia"],
+        },
+        {
+            "id": "excluded",
+            "title": "E Excluded",
+            "authors": ["E"],
+            "genres": ["romance", "sombrio"],
+        },
+        {
+            "id": "two",
+            "title": "Y Genres",
+            "authors": ["B"],
+            "genres": ["romance", "fantasia"],
+        },
+        {
+            "id": "context",
+            "title": "Z Context",
+            "authors": ["Z"],
+            "genres": ["introspectivo", "triste", "calmo"],
+        },
+    ]
+    result = RecommendationService()._rank(
+        source,
+        {"romance", "fantasia", "introspectivo", "triste", "calmo"},
+        {"sombrio"},
+        MusicFilters(),
+        10,
+        {"blocked"},
+        [],
+        preferred_genres={"romance", "fantasia"},
+    )
+    assert [row["item"]["id"] for row in result["items"]] == [
+        "context",
+        "two",
+        "one",
+        "mood",
+    ]
+    assert [row["scores"]["genre"] for row in result["items"]] == [0, 1, 0.5, 0]

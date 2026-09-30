@@ -1,6 +1,6 @@
 # API do Gandalf
 
-> **Atualização de 2026-09-30:** as instruções abaixo se referem principalmente ao caminho local. A [matriz de implementação](../docs/IMPLEMENTATION_STATUS.md) descreve também o modo online experimental e suas limitações. O ranking local atual é `local-rules-v5`; a [especificação da descoberta](../docs/05-API-Specification.md#61-post-recommendationsmusic) distingue contrato implementado de exemplos futuros.
+> **Atualização de 2026-09-30:** as instruções abaixo se referem principalmente ao caminho local. A [matriz de implementação](../docs/IMPLEMENTATION_STATUS.md) descreve também o modo online experimental e suas limitações. O ranking local atual é `local-rules-v6`; a [especificação da descoberta](../docs/05-API-Specification.md#61-post-recommendationsmusic) distingue contrato implementado de exemplos futuros.
 
 Também estão implementados `GET /api/v1/music/search`, `GET /api/v1/music/{id}` e `GET /api/v1/system/status`. O modo online usa MusicBrainz para busca musical, Open Library para livros e Groq opcional para interpretação/seleção. No iniciador use `GANDALF_ONLINE=1`; ao executar `uvicorn app.main:app` diretamente use `ONLINE_CATALOG=true`, banco migrado e configuração de ambiente. `python local.py` permanece offline por padrão.
 

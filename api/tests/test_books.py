@@ -52,7 +52,7 @@ def test_health_version_and_readiness_are_honest() -> None:
         assert version == {
             "app": "Gandalf",
             "version": "0.1.0",
-            "ranking_version": "local-rules-v5",
+            "ranking_version": "local-rules-v6",
         }
         response = client.get("/health/ready")
         assert response.status_code == 503

@@ -11,8 +11,19 @@ from app.schemas.recommendation import DiscoveryRequest, MusicFilters, ReadingRe
 from app.services.music_filters import matches_music_filters, resolve_music_filters
 from app.services.references import resolve_references
 
-RANKING_VERSION = "local-rules-v5"
+RANKING_VERSION = "local-rules-v6"
 CATALOG_NOTE = "Catálogo local selecionado. Sugestões por temas e filtros, sem IA paga."
+BOOK_GENRE_THEMES = frozenset(
+    {
+        "fantasia",
+        "ficção científica",
+        "mistério",
+        "terror",
+        "romance",
+        "aventura",
+        "cyberpunk",
+    }
+)
 ALIASES = {
     "calmo": (
         "calm",
@@ -110,6 +121,9 @@ class RecommendationService:
         )
         references = resolve_references(body.query, source)
         positive, negative = interpret(references.context)
+        # Only an explicit book request earns this tie-break. Genres inherited
+        # from a reference should not outweigh the user's requested atmosphere.
+        preferred_genres = positive & BOOK_GENRE_THEMES if kind == "books" else set()
         positive.update(references.tags)
         positive -= negative
         filters = body.filters.model_copy()
@@ -123,6 +137,7 @@ class RecommendationService:
             body.limit,
             references.blocked_ids,
             references.positive,
+            preferred_genres=preferred_genres,
         )
         result["parsed_query"]["excluded_references"] = references.negative
         return result
@@ -175,6 +190,7 @@ class RecommendationService:
         reference_ids,
         references,
         reading_mode=None,
+        preferred_genres=None,
     ):
         candidates = []
         for item in source:
@@ -209,9 +225,18 @@ class RecommendationService:
                 return int("cinematográfico" in tags)
             return 0
 
-        # Preserve book/context relevance; the mode only resolves equal scores.
+        def genre_affinity(matched):
+            return len(set(matched) & (preferred_genres or set()))
+
+        # Preserve total context relevance; explicit genres and reading mode
+        # only resolve equal scores, before the alphabetical fallback.
         candidates.sort(
-            key=lambda row: (-row[0], -mode_affinity(row[1]), row[1]["title"])
+            key=lambda row: (
+                -row[0],
+                -genre_affinity(row[2]),
+                -mode_affinity(row[1]),
+                row[1]["title"],
+            )
         )
         counts = Counter()
         rows = []
@@ -257,6 +282,13 @@ class RecommendationService:
                     + "."
                 )
             mode_score = mode_affinity(item)
+            genre_matches = sorted(set(matched) & (preferred_genres or set()))
+            if genre_matches:
+                reasons += (
+                    " Em empates, prioriza os gêneros pedidos explicitamente: "
+                    + ", ".join(genre_matches)
+                    + "."
+                )
             if reading_mode == "CALM" and mode_score > 0:
                 reasons += " Em empates, o modo Calma favorece atmosfera ambiental."
             elif reading_mode == "CALM" and mode_score < 0:
@@ -269,6 +301,11 @@ class RecommendationService:
                     "item": dict(item),
                     "scores": {
                         "context": round(score, 4),
+                        **(
+                            {"genre": len(genre_matches) / len(preferred_genres)}
+                            if preferred_genres
+                            else {}
+                        ),
                         **(
                             {"reading_mode": mode_score}
                             if reading_mode in {"CALM", "CINEMATIC"}
@@ -287,6 +324,11 @@ class RecommendationService:
                 "themes": sorted(positive),
                 "excluded_themes": sorted(negative),
                 "references": references,
+                **(
+                    {"preferred_genres": sorted(preferred_genres)}
+                    if preferred_genres
+                    else {}
+                ),
                 **filters.model_dump(exclude_none=True),
             },
             "items": rows,

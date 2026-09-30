@@ -75,6 +75,10 @@ def test_offline_evaluation_is_reproducible_and_does_not_regress(monkeypatch):
             (baseline_dir / f"local-v5-cinematic-k{k}.json").read_text(encoding="utf-8")
         )
         assert regressions(evaluate(k=k), cinematic) == []
+        genres = accepted_report(f"local-v6-genres-k{k}.json")
+        comparison = compare_reports(evaluate(k=k), genres)
+        assert comparison["regressions"] == []
+        assert comparison["case_regressions_count"] == 0
     assert report["summary"]["existence_rate"] == 1
     assert report["summary"]["constraint_satisfaction"] == 1
     assert report["summary"]["creator_limit_ok"] == 1
