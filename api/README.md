@@ -1,10 +1,12 @@
 # API do Gandalf
 
-> **Atualização de 2026-09-29:** as instruções abaixo se referem principalmente ao caminho local. A [matriz de implementação](../docs/IMPLEMENTATION_STATUS.md) descreve também o modo online experimental e suas limitações. O ranking local atual é `local-rules-v3`; a [especificação da descoberta](../docs/05-API-Specification.md#61-post-recommendationsmusic) distingue contrato implementado de exemplos futuros.
+> **Atualização de 2026-09-30:** as instruções abaixo se referem principalmente ao caminho local. A [matriz de implementação](../docs/IMPLEMENTATION_STATUS.md) descreve também o modo online experimental e suas limitações. O ranking local atual é `local-rules-v5`; a [especificação da descoberta](../docs/05-API-Specification.md#61-post-recommendationsmusic) distingue contrato implementado de exemplos futuros.
 
 Também estão implementados `GET /api/v1/music/search`, `GET /api/v1/music/{id}` e `GET /api/v1/system/status`. O modo online usa MusicBrainz para busca musical, Open Library para livros e Groq opcional para interpretação/seleção. No iniciador use `GANDALF_ONLINE=1`; ao executar `uvicorn app.main:app` diretamente use `ONLINE_CATALOG=true`, banco migrado e configuração de ambiente. `python local.py` permanece offline por padrão.
 
 Avaliação local reproduzível, sem rede: `python -m app.evaluation.runner --baseline ../docs/eval-reports/local-v3-baseline-k5.json`. Adicione `--k 10` e use `local-v3-baseline-k10.json` para comparar top-10. Veja [metodologia e resultados](../docs/eval-reports/2026-09-29-local-baseline.md).
+
+Com `--baseline`, a CLI mostra também `comparison`: listas antes/depois, deltas de métricas e perdas por consulta, além das regressões agregadas. `--output caminho.json` salva o relatório completo, sem permitir sobrescrever dataset ou baseline. O padrão falha apenas por regressões agregadas; `--fail-on-case-regression` exige baseline e também retorna código 1 diante de qualquer perda individual. Código 2 indica argumentos ou entradas incompatíveis. [Detalhes e exemplo v4/v5](../docs/eval-reports/2026-09-30-case-comparison.md).
 
 FastAPI com busca de livros, recomenda??es locais e autentica??o persistente.
 

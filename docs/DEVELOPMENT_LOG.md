@@ -1,5 +1,30 @@
 # Registro de desenvolvimento
 
+## 2026-09-30 — Comparação de avaliações por consulta
+
+### Implementado
+- CLI exibe casos alterados, títulos antes/depois, deltas e contagem de consultas com perda, inclusive quando a média não regride.
+- `--fail-on-case-regression` oferece gate estrito opcional; o padrão continua usando agregados por módulo/modo.
+- Validação de compatibilidade dos relatórios e proteção contra saída sobre o dataset/baseline.
+
+### Arquivos principais alterados
+- `api/app/evaluation/runner.py`, `api/tests/test_evaluation.py`, `api/README.md`
+- `docs/eval-reports/2026-09-30-case-comparison.md`, `docs/IMPLEMENTATION_STATUS.md`
+
+### Decisões técnicas
+- Comparar por ID, não posição da linha; manter tolerância de 0,000001 e sinalizar mudanças de catálogo.
+- Não modificar ranking, julgamentos nem baselines aceitos nesta etapa.
+
+### Estado atual
+- 186 testes da API aprovados; Ruff e formatação aprovados. Persiste aviso de depreciação Starlette/httpx.
+- CLI real confirma zero perdas agregadas v4→v5 em K=5/10, mas uma consulta com perda em K=5 e duas em K=10; modo estrito retorna 1 como esperado.
+- Repaginação/animações concluídas no commit local `5b40091`; documentação visual e licenças incluídas.
+
+### Próximos passos
+- Inspecionar interpretação e candidatos de mistério/detetive, romance introspectivo e piano antes de alterar regras.
+- Comparar qualquer experimento com v5 e registrar todas as perdas por consulta; manter corpus intacto.
+- Revisão humana, modo online e gates externos seguem pendentes.
+
 ## 2026-09-30 — Descoberta imersiva com capas e animações acessíveis
 
 ### Implementado

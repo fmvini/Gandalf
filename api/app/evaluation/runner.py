@@ -205,7 +205,11 @@ def regressions(current: dict, baseline: dict) -> list[str]:
         raise ValueError("Baseline requires the same metric definitions")
     failures = []
     for group in ("modules", "reading_modes"):
+        if current[group].keys() != baseline[group].keys():
+            raise ValueError(f"Reports require the same {group} groups")
         for module in current[group]:
+            if current[group][module].keys() != baseline[group][module].keys():
+                raise ValueError(f"Group {module} requires the same metric definitions")
             for metric, old in baseline[group][module].items():
                 new = current[group][module][metric]
                 if old is not None and (new is None or new + 1e-6 < old):
@@ -213,7 +217,67 @@ def regressions(current: dict, baseline: dict) -> list[str]:
     return failures
 
 
-def main():
+def compare_reports(current: dict, baseline: dict) -> dict:
+    """Expose individual tradeoffs without changing the aggregate acceptance gate."""
+    failures = regressions(current, baseline)
+
+    def index_cases(report):
+        cases = {case["id"]: case for case in report["cases"]}
+        if len(cases) != len(report["cases"]) or len(cases) != report["cases_count"]:
+            raise ValueError("Reports require unique case IDs and consistent counts")
+        return cases
+
+    before, after = index_cases(baseline), index_cases(current)
+    if before.keys() != after.keys():
+        raise ValueError("Reports require the same case IDs")
+    changes = []
+    for case_id in sorted(after):
+        old, new = before[case_id], after[case_id]
+        if (old["module"], old["mode"]) != (new["module"], new["mode"]):
+            raise ValueError(f"Case {case_id} changed module or reading mode")
+        if old["metrics"].keys() != new["metrics"].keys():
+            raise ValueError(f"Case {case_id} requires the same metric definitions")
+        metrics, losses = {}, []
+        for name, value in old["metrics"].items():
+            updated = new["metrics"][name]
+            if value == updated or (
+                value is not None
+                and updated is not None
+                and abs(value - updated) <= 1e-6
+            ):
+                continue
+            metrics[name] = {
+                "before": value,
+                "after": updated,
+                "delta": round(updated - value, 6)
+                if value is not None and updated is not None
+                else None,
+            }
+            if value is not None and (updated is None or updated < value):
+                losses.append(name)
+        if metrics or old["titles"] != new["titles"]:
+            changes.append(
+                {
+                    "id": case_id,
+                    "module": new["module"],
+                    "mode": new["mode"],
+                    "titles_before": old["titles"],
+                    "titles_after": new["titles"],
+                    "metrics": metrics,
+                    "regressed_metrics": losses,
+                }
+            )
+    return {
+        "baseline_ranking_version": baseline["ranking_version"],
+        "current_ranking_version": current["ranking_version"],
+        "catalog_changed": baseline["catalog_sha256"] != current["catalog_sha256"],
+        "regressions": failures,
+        "case_regressions_count": sum(bool(c["regressed_metrics"]) for c in changes),
+        "case_changes": changes,
+    }
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Evaluate local recommendations without network access"
     )
@@ -221,13 +285,29 @@ def main():
     parser.add_argument("--k", type=int, default=5)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--baseline", type=Path)
-    args = parser.parse_args()
-    report = evaluate(args.dataset, args.k)
-    failures = (
-        regressions(report, json.loads(args.baseline.read_text(encoding="utf-8")))
-        if args.baseline
-        else []
+    parser.add_argument(
+        "--fail-on-case-regression",
+        action="store_true",
+        help="Also fail when any individual case metric regresses (requires --baseline)",
     )
+    args = parser.parse_args(argv)
+    if args.fail_on_case_regression and not args.baseline:
+        parser.error("--fail-on-case-regression requires --baseline")
+    if args.output and args.output.resolve() in {
+        path.resolve() for path in (args.dataset, args.baseline) if path
+    }:
+        parser.error("--output must not overwrite the dataset or baseline")
+    comparison = None
+    try:
+        report = evaluate(args.dataset, args.k)
+        if args.baseline:
+            comparison = compare_reports(
+                report, json.loads(args.baseline.read_text(encoding="utf-8"))
+            )
+            report["comparison"] = comparison
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
+    failures = comparison["regressions"] if comparison else []
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
@@ -235,12 +315,23 @@ def main():
         )
     print(
         json.dumps(
-            {"modules": report["modules"], "regressions": failures},
+            {
+                "modules": report["modules"],
+                "regressions": failures,
+                **({"comparison": comparison} if comparison else {}),
+            },
             ensure_ascii=False,
             indent=2,
         )
     )
-    return int(bool(failures))
+    return int(
+        bool(failures)
+        or bool(
+            args.fail_on_case_regression
+            and comparison
+            and comparison["case_regressions_count"]
+        )
+    )
 
 
 if __name__ == "__main__":

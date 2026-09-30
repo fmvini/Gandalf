@@ -25,7 +25,7 @@ Este documento descreve o código atual. Os documentos numerados incluem o desen
 | Descoberta | Três fluxos públicos, filtros, exclusões, referências por título, diversidade e explicações | Personalização e persistência de recomendações |
 | Leitura | Cinco modos, preferência vocal e duração-alvo estimada; CALM favorece atmosfera e CINEMATIC favorece diversidade/etiqueta cinematográfica em empates, com avaliação v4/v5 | Revisão humana da diferenciação; playlists persistentes |
 | Interface | Home imersiva com capas e animações acessíveis, música/livros/leitura, ajustes, temas, responsividade, loading/erro/vazio | Login, histórico, salvos, feedback, perfil |
-| Qualidade | 157 testes backend, testes frontend, corpus de 45 consultas e baselines K=5/10 | Julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
+| Qualidade | 186 testes backend, testes frontend, corpus de 45 consultas, baselines K=5/10 e comparação por caso com gate estrito opcional | Julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
 
 ## Contrato online efetivo
 
@@ -49,4 +49,4 @@ Não há áudio integrado nem exportação Spotify. Energia/vocais não são for
 - **G5 aberto:** feedback/perfil/ranking personalizado ausentes.
 - **G6 aberto:** sem CI, auditoria final ou deploy público.
 
-Continuar por diagnóstico de baixa precisão/cobertura e comparação por consulta, após os experimentos locais CALM/CINEMATIC ([v5](eval-reports/2026-09-30-cinematic-tiebreak.md)). Obter revisão humana/conjunto reservado. Fechar G1 e abstrações antes de ampliar integrações externas; preservar modo local sem custo. Após os gates aplicáveis, avançar para persistência, auth na interface e personalização conforme roadmap.
+Continuar por diagnóstico de baixa precisão/cobertura usando a [comparação por consulta](eval-reports/2026-09-30-case-comparison.md), após os experimentos locais CALM/CINEMATIC ([v5](eval-reports/2026-09-30-cinematic-tiebreak.md)). Obter revisão humana/conjunto reservado. Fechar G1 e abstrações antes de ampliar integrações externas; preservar modo local sem custo. Após os gates aplicáveis, avançar para persistência, auth na interface e personalização conforme roadmap.
