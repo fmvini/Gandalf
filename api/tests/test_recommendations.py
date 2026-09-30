@@ -312,3 +312,89 @@ def test_calm_preference_only_breaks_ties_and_preserves_context_priority():
     assert [r["item"]["id"] for r in rank({"calmo"}, "FOCUS")] == ["a", "b", "c"]
     assert [r["item"]["id"] for r in rank({"calmo"}, "CALM")] == ["c", "b", "a"]
     assert rank({"calmo", "cinematográfico"}, "CALM")[0]["item"]["id"] == "a"
+
+
+def test_cinematic_ties_preserve_context_then_diversify_then_prefer_cinema():
+    source = [
+        {"id": "a", "title": "A Ambient", "artist": "A", "tags": ["aventura"]},
+        {
+            "id": "b",
+            "title": "B Cinema",
+            "artist": "B",
+            "tags": ["aventura", "cinematográfico"],
+        },
+        {
+            "id": "c",
+            "title": "C Cinema",
+            "artist": "B",
+            "tags": ["aventura", "cinematográfico"],
+        },
+        {
+            "id": "d",
+            "title": "D Context",
+            "artist": "D",
+            "tags": ["aventura", "fantasia"],
+        },
+        {
+            "id": "e",
+            "title": "E Cinema",
+            "artist": "B",
+            "tags": ["aventura", "cinematográfico"],
+        },
+    ]
+    items = RecommendationService()._rank(
+        source,
+        {"aventura", "fantasia"},
+        set(),
+        MusicFilters(),
+        10,
+        set(),
+        [],
+        reading_mode="CINEMATIC",
+    )["items"]
+    # Greater context beats mode affinity; new artists beat repeated ones;
+    # cinematic wins only when both context and artist count are equal.
+    assert [row["item"]["id"] for row in items] == ["d", "b", "a", "c"]
+    assert [row["scores"]["reading_mode"] for row in items] == [0, 1, 0, 1]
+    assert all("artistas menos repetidos" in row["explanation"] for row in items)
+
+
+@pytest.mark.parametrize("title", ["Duna", "O Hobbit", "O Jardim Secreto"])
+def test_cinematic_exposes_preference_and_respects_explicit_exclusions(client, title):
+    book = next(book for book in BOOKS if book.title == title)
+    response = client.post(
+        "/api/v1/recommendations/read-with-music",
+        json={
+            "book_id": str(book.id),
+            "mode": "CINEMATIC",
+            "vocals": "INSTRUMENTAL",
+            "context": "sem sombrio",
+            "target_duration_min": 50,
+        },
+    )
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert items
+    assert any(row["scores"]["reading_mode"] == 1 for row in items)
+    assert all(
+        not row["item"]["has_vocals"] and "sombrio" not in row["item"]["tags"]
+        for row in items
+    )
+    assert all("artistas menos repetidos" in row["explanation"] for row in items)
+
+
+def test_cinematic_preference_never_overrides_excluded_theme(client):
+    response = client.post(
+        "/api/v1/recommendations/read-with-music",
+        json={
+            "book_id": str(BOOKS[0].id),
+            "mode": "CINEMATIC",
+            "context": "sem cinema",
+            "target_duration_min": 25,
+        },
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert "cinematográfico" in result["parsed_query"]["excluded_themes"]
+    assert result["items"]
+    assert all(row["scores"]["reading_mode"] == 0 for row in result["items"])

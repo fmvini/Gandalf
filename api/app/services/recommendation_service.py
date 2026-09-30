@@ -11,7 +11,7 @@ from app.schemas.recommendation import DiscoveryRequest, MusicFilters, ReadingRe
 from app.services.music_filters import matches_music_filters, resolve_music_filters
 from app.services.references import resolve_references
 
-RANKING_VERSION = "local-rules-v4"
+RANKING_VERSION = "local-rules-v5"
 CATALOG_NOTE = "Catálogo local selecionado. Sugestões por temas e filtros, sem IA paga."
 ALIASES = {
     "calmo": (
@@ -201,19 +201,33 @@ class RecommendationService:
             score = len(matched) / max(len(positive), 1)
             candidates.append((score, item, sorted(matched)))
 
-        def calm_affinity(item):
-            if reading_mode != "CALM":
-                return 0
+        def mode_affinity(item):
             tags = set(item.get("tags", []))
-            return int("atmosférico" in tags) - int("cinematográfico" in tags)
+            if reading_mode == "CALM":
+                return int("atmosférico" in tags) - int("cinematográfico" in tags)
+            if reading_mode == "CINEMATIC":
+                return int("cinematográfico" in tags)
+            return 0
 
         # Preserve book/context relevance; the mode only resolves equal scores.
         candidates.sort(
-            key=lambda row: (-row[0], -calm_affinity(row[1]), row[1]["title"])
+            key=lambda row: (-row[0], -mode_affinity(row[1]), row[1]["title"])
         )
         counts = Counter()
         rows = []
-        for score, item, matched in candidates:
+        while candidates:
+            if reading_mode == "CINEMATIC":
+                # Within equal relevance, avoid repeating a creator before
+                # applying the editorial preference for cinematic tracks.
+                candidates.sort(
+                    key=lambda row: (
+                        -row[0],
+                        counts[row[1].get("artist", "")],
+                        -mode_affinity(row[1]),
+                        row[1]["title"],
+                    )
+                )
+            score, item, matched = candidates.pop(0)
             creator = item.get("artist", ", ".join(item.get("authors", [])))
             if counts[creator] >= 2:
                 continue
@@ -242,11 +256,13 @@ class RecommendationService:
                     + ", ".join(labels[value] for value in filters.excluded_energy)
                     + "."
                 )
-            mode_score = calm_affinity(item)
+            mode_score = mode_affinity(item)
             if reading_mode == "CALM" and mode_score > 0:
                 reasons += " Em empates, o modo Calma favorece atmosfera ambiental."
             elif reading_mode == "CALM" and mode_score < 0:
                 reasons += " Em empates, o modo Calma reduz a preferência por trilhas cinematográficas."
+            elif reading_mode == "CINEMATIC":
+                reasons += " Em empates, o modo Cinematográfico prioriza artistas menos repetidos e depois a etiqueta cinematográfica."
             rows.append(
                 {
                     "position": len(rows) + 1,
@@ -255,7 +271,7 @@ class RecommendationService:
                         "context": round(score, 4),
                         **(
                             {"reading_mode": mode_score}
-                            if reading_mode == "CALM"
+                            if reading_mode in {"CALM", "CINEMATIC"}
                             else {}
                         ),
                     },

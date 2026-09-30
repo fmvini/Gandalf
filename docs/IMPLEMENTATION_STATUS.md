@@ -6,7 +6,7 @@ Este documento descreve o código atual. Os documentos numerados incluem o desen
 
 | Modo | Ativação | Comportamento |
 |---|---|---|
-| Local | `start-local.ps1` ou `python local.py` | SQLite, 18 livros e 25 músicas, ranking determinístico `local-rules-v4`; sem chamadas externas após instalar dependências |
+| Local | `start-local.ps1` ou `python local.py` | SQLite, 18 livros e 25 músicas, ranking determinístico `local-rules-v5`; sem chamadas externas após instalar dependências |
 | Online experimental | `start-local.ps1 -Online` ou `GANDALF_ONLINE=1` ao executar `local.py` | Open Library, MusicBrainz, catálogo local; Groq opcional interpreta e pontua candidatos; fallback por regras |
 | API configurada diretamente | `uvicorn app.main:app` em `api/` | `ONLINE_CATALOG` e `BOOK_PROVIDER` definem o comportamento |
 
@@ -23,9 +23,9 @@ Este documento descreve o código atual. Os documentos numerados incluem o desen
 | Música | Busca/detalhe local e MusicBrainz, UUID/MBID, duração opcional, cache persistente | Escolha final/licenças/cobertura de G1; interface abstrata musical |
 | IA | Groq com schemas validados, timeout, cache e limite diário persistido | Não segue integralmente ADR-0002: IA também pontua; sem embeddings ou avaliação real no corpus |
 | Descoberta | Três fluxos públicos, filtros, exclusões, referências por título, diversidade e explicações | Personalização e persistência de recomendações |
-| Leitura | Cinco modos, preferência vocal e duração-alvo com indicação de estimativa; CALM desempata por atmosfera ambiental, com avaliação v4 sem regressões | Avaliação CINEMATIC; playlists persistentes |
+| Leitura | Cinco modos, preferência vocal e duração-alvo estimada; CALM favorece atmosfera e CINEMATIC favorece diversidade/etiqueta cinematográfica em empates, com avaliação v4/v5 | Revisão humana da diferenciação; playlists persistentes |
 | Interface | Home, música/livros/leitura, ajustes, temas, responsividade, loading/erro/vazio | Login, histórico, salvos, feedback, perfil |
-| Qualidade | 152 testes backend, testes frontend, corpus de 45 consultas e baselines K=5/10 | Julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
+| Qualidade | 157 testes backend, testes frontend, corpus de 45 consultas e baselines K=5/10 | Julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
 
 ## Contrato online efetivo
 
@@ -49,4 +49,4 @@ Não há áudio integrado nem exportação Spotify. Energia/vocais não são for
 - **G5 aberto:** feedback/perfil/ranking personalizado ausentes.
 - **G6 aberto:** sem CI, auditoria final ou deploy público.
 
-Continuar por diferenciação FOCUS/CALM/CINEMATIC com critérios explícitos e comparação contra os dois baselines. Depois revisar baixa precisão/cobertura e obter revisão humana/conjunto reservado. Fechar G1 e abstrações antes de ampliar integrações externas; preservar modo local sem custo. Após os gates aplicáveis, avançar para persistência, auth na interface e personalização conforme roadmap.
+Continuar por diagnóstico de baixa precisão/cobertura e comparação por consulta, após os experimentos locais CALM/CINEMATIC ([v5](eval-reports/2026-09-30-cinematic-tiebreak.md)). Obter revisão humana/conjunto reservado. Fechar G1 e abstrações antes de ampliar integrações externas; preservar modo local sem custo. Após os gates aplicáveis, avançar para persistência, auth na interface e personalização conforme roadmap.

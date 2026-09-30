@@ -1,5 +1,36 @@
 # Registro de desenvolvimento
 
+## 2026-09-30 — Modo Cinematográfico com desempate e diversidade
+
+### Implementado
+- CINEMATIC local desempata por artistas menos repetidos, etiqueta cinematográfica e título, sempre após relevância contextual; ranking `local-rules-v5`.
+- Critério exposto no score de modo e na explicação, com testes sintéticos e pela API em três livros.
+- Relatórios v5 em K=5/10 e proteção contra regressões dos resultados aceitos, preservando corpus, catálogo e baselines anteriores.
+
+### Arquivos principais alterados
+- `api/app/services/recommendation_service.py`
+- `api/tests/test_recommendations.py`
+- `api/tests/test_books.py`
+- `api/tests/test_evaluation.py`
+- `docs/05-API-Specification.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+- `docs/eval-reports/2026-09-30-cinematic-tiebreak.md`
+- `docs/eval-reports/local-v5-cinematic-k5.json`
+- `docs/eval-reports/local-v5-cinematic-k10.json`
+
+### Decisões técnicas
+- Descartada variante que favorecia a etiqueta sem considerar variedade de artistas por regredir diversidade em K=10.
+- Mudança restrita a leitura local CINEMATIC; nenhuma dependência, chamada externa ou exigência de energia alta.
+
+### Estado atual
+- 157 testes da API aprovados; Ruff e formatação aprovados. Sem regressões agregadas contra v3/v4 nos dois valores de K.
+- CINEMATIC Precision@10: 0,466667 → 0,500000; nDCG@10: 0,876961 → 0,921324. Perda individual em Duna@5 documentada; corpus não é avaliação humana nem conjunto reservado.
+
+### Próximos passos
+- Expor comparação por consulta na CLI para tornar visíveis perdas escondidas por médias; manter a política agregada explícita.
+- Diagnosticar baixa precisão em mistério de detetive, romance introspectivo e pedidos de piano antes de alterar regras/catálogo.
+- Manter gates externos e revisão humana pendentes; não avançar para personalização com base apenas nesses experimentos locais.
+
 ## 2026-09-30 — Validação e fechamento da etapa Calma
 
 ### Implementado
