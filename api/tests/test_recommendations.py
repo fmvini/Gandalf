@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.main import create_app
 from app.providers.local_catalog import BOOKS, MUSIC
-from app.schemas.recommendation import DiscoveryRequest
+from app.schemas.recommendation import DiscoveryRequest, MusicFilters
 from app.services.recommendation_service import RecommendationService, interpret
 
 
@@ -256,3 +256,59 @@ def test_explicit_energy_exclusions_and_validation(client):
         ).status_code
         == 422
     )
+
+
+@pytest.mark.parametrize("title", ["Duna", "O Hobbit", "O Jardim Secreto"])
+def test_calm_and_focus_have_distinct_order_with_same_hard_filters(client, title):
+    book = next(book for book in BOOKS if book.title == title)
+    orders = {}
+    for mode in ("FOCUS", "CALM"):
+        response = client.post(
+            "/api/v1/recommendations/read-with-music",
+            json={
+                "book_id": str(book.id),
+                "mode": mode,
+                "vocals": "INSTRUMENTAL",
+                "target_duration_min": 25,
+            },
+        )
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) == 5
+        assert all(
+            not row["item"]["has_vocals"] and row["item"]["energy"] == "low"
+            for row in items
+        )
+        orders[mode] = [row["item"]["id"] for row in items]
+        if mode == "CALM":
+            assert all("reading_mode" in row["scores"] for row in items)
+            assert any("Em empates" in row["explanation"] for row in items)
+    assert orders["FOCUS"] != orders["CALM"]
+
+
+def test_calm_preference_only_breaks_ties_and_preserves_context_priority():
+    source = [
+        {
+            "id": "a",
+            "title": "A Cinema",
+            "artist": "A",
+            "tags": ["calmo", "cinematográfico"],
+        },
+        {"id": "b", "title": "B Piano", "artist": "B", "tags": ["calmo"]},
+        {
+            "id": "c",
+            "title": "Z Ambient",
+            "artist": "C",
+            "tags": ["calmo", "atmosférico"],
+        },
+    ]
+    service = RecommendationService()
+
+    def rank(themes, mode):
+        return service._rank(
+            source, themes, set(), MusicFilters(), 3, set(), [], reading_mode=mode
+        )["items"]
+
+    assert [r["item"]["id"] for r in rank({"calmo"}, "FOCUS")] == ["a", "b", "c"]
+    assert [r["item"]["id"] for r in rank({"calmo"}, "CALM")] == ["c", "b", "a"]
+    assert rank({"calmo", "cinematográfico"}, "CALM")[0]["item"]["id"] == "a"

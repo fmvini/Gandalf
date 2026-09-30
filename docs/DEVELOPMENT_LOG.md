@@ -1,5 +1,59 @@
 # Registro de desenvolvimento
 
+## 2026-09-30 — Validação e fechamento da etapa Calma
+
+### Implementado
+- Revisada a alteração pendente do modo Calma e confirmada sua avaliação antes do commit local.
+- Atualizada a matriz de implementação para refletir o ranking v4 e a diferenciação já entregue.
+
+### Arquivos principais alterados
+- `docs/IMPLEMENTATION_STATUS.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Preservar código, julgamentos e relatórios da etapa anterior; concluir sua unidade lógica antes de iniciar CINEMATIC.
+
+### Estado atual
+- 152 testes da API aprovados; Ruff e verificação de formatação aprovados em 2026-09-30.
+- Permanece o aviso de depreciação Starlette/httpx.
+
+### Próximos passos
+- Experimentar desempate CINEMATIC por etiqueta cinematográfica; comparar com v3 e v4 em K=5/10 sem modificar o corpus.
+
+## 2026-09-29 — Modo Calma diferenciado com avaliação sem regressões
+
+### Implementado
+- Leitura local em CALM desempata candidatos pela preferência atmosférica e menor preferência cinematográfica, preservando prioridade de livro/contexto, filtros e diversidade.
+- Critério exposto em `scores.reading_mode` e explicações; ranking versionado como `local-rules-v4`.
+- Testes pela API demonstram ordens diferentes entre FOCUS/CALM com os mesmos filtros em Duna, O Hobbit e O Jardim Secreto. Cenário sintético garante que contexto maior vence o desempate.
+- Registrados relatórios v4 e comparação também contra eles, preservando os baselines e julgamentos originais.
+
+### Arquivos principais alterados
+- `api/app/services/recommendation_service.py`
+- `api/tests/test_recommendations.py`
+- `api/tests/test_books.py`
+- `api/tests/test_evaluation.py`
+- `docs/eval-reports/local-v4-calm-k5.json`
+- `docs/eval-reports/local-v4-calm-k10.json`
+- `docs/eval-reports/2026-09-29-calm-tiebreak.md`
+- `docs/05-API-Specification.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Usar desempate editorial explicável, sem mapear títulos/IDs do corpus nem substituir relevância contextual por uma preferência de modo.
+- Alteração restrita ao caminho local de leitura; o modo online experimental exige avaliação própria.
+- Manter dados e baselines v3 imutáveis. Experimento aceito por não apresentar regressões por módulo/modo em K=5 ou K=10.
+
+### Estado atual
+- 152 testes da API passaram; Ruff e formatação aprovados.
+- CALM P@5 passou de 0,8000 para 0,9333 e nDCG@5 de 0,9207 para 0,9797. Leitura agregada P@5: 0,8267; os demais módulos preservam métricas.
+- Diferenciação demonstrada em três livros, sem garantia de listas distintas para qualquer catálogo. Não fecha G4 nem valida preferências humanas.
+
+### Próximos passos
+- Experimentar preferência CINEMATIC ancorada em etiquetas e explicações, preservando prioridade de contexto e comparando v3/v4 nos dois valores de K.
+- Depois revisar baixa precisão em mistério de detetive, romance introspectivo e pedidos de piano, sem modificar julgamentos para favorecer o ranking.
+- Manter pendentes avaliação humana, modo online e gates externos antes de ampliar integrações/personalização.
+
 ## 2026-09-29 — Reconciliação da documentação com o modo online
 
 ### Implementado

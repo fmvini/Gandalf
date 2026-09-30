@@ -11,7 +11,7 @@ from app.schemas.recommendation import DiscoveryRequest, MusicFilters, ReadingRe
 from app.services.music_filters import matches_music_filters, resolve_music_filters
 from app.services.references import resolve_references
 
-RANKING_VERSION = "local-rules-v3"
+RANKING_VERSION = "local-rules-v4"
 CATALOG_NOTE = "Catálogo local selecionado. Sugestões por temas e filtros, sem IA paga."
 ALIASES = {
     "calmo": (
@@ -148,6 +148,7 @@ class RecommendationService:
             ceil(body.target_duration_min / 5),
             set(),
             [book.title],
+            reading_mode=body.mode,
         )
         total = sum(row["item"]["estimated_duration_ms"] for row in result["items"])
         result["playlist"] = {
@@ -165,7 +166,15 @@ class RecommendationService:
         return result
 
     def _rank(
-        self, source, positive, negative, filters, limit, reference_ids, references
+        self,
+        source,
+        positive,
+        negative,
+        filters,
+        limit,
+        reference_ids,
+        references,
+        reading_mode=None,
     ):
         candidates = []
         for item in source:
@@ -191,7 +200,17 @@ class RecommendationService:
                 continue
             score = len(matched) / max(len(positive), 1)
             candidates.append((score, item, sorted(matched)))
-        candidates.sort(key=lambda row: (-row[0], row[1]["title"]))
+
+        def calm_affinity(item):
+            if reading_mode != "CALM":
+                return 0
+            tags = set(item.get("tags", []))
+            return int("atmosférico" in tags) - int("cinematográfico" in tags)
+
+        # Preserve book/context relevance; the mode only resolves equal scores.
+        candidates.sort(
+            key=lambda row: (-row[0], -calm_affinity(row[1]), row[1]["title"])
+        )
         counts = Counter()
         rows = []
         for score, item, matched in candidates:
@@ -223,11 +242,23 @@ class RecommendationService:
                     + ", ".join(labels[value] for value in filters.excluded_energy)
                     + "."
                 )
+            mode_score = calm_affinity(item)
+            if reading_mode == "CALM" and mode_score > 0:
+                reasons += " Em empates, o modo Calma favorece atmosfera ambiental."
+            elif reading_mode == "CALM" and mode_score < 0:
+                reasons += " Em empates, o modo Calma reduz a preferência por trilhas cinematográficas."
             rows.append(
                 {
                     "position": len(rows) + 1,
                     "item": dict(item),
-                    "scores": {"context": round(score, 4)},
+                    "scores": {
+                        "context": round(score, 4),
+                        **(
+                            {"reading_mode": mode_score}
+                            if reading_mode == "CALM"
+                            else {}
+                        ),
+                    },
                     "explanation": reasons
                     + " Classificação editorial do catálogo local.",
                 }

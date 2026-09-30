@@ -54,6 +54,10 @@ def test_offline_evaluation_is_reproducible_and_does_not_regress(monkeypatch):
             (baseline_dir / f"local-v3-baseline-k{k}.json").read_text(encoding="utf-8")
         )
         assert regressions(evaluate(k=k), baseline) == []
+        accepted = json.loads(
+            (baseline_dir / f"local-v4-calm-k{k}.json").read_text(encoding="utf-8")
+        )
+        assert regressions(evaluate(k=k), accepted) == []
     assert report["summary"]["existence_rate"] == 1
     assert report["summary"]["constraint_satisfaction"] == 1
     assert report["summary"]["creator_limit_ok"] == 1
