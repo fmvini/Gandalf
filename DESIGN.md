@@ -1,6 +1,6 @@
 ---
 name: Gandalf
-description: Descoberta de música e livros em um atlas noturno acolhedor.
+description: Descoberta imersiva de música e livros, com capas e movimento discreto.
 colors:
   primary: "#ad8bd2"
   primary-hover: "#b99cda"
@@ -15,20 +15,22 @@ colors:
   light-text: "#2d2337"
 typography:
   display:
-    fontFamily: "Newsreader, Georgia, serif"
-    fontSize: "clamp(3.7rem, 5.7vw, 6rem)"
-    fontWeight: 500
-    lineHeight: 0.97
-    letterSpacing: "-0.03em"
+    fontFamily: "Manrope Variable, sans-serif"
+    fontSize: "clamp(2.7rem, 4.3vw, 4.1rem)"
+    fontWeight: 600
+    lineHeight: 1.12
+    letterSpacing: "-0.04em"
   body:
-    fontFamily: "DM Sans, sans-serif"
+    fontFamily: "Manrope Variable, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.55
 rounded:
+  control: "8px"
   sm: "10px"
   md: "12px"
   lg: "18px"
+  showcase: "16px"
   pill: "999px"
 spacing:
   xs: "8px"
@@ -45,23 +47,23 @@ components:
   search-field:
     backgroundColor: "{colors.surface-plum}"
     textColor: "{colors.text-ivory}"
-    rounded: "{rounded.pill}"
-    padding: "7px 7px 7px 22px"
+    rounded: "{rounded.md}"
+    padding: "7px 7px 7px 18px"
 ---
 
 # Design System: Gandalf
 
 ## Overview
 
-**Creative North Star: "Atlas de afinidades"**
+**Creative North Star: "Descoberta imersiva"**
 
-O Gandalf trata o pedido em linguagem natural como o início de um percurso por sensações. O mapa ilustrado é uma peça editorial que expressa essa ideia na Home; os fluxos de busca mantêm formulários e resultados objetivos. O tema principal é escuro, roxo e cozy, como um atlas aberto em uma sala de leitura à noite. O tema claro conserva a mesma hierarquia.
+O Gandalf trata o pedido em linguagem natural como o início de um percurso por sensações. Capas reais e movimento discreto aproximam o catálogo do visitante; os fluxos de busca mantêm formulários e resultados objetivos. O tema principal é escuro, roxo e cozy. O tema claro conserva a mesma hierarquia. Esta composição foi aprovada pelo usuário em 30/09/2026.
 
 **Key Characteristics:**
 
-- Tipografia editorial e controles fáceis de identificar.
+- Tipografia legível, marca editorial e controles fáceis de identificar.
 - Fundo ameixa, superfícies tonais e acento violeta.
-- Mapa autoral com rótulos em HTML para preservar leitura e adaptação.
+- Capas reais em perspectiva com navegação explícita.
 - Espaço suficiente para pedidos, filtros e metadados reais.
 
 ## Colors
@@ -81,34 +83,34 @@ O roxo guia as ações, enquanto fundos ameixa e texto marfim sustentam o uso pr
 - **Lavanda suave** (#c5b7ca): texto secundário.
 - **Lilás de papel** (#f6f1f7): fundo do tema claro.
 
-**The Atlas Rule.** A ilustração abre a experiência; listas e formulários usam superfícies simples para deixar o conteúdo real em primeiro plano.
+**The Catalog Rule.** Capas abrem a descoberta; listas e formulários usam superfícies simples para deixar o conteúdo real em primeiro plano. O atlas ilustrado permanece como apoio nas páginas internas.
 
 ## Typography
 
-**Display Font:** Newsreader (fallback Georgia).
-**Body Font:** DM Sans (fallback sans-serif).
+**Display / Body Font:** Manrope Variable (fallback sans-serif).
+**Brand Font:** Newsreader (fallback Georgia).
 
-Newsreader dá caráter de publicação cultural a títulos e chamadas. DM Sans mantém as instruções e os controles diretos.
+Manrope aproxima títulos, instruções e controles. Newsreader preserva o caráter editorial da marca e da numeração das faixas. Ambas são servidas localmente por Fontsource.
 
 ### Hierarchy
 
-- **Display** (500, até 6rem, line-height 0.97): tese da Home.
-- **Headline** (500, até 5.2rem): páginas de descoberta.
-- **Title** (500, 1.35 a 1.75rem): resultados e caminhos.
+- **Display** (600, até 4.1rem, line-height 1.12): título da Home.
+- **Headline** (600, até 4rem): páginas de descoberta.
+- **Title** (600–650, 1 a 1.5rem): caminhos, resultados e livro em destaque.
 - **Body** (400, 1rem, line-height 1.55): instruções e descrições.
-- **Label** (700, 0.83 a 0.96rem): controles e metadados.
+- **Label** (600–700): controles; metadados menores mantêm contraste e espaçamento.
 
 ## Layout
 
-Contêiner máximo de 1260px com margem fluida. Na Home, texto e atlas dividem o primeiro quadro; abaixo de 760px, a composição vira uma coluna e mantém a busca acima do mapa. Resultados usam linhas para leitura rápida, e a escolha de modos usa uma grade que se reduz a duas colunas no celular.
+Contêiner máximo de 1260px com margem fluida. Na Home, busca e carrossel dividem o primeiro quadro; abaixo de 850px, a composição vira uma coluna, mantendo a busca antes das capas. Os três caminhos se tornam linhas empilhadas. O cabeçalho usa navegação móvel abaixo de 760px. Resultados usam linhas para leitura rápida; modos de leitura usam uma grade que se reduz no celular. Ajustes em 520px e 360px preservam controles sem rolagem horizontal.
 
 ## Elevation & Depth
 
-Camadas tonais fazem a maior parte da separação. A busca principal recebe uma sombra difusa com deslocamento; painéis usam borda fina quando o agrupamento precisa ficar explícito.
+Camadas tonais fazem a maior parte da separação. Capas recebem sombra difusa com deslocamento e perspectiva; a busca usa borda fina, reforçada no foco. Evitar ampliar esse tratamento de profundidade para todos os resultados.
 
 ## Shapes
 
-Campos e painéis usam cantos de 10 a 18px. Busca principal, chips e botões principais usam forma de cápsula. As linhas de resultados não recebem uma caixa individual.
+Campos e painéis usam cantos de 10 a 18px. A busca principal tem raio de 12px, seus controles internos 8px e a vitrine 16px. Botões gerais conservam forma de cápsula; os da Home usam cantos menores. As linhas de resultados não recebem uma caixa individual.
 
 ## Components
 
@@ -129,6 +131,19 @@ Campos e painéis usam cantos de 10 a 18px. Busca principal, chips e botões pri
 
 - Arte raster sem texto embutido; rótulos legíveis em HTML se adaptam ao tamanho da tela.
 
+### Catálogo e escolhas
+
+- Carrossel sem avanço automático: botões, setas do teclado e arraste mudam o livro ativo; link leva à busca de trilha com o título preenchido.
+- Grupo de escolhas Música/Livros/Ler com música usa botões pressionáveis e destaque que acompanha a seleção; não representa painéis de abas.
+- Origem e adaptações dos componentes estão em `frontend/THIRD_PARTY_NOTICES.md`.
+
+### Movimento
+
+- Abertura da Home com deslocamentos curtos e conteúdo já visível; sequência de até 550ms com saída suave.
+- Capas e destaque de seleção usam molas amortecidas. Caminhos entram uma vez ao aparecer na tela, com intervalo de 70ms.
+- Hover eleva ações em 2px apenas onde há mouse e movimento permitido.
+- `prefers-reduced-motion` elimina entradas e deslocamentos animados, mantendo navegação e informação; sem loops decorativos.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -140,5 +155,5 @@ Campos e painéis usam cantos de 10 a 18px. Busca principal, chips e botões pri
 ### Don't:
 
 - **Don't** apresentar resultados demonstrativos como recomendações reais.
-- **Don't** transformar o mapa em um controle confuso ou obrigatório.
+- **Don't** depender de animação ou arraste para acessar conteúdo.
 - **Don't** usar brilho neon, gradiente roxo genérico ou cartões iguais para os três caminhos.

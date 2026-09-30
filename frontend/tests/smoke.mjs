@@ -20,6 +20,18 @@ try {
   await page.goto(base)
   await page.getByRole('heading', { name: /Encontre o que combina/ }).waitFor()
   await page.evaluate(() => document.fonts.ready)
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.hero-copy h1')).opacity === '1')
+  await page.getByRole('button', { name: 'Próximo livro' }).click()
+  await page.getByRole('heading', { name: 'O Hobbit', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Próximo livro' }).press('ArrowRight')
+  await page.getByRole('heading', { name: 'O Jardim Secreto', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Próximo livro' }).click()
+  await page.getByRole('heading', { name: 'Duna', exact: true }).waitFor()
+  await page.waitForFunction(() => {
+    const cover = document.querySelector('.showcase-cover:not([aria-hidden="true"])')
+    return Math.abs(new DOMMatrix(getComputedStyle(cover).transform).m41) < 0.05 && getComputedStyle(cover).opacity === '1'
+  })
+  assert.ok(await page.locator('.showcase-cover img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)), 'Local covers load')
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark')
   await page.screenshot({ path: resolve(reviewDir, 'desktop.png'), fullPage: true })
 
@@ -51,6 +63,18 @@ try {
   await page.getByText('Esta sugestão foi selecionada para o pedido acima. A explicação detalhada não está disponível nesta busca.').waitFor()
   await page.getByRole('textbox', { name: 'Seu pedido' }).fill('Outro pedido ainda não enviado')
   assert.equal(await page.getByRole('heading', { name: 'Fantasia acolhedora para ler hoje' }).count(), 1)
+
+  await page.unroute('**/api/v1/recommendations/books')
+  await page.route('**/api/v1/recommendations/books', async route => {
+    await route.fulfill({ json: { recommendation_id: null, items: [
+      { position: 1, item: { id: 'local-dune', title: 'Duna', authors: ['Frank Herbert'], provider: 'local' } },
+      { position: 2, item: { id: 'external-dune', title: 'Duna', authors: ['Outro autor'], provider: 'openlibrary' } },
+    ] } })
+  })
+  await page.getByRole('button', { name: /Encontrar sugestões/ }).click()
+  await page.getByText('Outro autor', { exact: true }).waitFor()
+  assert.equal(await page.locator('.result-row').nth(0).locator('img').getAttribute('src'), '/images/covers/dune.jpg')
+  assert.equal(await page.locator('.result-row').nth(1).locator('img').count(), 0, 'An external homonym does not inherit a local cover')
 
   let musicRequest
   await page.route('**/api/v1/recommendations/music', async route => {
@@ -106,15 +130,28 @@ try {
   await page.getByRole('button', { name: 'Trocar' }).click()
   assert.equal(await page.getByText('Faixa de teste').count(), 0)
 
-  const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true })
+  await page.goto(base)
+  await page.getByRole('button', { name: 'Próximo livro' }).click()
+  await page.getByRole('link', { name: 'Encontrar a trilha deste livro' }).click()
+  assert.equal(await page.getByRole('textbox', { name: 'Qual livro você está lendo?' }).inputValue(), 'O Hobbit')
+
+  const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, reducedMotion: 'reduce' })
   const mobilePage = await mobile.newPage()
   mobilePage.on('pageerror', error => consoleErrors.push(error.message))
   await mobilePage.goto(base)
   await mobilePage.getByRole('heading', { name: /Encontre o que combina/ }).waitFor()
   await mobilePage.evaluate(() => document.fonts.ready)
+  assert.equal(await mobilePage.locator('.hero-copy h1').evaluate(element => getComputedStyle(element).transform), 'none', 'Reduced motion removes entrance movement')
+  await mobilePage.getByRole('button', { name: 'Próximo livro' }).click()
+  await mobilePage.getByRole('heading', { name: 'O Hobbit', exact: true }).waitFor()
+  await mobilePage.getByRole('button', { name: 'Livro anterior' }).click()
+  await mobilePage.getByRole('heading', { name: 'Duna', exact: true }).waitFor()
   await mobilePage.screenshot({ path: resolve(reviewDir, 'mobile.png'), fullPage: true })
   const overflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
   assert.ok(overflow <= 1, 'Mobile has horizontal overflow of ' + overflow + 'px')
+  await mobilePage.setViewportSize({ width: 320, height: 740 })
+  assert.ok(await mobilePage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), '320px layout fits')
+  await mobilePage.screenshot({ path: resolve(reviewDir, 'mobile-small.png'), fullPage: true })
   await mobilePage.getByRole('button', { name: 'Abrir menu' }).click()
   await mobilePage.getByRole('link', { name: 'Música', exact: true }).click()
   await mobilePage.getByRole('heading', { name: /Encontre a música certa/ }).waitFor()

@@ -10,7 +10,10 @@
     "test": "node tests/smoke.mjs && node tests/live.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource/newsreader": "^5.3.0",
     "lucide-react": "0.468.0",
+    "motion": "^13.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router-dom": "7.18.4"

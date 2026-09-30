@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-28T13:34:10Z",
+  "generatedAt": "2026-09-30T00:00:00Z",
   "title": "Design System: Gandalf",
   "extensions": {
     "colorMeta": {
@@ -8,29 +8,93 @@
         "role": "primary",
         "displayName": "Ametista acolhedora",
         "canonical": "#ad8bd2",
-        "tonalRamp": ["#261a35", "#3d2a55", "#573b75", "#76559b", "#ad8bd2", "#c8aee1", "#e0d0ed", "#f3ebf8"]
+        "tonalRamp": [
+          "#261a35",
+          "#3d2a55",
+          "#573b75",
+          "#76559b",
+          "#ad8bd2",
+          "#c8aee1",
+          "#e0d0ed",
+          "#f3ebf8"
+        ]
       },
       "ink-plum": {
         "role": "neutral",
         "displayName": "Ameixa de fundo",
         "canonical": "#171321",
-        "tonalRamp": ["#171321", "#2b2439", "#453950", "#65566f", "#897992", "#ada0b4", "#d3c8d7", "#f4eef5"]
+        "tonalRamp": [
+          "#171321",
+          "#2b2439",
+          "#453950",
+          "#65566f",
+          "#897992",
+          "#ada0b4",
+          "#d3c8d7",
+          "#f4eef5"
+        ]
       }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display editorial", "purpose": "Tese da Home e títulos de abertura." },
-      "body": { "displayName": "Corpo de interface", "purpose": "Pedidos, filtros, metadados e ajuda." }
+      "display": {
+        "displayName": "Display de descoberta",
+        "purpose": "Tese da Home e títulos de abertura."
+      },
+      "body": {
+        "displayName": "Corpo de interface",
+        "purpose": "Pedidos, filtros, metadados e ajuda."
+      }
     },
     "shadows": [
-      { "name": "search-depth", "value": "0 12px 38px rgba(7, 4, 15, .18)", "purpose": "Separar a busca principal do fundo." }
+      {
+        "name": "cover-depth",
+        "value": "0 20px 28px rgb(0 0 0 / .3)",
+        "purpose": "Profundidade das capas na vitrine."
+      }
     ],
     "motion": [
-      { "name": "state-transition", "value": "200ms ease", "purpose": "Feedback de hover e seleção; reduzido por prefers-reduced-motion." }
+      {
+        "name": "hero-entrance",
+        "value": "550ms cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Abertura com conteúdo já visível; removida com movimento reduzido."
+      },
+      {
+        "name": "cover-spring",
+        "value": "stiffness 180, damping 26",
+        "purpose": "Navegação manual entre capas; instantânea com movimento reduzido."
+      },
+      {
+        "name": "choice-spring",
+        "value": "stiffness 380, damping 34",
+        "purpose": "Destacar a escolha ativa sem trocar o foco."
+      },
+      {
+        "name": "path-stagger",
+        "value": "70ms",
+        "purpose": "Entradas uma vez ao aparecer na tela; removidas com movimento reduzido."
+      }
     ],
     "breakpoints": [
-      { "name": "tablet", "value": "1000px" },
-      { "name": "mobile", "value": "760px" },
-      { "name": "compact", "value": "520px" }
+      {
+        "name": "hero-compact",
+        "value": "1100px"
+      },
+      {
+        "name": "hero-stack",
+        "value": "850px"
+      },
+      {
+        "name": "navigation-mobile",
+        "value": "760px"
+      },
+      {
+        "name": "compact",
+        "value": "520px"
+      },
+      {
+        "name": "small-phone",
+        "value": "360px"
+      }
     ]
   },
   "components": [
@@ -40,7 +104,7 @@
       "refersTo": "button-primary",
       "description": "Ação dominante de cada formulário.",
       "html": "<button class=\"ds-btn-primary\">Encontrar sugestões</button>",
-      "css": ".ds-btn-primary{background:#ad8bd2;color:#1c1427;border:0;border-radius:999px;padding:11px 20px;min-height:48px;font:700 14px 'DM Sans',sans-serif;cursor:pointer;transition:background .2s ease}.ds-btn-primary:hover{background:#b99cda}.ds-btn-primary:focus-visible{outline:2px solid #f4eef5;outline-offset:3px}"
+      "css": ".ds-btn-primary{background:#ad8bd2;color:#1c1427;border:0;border-radius:999px;padding:11px 20px;min-height:48px;font:700 14px 'Manrope Variable',sans-serif;cursor:pointer;transition:background .2s ease}.ds-btn-primary:hover{background:#b99cda}.ds-btn-primary:focus-visible{outline:2px solid #f4eef5;outline-offset:3px}"
     },
     {
       "name": "Campo de busca",
@@ -48,24 +112,55 @@
       "refersTo": "search-field",
       "description": "Entrada livre que inicia a descoberta.",
       "html": "<input class=\"ds-search\" placeholder=\"Descreva o que você procura\">",
-      "css": ".ds-search{background:#211b2e;color:#f4eef5;border:1px solid #544662;border-radius:999px;padding:18px 22px;min-height:64px;font:400 16px 'DM Sans',sans-serif}.ds-search::placeholder{color:#c5b7ca}.ds-search:focus-visible{outline:2px solid #ad8bd2;outline-offset:3px}"
+      "css": ".ds-search{background:#211b2e;color:#f4eef5;border:1px solid #544662;border-radius:12px;padding:18px 22px;min-height:64px;font:400 16px 'Manrope Variable',sans-serif}.ds-search::placeholder{color:#c5b7ca}.ds-search:focus-visible{outline:2px solid #ad8bd2;outline-offset:3px}"
     },
     {
       "name": "Modo selecionado",
       "kind": "chip",
       "description": "Escolha do destino da busca.",
       "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Música</button>",
-      "css": ".ds-chip{background:#382b4b;color:#f4eef5;border:1px solid #ad8bd2;border-radius:999px;padding:9px 18px;min-height:44px;font:700 14px 'DM Sans',sans-serif;cursor:pointer}.ds-chip:hover{background:#45365d}.ds-chip:focus-visible{outline:2px solid #ad8bd2;outline-offset:3px}"
+      "css": ".ds-chip{background:#382b4b;color:#f4eef5;border:0;border-radius:8px;padding:9px 18px;min-height:44px;font:700 14px 'Manrope Variable',sans-serif;cursor:pointer}.ds-chip:hover{background:#45365d}.ds-chip:focus-visible{outline:2px solid #ad8bd2;outline-offset:3px}"
+    },
+    {
+      "name": "Navegação",
+      "kind": "navigation",
+      "description": "Destino ativo com linha sutil.",
+      "html": "<a class=\"ds-nav\" href=\"#\" aria-current=\"page\">Livros</a>",
+      "css": ".ds-nav{display:inline-block;color:#f4eef5;text-decoration:none;padding:10px 0;border-bottom:2px solid #ad8bd2;font:600 14px \"Manrope Variable\",sans-serif}.ds-nav:hover{color:#ad8bd2}.ds-nav:focus-visible{outline:2px solid #ad8bd2;outline-offset:3px}"
+    },
+    {
+      "name": "Painel da vitrine",
+      "kind": "card",
+      "description": "Superfície tonal que agrupa conteúdo do catálogo.",
+      "html": "<section class=\"ds-showcase\">Na sua próxima página</section>",
+      "css": ".ds-showcase{background:#211b2e;color:#f4eef5;border-radius:16px;padding:24px 28px;font:600 14px \"Manrope Variable\",sans-serif}"
     }
   ],
   "narrative": {
-    "northStar": "Atlas de afinidades",
-    "overview": "O Gandalf trata o pedido em linguagem natural como o início de um percurso por sensações. O tema principal é escuro, roxo e cozy, como um atlas aberto em uma sala de leitura à noite.",
-    "keyCharacteristics": ["Tipografia editorial e controles fáceis de identificar.", "Fundo ameixa, superfícies tonais e acento violeta.", "Mapa autoral com rótulos em HTML.", "Espaço para pedidos, filtros e metadados reais."],
-    "rules": [
-      { "name": "The Atlas Rule", "body": "A ilustração abre a experiência; listas e formulários usam superfícies simples para deixar o conteúdo real em primeiro plano.", "section": "colors" }
+    "northStar": "Descoberta imersiva",
+    "overview": "O Gandalf trata o pedido em linguagem natural como o início de um percurso por sensações. Capas reais e movimento discreto aproximam o catálogo do visitante; os fluxos de busca mantêm formulários e resultados objetivos. O tema principal é escuro, roxo e cozy. O tema claro conserva a mesma hierarquia. Esta composição foi aprovada pelo usuário em 30/09/2026.",
+    "keyCharacteristics": [
+      "Tipografia legível, marca editorial e controles fáceis de identificar.",
+      "Fundo ameixa, superfícies tonais e acento violeta.",
+      "Capas reais em perspectiva com navegação explícita.",
+      "Espaço suficiente para pedidos, filtros e metadados reais."
     ],
-    "dos": ["Iniciar a descoberta com um pedido livre e um destino explícito.", "Manter o tema escuro como padrão e oferecer o claro.", "Usar imagens de catálogo apenas quando vierem de provedores reais."],
-    "donts": ["Apresentar resultados demonstrativos como recomendações reais.", "Transformar o mapa em um controle confuso ou obrigatório.", "Usar brilho neon, gradiente roxo genérico ou cartões iguais para os três caminhos."]
+    "rules": [
+      {
+        "name": "The Catalog Rule",
+        "body": "Capas abrem a descoberta; listas e formulários usam superfícies simples para deixar o conteúdo real em primeiro plano. O atlas ilustrado permanece como apoio nas páginas internas.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "iniciar a descoberta com um pedido livre e um destino explícito.",
+      "manter o tema escuro como padrão e oferecer o claro.",
+      "usar imagens de catálogo apenas quando vierem de provedores reais."
+    ],
+    "donts": [
+      "apresentar resultados demonstrativos como recomendações reais.",
+      "depender de animação ou arraste para acessar conteúdo.",
+      "usar brilho neon, gradiente roxo genérico ou cartões iguais para os três caminhos."
+    ]
   }
 }

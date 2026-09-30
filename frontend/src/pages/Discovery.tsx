@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, BookOpen, CircleAlert, Headphones, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
 import { api, musicDestination, post, type BookItem, type MusicItem, type RankedItem, type Recommendation } from '../lib/api'
 import { duration, intentWords } from '../lib/format'
+import { localBookCover } from '../lib/showcase'
 
 type Kind = 'music' | 'books'
 type Data = Recommendation<MusicItem> | Recommendation<BookItem>
@@ -61,7 +62,7 @@ function MusicResult({ ranked, recommendationId }: { ranked: RankedItem<MusicIte
 
 function BookResult({ ranked, recommendationId }: { ranked: RankedItem<BookItem>; recommendationId: string | null }) {
   const item = ranked.item
-  return <li className="result-row"><ResultImage url={item.cover_url} title={item.title} type="books" /><div className="result-main"><div className="result-heading"><h3>{item.title}</h3>{item.publication_year ? <span>{item.publication_year}</span> : null}</div><p>{item.authors?.join(', ') || 'Autoria não informada'}</p>{item.description ? <p className="result-description">{item.description}</p> : null}<Why recommendationId={recommendationId} itemId={item.id} /></div>{item.external_url ? <a className="result-link" href={item.external_url} target="_blank" rel="noopener noreferrer" aria-label={'Abrir ' + item.title + ' na fonte'}>Ver livro <ArrowUpRight size={17} /></a> : null}</li>
+  return <li className="result-row"><ResultImage url={item.cover_url || (item.provider === 'local' ? localBookCover(item.title) : undefined)} title={item.title} type="books" /><div className="result-main"><div className="result-heading"><h3>{item.title}</h3>{item.publication_year ? <span>{item.publication_year}</span> : null}</div><p>{item.authors?.join(', ') || 'Autoria não informada'}</p>{item.description ? <p className="result-description">{item.description}</p> : null}<Why recommendationId={recommendationId} itemId={item.id} /></div>{item.external_url ? <a className="result-link" href={item.external_url} target="_blank" rel="noopener noreferrer" aria-label={'Abrir ' + item.title + ' na fonte'}>Ver livro <ArrowUpRight size={17} /></a> : null}</li>
 }
 
 export default function Discovery({ kind }: { kind: Kind }) {

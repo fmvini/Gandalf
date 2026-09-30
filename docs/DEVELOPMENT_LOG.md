@@ -1,5 +1,36 @@
 # Registro de desenvolvimento
 
+## 2026-09-30 — Descoberta imersiva com capas e animações acessíveis
+
+### Implementado
+- Repaginação aprovada pelo usuário, preservando identidade ametista, temas e os três fluxos públicos.
+- Carrossel de capas com botões, teclado e arraste, ligado à trilha do livro; escolhas animadas e sugestões acionáveis na Home.
+- Entradas discretas dos conteúdos e feedback de interação, respeitando movimento reduzido e sem avanço automático.
+- Fontes e capas servidas localmente; créditos dos componentes disponíveis no 21st.dev e licenças das fontes incluídos.
+- Capas de apoio restritas a resultados do provedor local, sem atribuição a homônimos externos.
+
+### Arquivos principais alterados
+- `frontend/src/pages/Home.tsx`, `frontend/src/pages/Discovery.tsx`
+- `frontend/src/components/ui/animated-tabs.tsx`, `frontend/src/components/ui/three-d-carousel.tsx`
+- `frontend/src/lib/showcase.ts`, `frontend/src/showcase.css`, `frontend/src/styles.css`, `frontend/src/main.tsx`
+- `frontend/package.json`, `frontend/package-lock.json`, `frontend/index.html`, `frontend/tests/smoke.mjs`
+- `frontend/public/images/covers/`, `frontend/public/licenses/`, `frontend/THIRD_PARTY_NOTICES.md`
+- `PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json`, `docs/IMPLEMENTATION_STATUS.md`
+
+### Decisões técnicas
+- Adaptados Animated Tabs de Chetan Verma e 3D Carousel do Cult UI a partir das fontes públicas MIT; CLI do 21st exige autenticação ausente.
+- Motion controla transições; fontes via Fontsource eliminam a dependência de Google Fonts em tempo de execução.
+- Mantida a composição aprovada após correção visual; sem reprodução de áudio ou recomendação personalizada fictícia.
+
+### Estado atual
+- `npm test` e `npm run build` aprovados: smoke e E2E com FastAPI/SQLite reais, incluindo filtros, explicações, erro, vazio e mobile.
+- Revisão visual direta de desktop/mobile e tema claro; subagente revisor interrompido por limite de uso, sem parecer independente concluído.
+- Capas são de edições em inglês e mantêm direitos de seus titulares. Catálogo local e integrações online continuam com os limites documentados.
+
+### Próximos passos
+- Concluir e testar `compare_reports` e o modo estrito da CLI de avaliação em `api/app/evaluation/runner.py`; alteração pendente fora do commit visual.
+- Diagnosticar consultas com baixa precisão usando comparação por caso, preservando corpus e baselines aceitos.
+
 ## 2026-09-30 — Modo Cinematográfico com desempate e diversidade
 
 ### Implementado

@@ -24,7 +24,7 @@ Este documento descreve o código atual. Os documentos numerados incluem o desen
 | IA | Groq com schemas validados, timeout, cache e limite diário persistido | Não segue integralmente ADR-0002: IA também pontua; sem embeddings ou avaliação real no corpus |
 | Descoberta | Três fluxos públicos, filtros, exclusões, referências por título, diversidade e explicações | Personalização e persistência de recomendações |
 | Leitura | Cinco modos, preferência vocal e duração-alvo estimada; CALM favorece atmosfera e CINEMATIC favorece diversidade/etiqueta cinematográfica em empates, com avaliação v4/v5 | Revisão humana da diferenciação; playlists persistentes |
-| Interface | Home, música/livros/leitura, ajustes, temas, responsividade, loading/erro/vazio | Login, histórico, salvos, feedback, perfil |
+| Interface | Home imersiva com capas e animações acessíveis, música/livros/leitura, ajustes, temas, responsividade, loading/erro/vazio | Login, histórico, salvos, feedback, perfil |
 | Qualidade | 157 testes backend, testes frontend, corpus de 45 consultas e baselines K=5/10 | Julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
 
 ## Contrato online efetivo
