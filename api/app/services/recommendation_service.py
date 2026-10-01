@@ -5,12 +5,15 @@ from math import ceil
 from time import monotonic
 from uuid import uuid4
 
+from starlette.concurrency import run_in_threadpool
+
 from app.core.exceptions import AppError
 from app.providers.local_catalog import BOOKS, MUSIC, normalize
 from app.schemas.book import BookItem
 from app.schemas.recommendation import DiscoveryRequest, MusicFilters, ReadingRequest
 from app.services.music_filters import matches_music_filters, resolve_music_filters
 from app.services.reading_duration import reading_summary
+from app.services.recommendation_cache import RecommendationCache, result_snapshot
 from app.services.references import resolve_references
 
 RANKING_VERSION = "local-rules-v7"
@@ -107,16 +110,22 @@ def interpret(query: str) -> tuple[set[str], set[str]]:
 
 
 class RecommendationService:
-    def __init__(self):
-        # Anonymous results are private by unguessable ID, expire in one hour,
-        # and are bounded to avoid retaining unbounded user queries in memory.
+    def __init__(self, cache: RecommendationCache | None = None):
+        self.cache = cache
+        # Without a database use the original one-hour/256-result memory cache.
+        # Database-backed apps use only the shared cache, so eviction/expiry
+        # cannot be bypassed by a stale process-local copy.
         self.results: OrderedDict[str, tuple[float, dict]] = OrderedDict()
 
     async def recommend(self, kind, body):
-        return self.discover(kind, body)
+        if self.cache is None:
+            return self.discover(kind, body)
+        return await run_in_threadpool(self.discover, kind, body)
 
     async def soundtrack(self, book, body):
-        return self.reading(book, body)
+        if self.cache is None:
+            return self.reading(book, body)
+        return await run_in_threadpool(self.reading, book, body)
 
     def discover(self, kind: str, body: DiscoveryRequest) -> dict:
         source = (
@@ -150,7 +159,7 @@ class RecommendationService:
             result["meta"]["has_more"] = len(result["items"]) > body.limit
             result["meta"]["next_offset"] = None
             result["items"] = result["items"][: body.limit]
-        return result
+        return self.remember(result)
 
     def reading(self, book: BookItem, body: ReadingRequest) -> dict:
         positive, negative = interpret(body.context)
@@ -186,7 +195,7 @@ class RecommendationService:
             result["meta"]["hint"] += (
                 " O catálogo disponível não preenche toda a duração solicitada."
             )
-        return result
+        return self.remember(result)
 
     def _rank(
         self,
@@ -348,11 +357,17 @@ class RecommendationService:
                 else "Nenhuma opção no catálogo local para esse pedido. Tente fantasia, mistério, calma, aventura ou amplie os filtros.",
             },
         }
-        return self.remember(result)
+        return result
 
     def remember(self, result):
+        if self.cache is not None:
+            self.cache.put(result)
+            return result
         self._prune()
-        self.results[result["recommendation_id"]] = (monotonic() + 3600, result)
+        self.results[result["recommendation_id"]] = (
+            monotonic() + 3600,
+            result_snapshot(result),
+        )
         while len(self.results) > 256:
             self.results.popitem(last=False)
         return result
@@ -363,10 +378,15 @@ class RecommendationService:
             del self.results[key]
 
     def get_result(self, recommendation_id: str) -> dict:
-        self._prune()
-        record = self.results.get(recommendation_id)
-        if record:
-            return deepcopy(record[1])
+        if self.cache is not None:
+            result = self.cache.get(recommendation_id)
+            if result is not None:
+                return result
+        else:
+            self._prune()
+            record = self.results.get(recommendation_id)
+            if record:
+                return deepcopy(record[1])
         raise AppError(
             404,
             "NOT_FOUND",

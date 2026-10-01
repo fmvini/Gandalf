@@ -2,7 +2,9 @@
 
 ## Estado
 
-Implementado e testado em SQLite em 2026-10-01. SQL PostgreSQL gerado e conferido; execução real, concorrência nesse banco e interface de playlists pendentes.
+Implementado e testado em SQLite em 2026-10-01; interface validada separadamente em `d2359c2`. SQL PostgreSQL gerado e conferido; execução real e concorrência nesse banco pendentes.
+
+**Atualização:** a decisão de cache apenas por processo e sua leitura no event loop, descritas abaixo, foram substituídas pelo [ADR-0015](0015-shared-recommendation-cache.md). Com banco configurado, a origem é compartilhada entre instâncias por até uma hora; o histórico desta decisão permanece preservado.
 
 ## Contexto
 

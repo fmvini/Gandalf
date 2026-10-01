@@ -1,6 +1,8 @@
 from collections import Counter
 from uuid import uuid4
 
+from starlette.concurrency import run_in_threadpool
+
 from app.ai.groq import Intent
 from app.core.exceptions import AppError
 from app.providers.local_catalog import BOOKS, MUSIC, normalize
@@ -52,8 +54,8 @@ def metadata_tags(item):
 
 
 class OnlineRecommendationService(RecommendationService):
-    def __init__(self, ai, books, music):
-        super().__init__()
+    def __init__(self, ai, books, music, cache=None):
+        super().__init__(cache)
         self.ai, self.books, self.music = ai, books, music
 
     async def recommend(self, kind, body):
@@ -362,8 +364,12 @@ class OnlineRecommendationService(RecommendationService):
                 ),
             },
         }
-        return self.remember(result)
+        if self.cache is None:
+            return self.remember(result)
+        return await run_in_threadpool(self.remember, result)
 
     async def soundtrack(self, book, body):
         result = await generate_soundtrack(self.ai, self.music, book, body)
-        return self.remember(result)
+        if self.cache is None:
+            return self.remember(result)
+        return await run_in_threadpool(self.remember, result)

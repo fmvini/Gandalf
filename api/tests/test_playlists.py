@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import pytest
 from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import delete, func, inspect, select, text
+from sqlalchemy import delete, func, inspect, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -14,7 +14,7 @@ from app.core.config import Settings
 from app.core.security import create_access_token
 from app.database.session import make_engine
 from app.main import create_app
-from app.models import MusicCatalog, Playlist, PlaylistTrack, User
+from app.models import MusicCatalog, Playlist, PlaylistTrack, RecommendationResult, User
 from app.providers.local_catalog import BOOKS, MUSIC
 
 ROOT = "/api/v1/playlists"
@@ -210,7 +210,7 @@ def test_reading_save_subset_and_restart_preserve_snapshots(playlists):
             restarted.get(ROOT + "/" + saved["id"], headers=new_headers).json() == saved
         )
         assert restarted.get(ROOT, headers=new_headers).json()["total"] == 2
-        expired = restarted.post(
+        after_restart = restarted.post(
             ROOT,
             headers=new_headers,
             json={
@@ -218,7 +218,8 @@ def test_reading_save_subset_and_restart_preserve_snapshots(playlists):
                 "source_recommendation_id": result["recommendation_id"],
             },
         )
-        assert expired.status_code == 404
+        assert after_restart.status_code == 201
+        assert [row["item"]["id"] for row in after_restart.json()["tracks"]] == ids
 
 
 def test_account_isolation_and_pagination(playlists):
@@ -335,14 +336,19 @@ def test_source_validation_does_not_fall_back_to_manual(playlists, source):
         source_id = str(uuid4())
         extra = {"music_ids": [MUSIC[0]["id"]]}
     elif source == "expired":
-        client.app.state.recommendation_service.results[source_id] = (0, result)
+        with client.app.state.session_factory.begin() as session:
+            session.execute(
+                update(RecommendationResult)
+                .where(RecommendationResult.id == UUID(source_id))
+                .values(expires_at=0)
+            )
     elif source in {"books", "music"}:
         source_id = client.post(
             "/api/v1/recommendations/" + source, json={"query": "fantasia calma"}
         ).json()["recommendation_id"]
     elif source == "empty":
-        cached = client.app.state.recommendation_service.results[source_id][1]
-        cached["items"] = []
+        result["items"] = []
+        client.app.state.recommendation_service.remember(result)
     elif source == "mismatch":
         extra = {
             "music_ids": [

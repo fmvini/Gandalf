@@ -1,5 +1,37 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Cache de recomendações compartilhado entre instâncias
+
+### Implementado
+- Integrado o schema 0007 ao backend local/online para salvar origens de trilha e recuperar explicações após reinício ou troca de instância, enquanto válidas. Endpoints, contratos e isolamento das playlists preservados.
+- Snapshot contém somente identidade, itens e resumo da playlist; publicação acontece depois de filtros/paginação/resumo. Consulta, intenção interpretada e conta não são persistidas.
+- TTL de uma hora sem renovação nas consultas, limite global de 256 e limpeza de expirados/evicção em transações. Banco é fonte única; não há cópia local capaz de ressuscitar removidos. Sem banco configurado, cache público em memória preservado.
+- I/O do cache fora do event loop; banco configurado indisponível/desatualizado retorna 503 sem expor SQL. Origem ausente/expirada/removida continua 404; playlists já salvas continuam disponíveis.
+
+### Arquivos principais alterados
+- `api/app/services/recommendation_cache.py`, `api/app/services/recommendation_service.py`, `api/app/services/online_recommendations.py`
+- `api/app/main.py`, `api/app/routes/recommendations.py`, `api/app/routes/playlists.py`
+- `api/tests/test_recommendation_cache.py`, `api/tests/test_playlists.py`
+- `api/README.md`, `docs/05-API-Specification.md`
+- `docs/adr/0015-shared-recommendation-cache.md`, `docs/adr/0014-owner-scoped-playlists.md`, `docs/adr/README.md`
+- `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- SQLite serializa escrita antes de limitar o cache; PostgreSQL usa bloqueio consultivo por transação. Preservar a gravação recém-publicada quando timestamps empatam. PostgreSQL real ainda não validado.
+- TTL usa milissegundos Unix UTC entre instâncias. Acessos/gravações purgam expirados, mas não há job periódico: sem tráfego, dados expirados podem ficar em disco, sempre inacessíveis pelo cache. Não equivale a histórico pessoal ou limpeza de backups.
+- Banco configurado é dependência para gerar/recuperar resultados: não cair em memória após falha, pois outra instância não poderia recuperar essa origem. Aplicar 0007 antes de iniciar; `local.py` migra automaticamente.
+- Coordenação via Maestri entre Maestro/backend, Frontend e Banco de Dados, com as três conexões verificadas. Commits locais separados de schema (`54e13c2`) e frontend (`d2359c2`) registrados neste terminal após revisão/testes, pois os outros terminais não podiam escrever `.git`. Nenhum frontend editado por este agente.
+
+### Estado atual
+- 302 testes backend aprovados; sete novos casos cobrem snapshots mínimos/cópias, TTL exato sem renovação, evicção global, três processos SQLite concorrentes, duas aplicações/contas, falha de banco e empate de timestamps. Ruff/formatação aprovados; gates v7 K=5/10 sem mudanças ou regressões. Compatibilidade online sem banco revalidada em 43 testes após ajuste final. Persiste aviso Starlette/httpx conhecido.
+- Build e todos os seis módulos frontend aprovados, incluindo playlists/E2E real com duas contas. Agente frontend revisou 24 capturas nos dois temas e três larguras, com reviewer `ship`. Testes usaram API/bancos temporários; dados e configuração do usuário não foram modificados. Nenhum push/deploy.
+- PostgreSQL/pgvector real, concorrência de refresh nesse banco, CI hospedada, lock Python, mypy e avaliações online amplas continuam pendentes.
+
+### Próximos passos
+- Iniciar backend atualizado com banco migrado até 0007; verificar readiness e salvar/explicar uma trilha na instância correta, mantendo o modo online existente se necessário. Não copiar SQLite ativo para outra máquina; parar a API ou usar backup consistente.
+- Agente de banco: com PostgreSQL/pgvector disponível, testar migração e cache/refresh concorrentes em banco descartável antes de ampliar implantação com múltiplos workers.
+- Backend/infra: preparar lock Python e mypy incremental; após push explicitamente autorizado, conferir jobs/artefatos da CI hospedada. Para favoritos/histórico, definir contrato de proprietário/privacidade antes de persistir consultas ou integrar botões na UI.
+
 ## 2026-10-01 — Integração de playlists na conta
 
 ### Implementado

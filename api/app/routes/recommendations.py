@@ -39,6 +39,8 @@ async def reading(request: Request, body: ReadingRequest):
 
 @router.get("/{recommendation_id}/items/{item_id}/explanation")
 async def explanation(request: Request, recommendation_id: UUID, item_id: UUID):
-    return request.app.state.recommendation_service.explanation(
-        str(recommendation_id), str(item_id)
+    return await run_in_threadpool(
+        request.app.state.recommendation_service.explanation,
+        str(recommendation_id),
+        str(item_id),
     )

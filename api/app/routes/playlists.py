@@ -28,11 +28,12 @@ async def create(
     service: Annotated[PlaylistService, Depends(playlist_service)],
     response: Response,
 ):
-    # Read the ephemeral cache on the event loop, before database work runs in
-    # a worker thread. The snapshot cannot change during save.
+    # Load a detached snapshot before writing the owner-scoped playlist. Both
+    # database operations run outside the event loop in their own sessions.
     recommendation = (
-        request.app.state.recommendation_service.get_result(
-            str(body.source_recommendation_id)
+        await run_in_threadpool(
+            request.app.state.recommendation_service.get_result,
+            str(body.source_recommendation_id),
         )
         if body.source_recommendation_id is not None
         else None

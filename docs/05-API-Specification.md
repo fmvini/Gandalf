@@ -649,7 +649,7 @@ Se a intenção for ambígua: `200` com `"clarification": { "question": "…", "
 `name` é obrigatório (1–120 caracteres após trim); `description` é opcional/nula (até 1.000). Campos extras são rejeitados; a conta vem exclusivamente do Bearer, nunca do corpo.
 
 - **Manual:** omitir `source_recommendation_id` e enviar `music_ids` (1–25 UUIDs únicos). Só aceita itens do catálogo local ou já persistidos em `music_catalog`; não consulta provedores externos.
-- **Trilha:** enviar o UUID de um resultado público de `/recommendations/read-with-music` ainda no cache do processo (até uma hora/256 buscas). Omitir `music_ids` salva toda a trilha, com até 60 faixas; informar uma lista salva um subconjunto de até 60 IDs na ordem enviada. Todos os IDs devem pertencer à trilha. Resultados de descoberta de livros/músicas não são aceitos como origem nesta etapa; músicas de descoberta podem ser salvas pelo fluxo manual, limitado a 25 faixas.
+- **Trilha:** enviar o UUID de um resultado público de `/recommendations/read-with-music` ainda válido no cache compartilhado (`0007_recommendation_results`, até uma hora/256 resultados no banco inteiro). Funciona entre instâncias/reinícios usando o mesmo banco; consultas não renovam TTL e evicção pode ocorrer antes. Omitir `music_ids` salva toda a trilha, com até 60 faixas; informar uma lista salva um subconjunto de até 60 IDs na ordem enviada. Todos os IDs devem pertencer à trilha. Resultados de descoberta de livros/músicas não são aceitos como origem nesta etapa; músicas de descoberta podem ser salvas pelo fluxo manual, limitado a 25 faixas.
 - Não aceita lista vazia nem repetições. Resultado desconhecido/expirado retorna `404 NOT_FOUND`; origem incompatível, trilha vazia ou seleção fora da origem retorna `422 VALIDATION_ERROR`. Música manual desconhecida retorna `404 NOT_FOUND`. Nenhuma dessas falhas grava parcialmente a playlist.
 
 **Response `201`** com `Location: /api/v1/playlists/{id}`:
@@ -673,7 +673,7 @@ Metadados e ordem são copiados no salvamento e permanecem disponíveis após ex
 
 `GET /playlists/{id}` retorna o mesmo detalhe da criação. `DELETE /playlists/{id}` retorna `204` sem corpo e preserva os itens do catálogo compartilhado. IDs ausentes ou pertencentes a outra conta retornam o mesmo `404 NOT_FOUND`, tanto na consulta quanto na exclusão; repetir a exclusão também retorna 404.
 
-Todas as operações exigem uma conta ativa e JWT válido (`401` quando inválido/expirado). Banco não configurado ou tabelas de playlists indisponíveis retornam `503 SERVICE_UNAVAILABLE`. PostgreSQL tem SQL de migração validado, mas execução real e concorrência entre processos seguem pendentes.
+Todas as operações exigem uma conta ativa e JWT válido (`401` quando inválido/expirado). Banco não configurado ou tabelas de playlists indisponíveis retornam `503 SERVICE_UNAVAILABLE`. Cache de origem indisponível/desatualizado também retorna 503, sem criar playlist parcial. O cache guarda só identidade, itens e resumo da trilha, sem consulta/intenção/conta; expirados são purgados durante acessos/gravações. Sem banco, explicações públicas usam memória por processo, mas playlists continuam exigindo banco. [ADR-0015](adr/0015-shared-recommendation-cache.md). PostgreSQL tem SQL de migração validado, mas execução real e concorrência entre processos nesse banco seguem pendentes.
 
 ---
 

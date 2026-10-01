@@ -1,5 +1,13 @@
 # Ponto de retomada — 2026-10-01
 
+## Cache compartilhado de origens e explicações — backend validado
+
+Schema `0007_recommendation_results` entregue pelo agente de banco em `54e13c2`; frontend de playlists em `d2359c2`. Backend agora usa o banco como cache único dos resultados públicos: snapshots de identidade/itens/resumo, sem consulta/intenção/conta. Origem para salvar e explicações sobrevivem a reinício/troca de instância durante o TTL de 3.600 segundos; limite global de 256, sem renovação ao consultar. Expiração/evicção retorna 404; banco configurado indisponível/desatualizado retorna 503, sem fallback de memória. Sem banco configurado, fluxos públicos mantêm o cache por processo. [ADR-0015](adr/0015-shared-recommendation-cache.md) registra limites e concorrência.
+
+302 testes backend, Ruff/formatação e gates v7 K=5/10 aprovados, sem mudanças/regressões; sete testes novos cobrem inclusive três processos SQLite concorrentes e duas aplicações salvando/explicando a mesma origem. Compatibilidade online sem banco revalidada (43 testes). Build e seis módulos frontend aprovados com API/SQLite temporários, incluindo duas contas e revogação; visual aprovado preservado pelo agente frontend.
+
+Antes de iniciar o backend atualizado em um banco existente, aplicar `alembic upgrade head` no banco correto; `local.py` aplica automaticamente. Não ampliar chaves/cotas nem mudar o modo online do usuário incidentalmente. Validar PostgreSQL real/migrações/concorrência com instância descartável antes de fechar esse gate; SQL gerado não basta. CI hospedada, lock Python, mypy, histórico/favoritos com contrato próprio e avaliações online amplas continuam pendentes. Os três agentes estão conectados pelo Maestri (Maestro/backend, Frontend, Banco de Dados); combinar arquivos/documentos e serializar commits. Não fazer push.
+
 ## Playlists na interface — entrega validada
 
 Salvamento da trilha completa, login/cadastro com retorno à trilha e seus controles, lista paginada em `/account`, detalhe em `/account/playlists/:id` e exclusão com confirmação implementados. Cliente tipado reutiliza sessão/refresh em memória, cancela requisições privadas ao sair/trocar de conta e trata falhas e origem expirada. Endpoints existentes preservados; schema paralelo `0007` está no commit `54e13c2`, e integração backend/cache pertence à entrega separada do Maestro.

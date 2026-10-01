@@ -32,6 +32,7 @@ from app.services.book_service import BookService
 from app.services.hybrid_books import HybridBookService
 from app.services.online_recommendations import OnlineRecommendationService
 from app.services.online_store import OnlineStore
+from app.services.recommendation_cache import RecommendationCache
 from app.services.recommendation_service import RANKING_VERSION, RecommendationService
 
 logger = logging.getLogger("gandalf.api")
@@ -91,7 +92,12 @@ def create_app(
                 config.book_search_cache_ttl_seconds,
                 application.state.session_factory,
             )
-            application.state.recommendation_service = RecommendationService()
+            cache = (
+                RecommendationCache(application.state.session_factory)
+                if application.state.session_factory is not None
+                else None
+            )
+            application.state.recommendation_service = RecommendationService(cache)
             store = OnlineStore(application.state.session_factory)
             application.state.online_store = store
             application.state.music_provider = None
@@ -105,7 +111,7 @@ def create_app(
                 ai = GroqClient(client, store, config)
                 application.state.music_provider = music
                 application.state.recommendation_service = OnlineRecommendationService(
-                    ai, application.state.book_service, music
+                    ai, application.state.book_service, music, cache
                 )
             try:
                 yield
