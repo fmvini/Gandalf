@@ -7,6 +7,7 @@ import '@fontsource/newsreader/600.css'
 import './styles.css'
 import './showcase.css'
 import './components/ui/components.css'
+import './account.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

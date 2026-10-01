@@ -1,5 +1,11 @@
 # Ponto de retomada — 2026-10-01
 
+## Atualização após integrar autenticação na interface
+
+O usuário confirmou autenticação como próxima entrega. Cadastro `/register`, login `/login`, dados da conta e logout `/account` agora usam os endpoints existentes. Sessão somente em memória conforme ADR-0006; navegar entre rotas preserva acesso, reload/fechamento exige login. Refresh rotativo compartilhado, logout aguarda rotação e revoga o token ativo; erros de rede permitem retry. Os três fluxos públicos permanecem acessíveis sem conta.
+
+Build, suíte frontend (smoke/componentes/auth/E2E com cadastro e revogação reais), 220 testes backend e Ruff/formatação aprovados. Capturas `auth-*` em `.impeccable/review/` cobrem 1440/390/320 px nos dois temas; dados fictícios e SQLite temporário. Servidores locais existentes preservados. Não há histórico, salvos, playlists persistentes, recuperação de senha ou edição de conta nesta entrega. Ler a entrada mais recente do log; próximo passo de produto: desenhar contratos e persistência de playlists/salvos antes de ligá-los à conta. CI foi preservada no commit separado `ccffe39`; execução hospedada ainda pendente e nenhum push autorizado.
+
 ## Atualização após preparar a CI
 
 Workflow inicial em `.github/workflows/ci.yml`: API/Ruff/pytest, comparação estrita K=5/10 contra v7 e build/E2E dos três fluxos. Actionlint, 220 testes da API, gates locais, build e suíte frontend aprovados. Corrigida somente a espera do teste responsivo, com autorização do usuário; esta etapa não altera componentes, estilos ou animações. Execução hospedada ainda pendente, sem push automático. Ler [CI.md](CI.md) e a entrada mais recente do log para continuar. A integração de interface foi concluída separadamente em `beb7569`; novas alterações de autenticação do outro terminal foram preservadas fora desta etapa.

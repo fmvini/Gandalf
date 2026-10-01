@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { ArrowUpRight, Menu, Moon, Sun, X } from 'lucide-react'
+import { ArrowUpRight, Menu, Moon, Sun, UserRound, X } from 'lucide-react'
 import Home from './pages/Home'
 import Discovery from './pages/Discovery'
 import ReadWithMusic from './pages/ReadWithMusic'
+import Authentication from './pages/Authentication'
+import Account from './pages/Account'
+import { useSession } from './lib/useSession'
 
 const links = [
   { to: '/music', label: 'Música' },
@@ -22,6 +25,7 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
+  const { user } = useSession()
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -43,6 +47,7 @@ export default function App() {
             {links.map(link => <NavLink key={link.to} to={link.to} className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>{link.label}</NavLink>)}
           </nav>
           <div className="header-actions">
+            <Link className="account-link" to={user ? '/account' : '/login'} aria-label={user ? 'Minha conta' : 'Entrar na conta'}><UserRound size={18} aria-hidden="true" /><span>{user ? 'Minha conta' : 'Entrar'}</span></Link>
             <button className="icon-button theme-button" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'} title={theme === 'light' ? 'Tema escuro' : 'Tema claro'}>
               {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
             </button>
@@ -59,6 +64,9 @@ export default function App() {
           <Route path="/music" element={<Discovery key="music" kind="music" />} />
           <Route path="/books" element={<Discovery key="books" kind="books" />} />
           <Route path="/read-with-music" element={<ReadWithMusic />} />
+          <Route path="/login" element={<Authentication key="login" mode="login" />} />
+          <Route path="/register" element={<Authentication key="register" mode="register" />} />
+          <Route path="/account" element={<Account />} />
           <Route path="*" element={<section className="not-found container"><h1>Esse caminho não existe.</h1><p>Volte ao início para encontrar música, livros ou uma trilha para ler.</p><Link className="button button-primary" to="/">Voltar ao início <ArrowUpRight size={18} /></Link></section>} />
         </Routes>
       </main>

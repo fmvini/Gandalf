@@ -1,5 +1,33 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Cadastro, login e conta na interface
+
+### Implementado
+- Integradas telas `/register`, `/login` e `/account` aos endpoints existentes de cadastro, login, dados da conta e logout. Cabeçalho alterna entre Entrar/Minha conta, preservando os três fluxos públicos sem conta e o visual aprovado.
+- Formulários com validação, confirmação/visibilidade de senha, preenchimento do e-mail após cadastro, estados de envio, erros focados/anunciados e retry. Navegar para fora cancela requisições de formulário.
+- Sessão somente em memória, renovação rotativa compartilhada e logout que aguarda rotação/revoga o token atual. Respostas atrasadas após saída não restauram a conta; refresh inválido leva novamente ao login.
+- Corrigida documentação frontend obsoleta; CI paralela concluída em `ccffe39` preservada integralmente.
+
+### Arquivos principais alterados
+- `frontend/src/lib/auth.ts`, `frontend/src/lib/useSession.ts`, `frontend/src/lib/api.ts`
+- `frontend/src/pages/Authentication.tsx`, `frontend/src/pages/Account.tsx`, `frontend/src/account.css`, `frontend/src/App.tsx`, `frontend/src/main.tsx`
+- `frontend/tests/auth.mjs`, `frontend/tests/live.mjs`, `frontend/package.json`, `frontend/README.md`
+- `docs/IMPLEMENTATION_STATUS.md`, `docs/CONTINUATION.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Mantido ADR-0006: sem tokens em localStorage/sessionStorage/cookies; reload/fechamento exige login. Registro não autentica automaticamente, seguindo os contratos da API. Sem novas dependências, endpoints ou migrations.
+- Uma renovação por sessão atende requisições concorrentes; 401 atrasado reutiliza o par novo. Saída bloqueia novas renovações e aguarda as já iniciadas para impedir revogação de um refresh antigo. Falha de rede ao sair mantém a conta disponível para retry.
+- Cliente HTTP conserva Headers/Authorization, identifica status de erro e aceita 204 sem tentar decodificar JSON. Esperas dos testes usam a nova tela montada antes de preencher campos compartilhados; navegação tem timeout de 30 s, sem sleeps fixos.
+
+### Estado atual
+- `npm run build` e `npm test` aprovados: smoke, componentes, autenticação simulada e E2E com API real/SQLite isolado. Cobertura de validação, erros 401/409/429, tokens somente em memória, rotação simultânea/401 atrasado, renovação proativa, logout durante refresh, retry/204, expiração, cancelamento e resposta de perfil após saída. E2E confirma refresh revogado no banco.
+- 220 testes backend e Ruff check/formatação aprovados; permanece o aviso conhecido Starlette/httpx. Capturas de login/cadastro/conta em 1440/390/320 px, claro/escuro, inspecionadas sem overflow; detector Impeccable retornou `[]`. Revisão independente Impeccable: `ship` para esta extensão Operate, sem correções materiais; estados transitórios corroborados no código/testes, sem capturas específicas. Capturas ignoradas pelo Git em `.impeccable/review/auth-*`.
+- Servidores existentes em 5173/8000 preservados; testes usam portas/banco temporários. Nenhum acesso a `api/.env`, consulta ao 21st, push ou deploy nesta etapa. Histórico/salvos, playlists persistentes, recuperação de senha, edição da conta e preferências ainda pendentes. Conferência de documentação Impeccable preservou `PRODUCT.md`, `DESIGN.md` e sidecar; divergências preexistentes de tokens não foram incorporadas nem corrigidas nesta extensão.
+
+### Próximos passos
+- Definir contratos e migrations para playlists/salvos por proprietário, com autorização e isolamento entre contas; integrar os fluxos públicos após testes de persistência.
+- Continuar revisão humana/conjunto reservado do ranking v7 e gates de provedores/infra. CI hospedada só deve ser verificada após push explicitamente autorizado; detalhes em `docs/CI.md`.
+
 ## 2026-10-01 — CI inicial para API, ranking e fluxos públicos
 
 ### Implementado

@@ -23,12 +23,21 @@ export type Recommendation<T> = {
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '')
 
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number, public readonly code?: string) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response
+  const headers = new Headers(init?.headers)
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   try {
     response = await fetch(`${baseUrl}${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      headers,
     })
   } catch {
     throw new Error('Não foi possível conectar à API. Verifique se o servidor está ligado e tente novamente.')
@@ -36,9 +45,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const data = await response.json().catch(() => null)
     const message = data?.error?.message || data?.detail
-    if (response.status === 429) throw new Error('Muitas buscas em pouco tempo. Aguarde um instante e tente novamente.')
-    throw new Error(typeof message === 'string' ? message : 'A busca não pôde ser concluída. Tente novamente.')
+    if (response.status === 429) throw new ApiError('Muitas tentativas em pouco tempo. Aguarde um instante e tente novamente.', 429, data?.error?.code)
+    throw new ApiError(typeof message === 'string' ? message : 'A solicitação não pôde ser concluída. Tente novamente.', response.status, data?.error?.code)
   }
+  if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
 }
 

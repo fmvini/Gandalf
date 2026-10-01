@@ -49,6 +49,7 @@ try {
   browser = await chromium.launch({ headless: true })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   page.setDefaultTimeout(10_000)
+  page.setDefaultNavigationTimeout(30_000)
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
@@ -76,7 +77,8 @@ try {
         })
         assert.ok(contrasts.every(item => item.ratio >= 4.5), `${theme} preference contrast: ${JSON.stringify(contrasts)}`)
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${flow} ${width}px ${theme} fits`)
-        await page.screenshot({ path: resolve(reviewDir, `components-${flow}-${width}-${theme}.png`), fullPage: true })
+        const capture = flow.startsWith('auth-') ? flow : 'components-' + flow
+        await page.screenshot({ path: resolve(reviewDir, `${capture}-${width}-${theme}.png`), fullPage: true })
       }
     }
     await page.setViewportSize({ width: 1440, height: 900 })
@@ -125,8 +127,43 @@ try {
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
   await page.getByRole('button', { name: 'Trocar' }).click()
   assert.equal(await page.locator('.playlist-list li').count(), 0)
+
+  // Account data and refresh revocation use the same real API and isolated DB.
+  await page.getByRole('link', { name: 'Entrar na conta' }).click()
+  await page.getByRole('heading', { name: 'Entre no Gandalf.' }).waitFor()
+  await reviewVariants('auth-login')
+  await page.getByRole('link', { name: 'Criar conta', exact: true }).click()
+  await page.getByRole('heading', { name: 'Crie sua conta.' }).waitFor()
+  await reviewVariants('auth-register')
+  const email = 'leitor@example.com'
+  const password = 'a fictitious test phrase 123'
+  await page.getByLabel('E-mail', { exact: true }).fill(email)
+  await page.getByLabel('Nome de usuário', { exact: true }).fill('leitor')
+  await page.getByLabel('Senha', { exact: true }).fill(password)
+  await page.getByLabel('Confirme a senha', { exact: true }).fill(password)
+  await page.getByRole('button', { name: 'Criar conta', exact: true }).click()
+  await page.getByRole('status').filter({ hasText: 'Conta criada.' }).waitFor()
+  assert.equal(await page.getByLabel('E-mail', { exact: true }).inputValue(), email)
+  await page.getByLabel('Senha', { exact: true }).fill(password)
+  const loginResponse = page.waitForResponse(response => response.url().endsWith('/auth/login') && response.status() === 200)
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
+  const credentials = await (await loginResponse).json()
+  await page.getByRole('heading', { name: 'Sua conta.' }).waitFor()
+  await page.getByRole('button', { name: 'Atualizar dados', exact: true }).waitFor()
+  assert.equal(await page.locator('.account-details dd').nth(1).textContent(), email)
+  await reviewVariants('auth-account')
+  await page.getByRole('link', { name: 'Explorar sugestões', exact: true }).click()
+  await page.getByRole('link', { name: 'Minha conta', exact: true }).click()
+  await page.getByRole('button', { name: 'Atualizar dados', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Sair da conta', exact: true }).click()
+  await page.getByRole('heading', { name: 'Entre no Gandalf.' }).waitFor()
+  const revoked = await fetch(apiUrl + '/api/v1/auth/refresh', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: credentials.refresh_token }),
+  })
+  assert.equal(revoked.status, 401, 'Logout revokes the refresh token in the database')
   assert.deepEqual(errors, [])
-  console.log('Live E2E passed: real API, SQLite, offline books/music/reading, filters, explanations, empty state and mobile.')
+  console.log('Live E2E passed: real API, SQLite, public flows, registration/login/account/logout/revocation, desktop/mobile and both themes.')
 } finally {
   await browser?.close()
   await server?.close()
