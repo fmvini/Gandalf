@@ -1,5 +1,21 @@
 # Ponto de retomada — 2026-10-01
 
+## Atualização após concluir piano/detetive
+
+A etapa `local-rules-v7` foi validada nesta continuação. O checkpoint abaixo é histórico: suas pendências de piano/detetive, falha de versão e formatação já foram resolvidas. Leia a entrada mais recente de `DEVELOPMENT_LOG.md` e a matriz atual antes de seguir instruções antigas.
+
+- Fontes e limites formalizados em `docs/catalog-metadata.md`; sete obras com piano e um livro de detetive, sem mudar itens/IDs. Saman continua sem nova etiqueta.
+- 220 testes da API, Ruff e formatação aprovados. Relatórios `local-v7-piano-detective-k5.json` e `local-v7-piano-detective-k10.json` em `docs/eval-reports/` com gate estrito contra v6: zero perdas agregadas ou por consulta. Apenas b03/m06 mudam; corpus/julgamentos preservados.
+- Build, smoke e E2E passaram usando uma cópia isolada da interface aprovada do commit `3732389` com o backend atual. Capturas desktop/mobile foram inspecionadas; o visual e animações aprovados permanecem a referência.
+- Existem alterações frontend de outro terminal em andamento na árvore de trabalho, além de documentação local não versionada (`docs/HANDOFF_MAESTRI.md`). Elas foram preservadas e excluídas do commit v7. O estado continua mudando: o frontend da árvore de trabalho não foi validado por esses testes. Conferir Git/dependências/testes e ler o handoff local, se presente, antes de retomá-lo.
+- Instâncias existentes em 8000/5173 preservadas; API local confirmou v7/readiness e consultas de piano/detetive com exclusões. O E2E iniciou uma nova instância isolada com SQLite temporário. Não encerrar processos sem identificar sua origem.
+
+### Próxima instrução
+
+> Leia a entrada mais recente de `docs/DEVELOPMENT_LOG.md` e `docs/IMPLEMENTATION_STATUS.md`. Piano/detetive v7 já está validado; use seus relatórios como baseline. Confira alterações locais e `docs/HANDOFF_MAESTRI.md`, se presente, antes de retomar componentes pausados da interface. Preserve o visual/animações aprovados. Para o ranking, obter revisão humana, conjunto reservado e evidência por obra antes de ampliar metadados. Gates online, PostgreSQL/pgvector e CI seguem abertos. Documente, teste e faça commits locais coerentes; não faça push.
+
+## Checkpoint anterior (histórico)
+
 Este documento transfere o contexto para outro terminal. Foi conferido no repositório em `C:\Users\vinic\Documents\Gandalf`, branch `main`, a partir do commit `39a7395`. O pedido desta sessão foi registrar o estado, sem continuar a implementação incompleta.
 
 ## Instrução pronta para o próximo terminal

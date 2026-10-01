@@ -198,6 +198,117 @@ def test_catalog_integrity_and_negation():
 
 
 @pytest.mark.parametrize(
+    "query,positive,negative",
+    [
+        ("Piano acolhedor", {"piano", "acolhedor"}, set()),
+        ("Mistério de detetive", {"mistério", "detetive"}, set()),
+        ("Detective fiction", {"detetive"}, set()),
+        ("sem piano mas calmo", {"calmo"}, {"piano"}),
+        ("mistério sem detetives", {"mistério"}, {"detetive"}),
+        ("não quero piano nem detetive; aventura", {"aventura"}, {"piano", "detetive"}),
+        ("piano sem piano", set(), {"piano"}),
+        ("campeonato indetectável", set(), set()),
+    ],
+)
+def test_piano_and_detective_interpretation_and_negation(query, positive, negative):
+    assert interpret(query) == (positive, negative)
+
+
+@pytest.mark.parametrize(
+    "kind,query,tag,title",
+    [
+        ("music", "piano", "piano", "Ambre"),
+        ("books", "detetive", "detetive", "O Cão dos Baskervilles"),
+    ],
+)
+def test_specific_catalog_terms_return_matching_items_and_explanations(
+    client, kind, query, tag, title
+):
+    response = client.post(
+        f"/api/v1/recommendations/{kind}", json={"query": query, "limit": 10}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["parsed_query"]["themes"] == [tag]
+    assert data["items"][0]["item"]["title"] == title
+    assert all(
+        tag in row["item"].get("tags", row["item"].get("genres", []))
+        for row in data["items"]
+    )
+    first = data["items"][0]["item"]
+    explanation = client.get(
+        f"/api/v1/recommendations/{data['recommendation_id']}/items/{first['id']}/explanation"
+    )
+    assert tag in explanation.json()["text"]
+    if kind == "books":
+        assert data["parsed_query"]["preferred_genres"] == [tag]
+        assert data["items"][0]["scores"]["genre"] == 1
+    else:
+        assert "preferred_genres" not in data["parsed_query"]
+
+
+@pytest.mark.parametrize(
+    "kind,query,tag,reference,excluded_reference",
+    [
+        ("music", "Como Ambre, calmo sem piano", "piano", "Ambre", False),
+        ("music", "Piano sem Ambre", "piano", "Ambre", True),
+        (
+            "books",
+            "Como O Cão dos Baskervilles, mistério sem detetive",
+            "detetive",
+            "O Cão dos Baskervilles",
+            False,
+        ),
+        (
+            "books",
+            "Mistério sem O Cão dos Baskervilles",
+            "detetive",
+            "O Cão dos Baskervilles",
+            True,
+        ),
+    ],
+)
+def test_specific_terms_respect_exclusions_and_reference_removal(
+    client, kind, query, tag, reference, excluded_reference
+):
+    result = client.post(
+        f"/api/v1/recommendations/{kind}", json={"query": query, "limit": 10}
+    ).json()
+    assert result["items"]
+    assert all(row["item"]["title"] != reference for row in result["items"])
+    reference_field = "excluded_references" if excluded_reference else "references"
+    assert result["parsed_query"][reference_field] == [reference]
+    if not excluded_reference:
+        assert tag in result["parsed_query"]["excluded_themes"]
+        assert tag not in result["parsed_query"]["themes"]
+        assert all(
+            tag not in row["item"].get("tags", row["item"].get("genres", []))
+            for row in result["items"]
+        )
+
+
+def test_detective_reference_does_not_gain_explicit_genre_priority(client):
+    result = client.post(
+        "/api/v1/recommendations/books",
+        json={"query": "Como O Cão dos Baskervilles"},
+    ).json()
+    assert result["items"]
+    assert "detetive" in result["parsed_query"]["themes"]
+    assert "preferred_genres" not in result["parsed_query"]
+    assert all("genre" not in row["scores"] for row in result["items"])
+
+
+def test_reading_piano_exclusion_overrides_book_and_mode_themes(client):
+    result = client.post(
+        "/api/v1/recommendations/read-with-music",
+        json={"book_id": str(BOOKS[0].id), "mode": "CALM", "context": "sem piano"},
+    ).json()
+    assert result["items"]
+    assert "piano" in result["parsed_query"]["excluded_themes"]
+    assert all("piano" not in row["item"]["tags"] for row in result["items"])
+
+
+@pytest.mark.parametrize(
     "query,vocals,allowed_energy",
     [
         ("não quero instrumental", True, {"low", "medium", "high"}),

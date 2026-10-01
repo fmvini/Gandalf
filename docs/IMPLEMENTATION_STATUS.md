@@ -1,14 +1,14 @@
-# Estado da implementação — 2026-09-30
+# Estado da implementação — 2026-10-01
 
-> **Checkpoint de 2026-10-01:** esta matriz registra a última etapa integralmente validada (v6). O commit `39a7395` já contém o experimento v7 de piano/detetive, ainda incompleto. A verificação atual teve 191 testes aprovados e uma falha de expectativa de versão; o catálogo também precisa de formatação. Para retomar pelo estado real do código, leia [CONTINUATION.md](CONTINUATION.md).
+> **Checkpoint de 2026-10-01:** etapa v7 de piano/detetive validada: fontes documentadas, 220 testes backend, Ruff e comparação estrita K=5/10 contra v6 sem perdas. Build, smoke e E2E passaram usando a interface aprovada do commit `3732389` em cópia isolada com o backend atual. Há alterações frontend de outro terminal em andamento na árvore de trabalho, não validadas nesta etapa; consulte o arquivo local não versionado `docs/HANDOFF_MAESTRI.md`, se presente, e confira o diff atual. Sua integração não faz parte da entrega v7.
 
-A matriz abaixo descreve a etapa validada em 2026-09-30. Os documentos numerados incluem o desenho completo do produto. Histórico e continuidade: [DEVELOPMENT_LOG](DEVELOPMENT_LOG.md).
+A matriz abaixo descreve as etapas validadas até v7. Os documentos numerados incluem o desenho completo do produto. Histórico e continuidade: [DEVELOPMENT_LOG](DEVELOPMENT_LOG.md) e [CONTINUATION](CONTINUATION.md).
 
 ## Execução
 
 | Modo | Ativação | Comportamento |
 |---|---|---|
-| Local | `start-local.ps1` ou `python local.py` | SQLite, 18 livros e 25 músicas, ranking determinístico `local-rules-v6`; sem chamadas externas após instalar dependências |
+| Local | `start-local.ps1` ou `python local.py` | SQLite, 18 livros e 25 músicas, ranking determinístico `local-rules-v7`; sem chamadas externas após instalar dependências |
 | Online experimental | `start-local.ps1 -Online` ou `GANDALF_ONLINE=1` ao executar `local.py` | Open Library, MusicBrainz, catálogo local; Groq opcional interpreta e pontua candidatos; fallback por regras |
 | API configurada diretamente | `uvicorn app.main:app` em `api/` | `ONLINE_CATALOG` e `BOOK_PROVIDER` definem o comportamento |
 
@@ -24,10 +24,10 @@ A matriz abaixo descreve a etapa validada em 2026-09-30. Os documentos numerados
 | Livros | Busca/detalhe local e Open Library, cache persistente, busca híbrida online | Metadados incompletos; sem embeddings |
 | Música | Busca/detalhe local e MusicBrainz, UUID/MBID, duração opcional, cache persistente | Escolha final/licenças/cobertura de G1; interface abstrata musical |
 | IA | Groq com schemas validados, timeout, cache e limite diário persistido | Não segue integralmente ADR-0002: IA também pontua; sem embeddings ou avaliação real no corpus |
-| Descoberta | Três fluxos públicos, filtros, exclusões, referências por título, diversidade e explicações; livros locais priorizam gêneros explícitos em empates | Personalização e persistência de recomendações |
+| Descoberta | Três fluxos públicos, filtros, exclusões, referências por título, diversidade e explicações; livros locais priorizam gêneros explícitos em empates; piano/detetive com fontes por obra e fallback online testado sem IA | Cobertura parcial de instrumentos/subgêneros; personalização e persistência de recomendações |
 | Leitura | Cinco modos, preferência vocal e duração-alvo estimada; CALM favorece atmosfera e CINEMATIC favorece diversidade/etiqueta cinematográfica em empates, com avaliação v4/v5 | Revisão humana da diferenciação; playlists persistentes |
 | Interface | Home imersiva com capas e animações acessíveis, música/livros/leitura, ajustes, temas, responsividade, loading/erro/vazio | Login, histórico, salvos, feedback, perfil |
-| Qualidade | 192 testes backend, testes frontend, corpus de 45 consultas, baselines K=5/10 e comparação por caso com gate estrito opcional | Julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
+| Qualidade | 220 testes backend, corpus de 45 consultas, baselines v3–v7 K=5/10 e comparação por caso com gate estrito opcional | Frontend pausado precisa de validação própria; julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
 
 ## Contrato online efetivo
 
@@ -51,4 +51,4 @@ Não há áudio integrado nem exportação Spotify. Energia/vocais não são for
 - **G5 aberto:** feedback/perfil/ranking personalizado ausentes.
 - **G6 aberto:** sem CI, auditoria final ou deploy público.
 
-Continuar pelos limites de vocabulário/metadados de piano e detetive, diagnosticados junto ao [desempate por gênero explícito v6](eval-reports/2026-09-30-explicit-book-genres.md). Usar a [comparação por consulta](eval-reports/2026-09-30-case-comparison.md) para novos experimentos. Obter revisão humana/conjunto reservado. Fechar G1 e abstrações antes de ampliar integrações externas; preservar modo local sem custo. Após os gates aplicáveis, avançar para persistência, auth na interface e personalização conforme roadmap.
+Piano/detetive foram validados na [etapa v7](eval-reports/2026-10-01-piano-detective.md); as [fontes e limitações de cobertura](catalog-metadata.md) distinguem obras de gravações. Usar v7 como baseline para novos experimentos, preservando julgamentos e relatórios históricos. Obter revisão humana/conjunto reservado; ampliar metadados somente com evidência por obra. A integração frontend pausada tem sequência própria em `HANDOFF_MAESTRI.md`. Fechar G1 e abstrações antes de ampliar integrações externas; preservar modo local sem custo. Após os gates aplicáveis, avançar para persistência, auth na interface e personalização conforme roadmap.

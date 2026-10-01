@@ -1,6 +1,12 @@
 # API do Gandalf
 
-> **Atualização de 2026-09-30:** as instruções abaixo se referem principalmente ao caminho local. A [matriz de implementação](../docs/IMPLEMENTATION_STATUS.md) descreve também o modo online experimental e suas limitações. O ranking local atual é `local-rules-v6`; a [especificação da descoberta](../docs/05-API-Specification.md#61-post-recommendationsmusic) distingue contrato implementado de exemplos futuros.
+> **Atualização de 2026-10-01:** as instruções abaixo se referem principalmente ao caminho local. A [matriz de implementação](../docs/IMPLEMENTATION_STATUS.md) descreve também o modo online experimental e suas limitações. O ranking local atual é `local-rules-v7`; a [especificação da descoberta](../docs/05-API-Specification.md#61-post-recommendationsmusic) distingue contrato implementado de exemplos futuros.
+
+Piano e detetive agora são reconhecidos pelo parser e pelo fallback online sem IA. Há sete músicas com `piano` e um livro com `detetive`, com [fontes por obra e limites](../docs/catalog-metadata.md). Piano descreve uma obra/edição com piano, sem garantir piano solo ou a gravação aberta por um link de busca. Ausência de etiqueta não prova ausência do instrumento/tema. Inclusão continua por afinidade de temas; exclusões removem itens com as etiquetas conhecidas.
+
+No ranking local, a relevância total precede os desempates: gêneros explicitamente pedidos nos livros (incluindo detetive), atmosfera em CALM e diversidade de artistas/etiqueta cinematográfica em CINEMATIC. Depois se usa o título. Referências não recebem prioridade de gênero explícito e são removidas dos resultados; filtros e exclusões prevalecem.
+
+[Avaliação v7 contra v6](../docs/eval-reports/2026-10-01-piano-detective.md): 45 consultas intactas, K=5/10, nenhuma perda agregada ou por consulta. Para proteger a etapa atual, execute `python -m app.evaluation.runner --baseline ../docs/eval-reports/local-v7-piano-detective-k5.json --fail-on-case-regression` e repita com `--k 10` e o relatório K=10. Revisão humana, conjunto reservado e avaliação online real continuam pendentes.
 
 Também estão implementados `GET /api/v1/music/search`, `GET /api/v1/music/{id}` e `GET /api/v1/system/status`. O modo online usa MusicBrainz para busca musical, Open Library para livros e Groq opcional para interpretação/seleção. No iniciador use `GANDALF_ONLINE=1`; ao executar `uvicorn app.main:app` diretamente use `ONLINE_CATALOG=true`, banco migrado e configuração de ambiente. `python local.py` permanece offline por padrão.
 
@@ -29,7 +35,7 @@ Swagger: http://127.0.0.1:8000/docs. Frontend: `VITE_API_BASE_URL=http://127.0.0
 |---|---|---|
 | GET | `/health` | Processo ativo |
 | GET | `/health/ready` | Banco e todas as tabelas; pgvector exigido apenas no PostgreSQL |
-| GET | `/version` | Vers?o da aplica??o e `local-rules-v1` |
+| GET | `/version` | Versão da aplicação e `local-rules-v7` |
 | GET | `/api/v1/books/search?q=Duna&limit=6` | T?tulo/autor local, ou Open Library se configurada |
 | GET | `/api/v1/books/{id}` | Livro local ou catalogado pelo provider externo |
 | POST | `/api/v1/recommendations/music` | Ranking musical local |
@@ -52,7 +58,7 @@ Descoberta recebe `query` (3?1.000 caracteres), `limit` (1?25, padr?o 10) e `fil
 
 Leitura recebe `book_id`, `mode` (`FOCUS`, `IMMERSIVE`, `CINEMATIC`, `CALM`, `CUSTOM`), `context` (at? 500 caracteres, obrigat?rio em `CUSTOM`), `vocals` (`INSTRUMENTAL`, `MINIMAL`, `ANY`) e `target_duration_min` (15?120).
 
-O ranking faz correspond?ncia de temas editoriais, exclus?es simples, filtros expl?citos, remove t?tulos usados como refer?ncia e limita dois itens por artista/autor. Empates s?o ordenados por t?tulo. `scores.context` ? a fra??o de temas correspondentes, n?o similaridade de embeddings. Pedidos n?o reconhecidos retornam vazio com orienta??o.
+O ranking faz correspondência de temas editoriais, exclusões simples, filtros explícitos, remove títulos usados como referência e limita dois itens por artista/autor. Os critérios de desempate por gênero e modo estão descritos no início deste documento; o título é o último critério. `scores.context` é a fração de temas correspondentes, não similaridade de embeddings. Pedidos não reconhecidos retornam vazio com orientação.
 
 `meta.mode=local` e `meta.hint` identificam os limites. S?o 18 livros e 25 m?sicas; links musicais abrem buscas, sem ?udio hospedado. A trilha estima cinco minutos por faixa (`playlist.duration_estimated=true`), sem atribuir dura??o real ?s grava??es. Pode haver menos itens que a dura??o ou limite pedidos.
 

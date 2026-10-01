@@ -170,9 +170,27 @@ BOOKS = [
 # Durations vary by recording. Five minutes per item is a planning estimate,
 # never presented as recording metadata. Links intentionally open a search.
 MUSIC_ROWS = [
-    ("Gymnopédie No. 1", "Erik Satie", "calmo,introspectivo,acolhedor,piano", "low", False),
-    ("Clair de lune", "Claude Debussy", "calmo,atmosférico,acolhedor,piano", "low", False),
-    ("Spiegel im Spiegel", "Arvo Pärt", "calmo,introspectivo,triste,piano", "low", False),
+    (
+        "Gymnopédie No. 1",
+        "Erik Satie",
+        "calmo,introspectivo,acolhedor,piano",
+        "low",
+        False,
+    ),
+    (
+        "Clair de lune",
+        "Claude Debussy",
+        "calmo,atmosférico,acolhedor,piano",
+        "low",
+        False,
+    ),
+    (
+        "Spiegel im Spiegel",
+        "Arvo Pärt",
+        "calmo,introspectivo,triste,piano",
+        "low",
+        False,
+    ),
     (
         "On the Nature of Daylight",
         "Max Richter",

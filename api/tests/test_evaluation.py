@@ -79,6 +79,10 @@ def test_offline_evaluation_is_reproducible_and_does_not_regress(monkeypatch):
         comparison = compare_reports(evaluate(k=k), genres)
         assert comparison["regressions"] == []
         assert comparison["case_regressions_count"] == 0
+        instruments = accepted_report(f"local-v7-piano-detective-k{k}.json")
+        comparison = compare_reports(evaluate(k=k), instruments)
+        assert comparison["regressions"] == []
+        assert comparison["case_regressions_count"] == 0
     assert report["summary"]["existence_rate"] == 1
     assert report["summary"]["constraint_satisfaction"] == 1
     assert report["summary"]["creator_limit_ok"] == 1

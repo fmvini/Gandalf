@@ -1,0 +1,1235 @@
+{
+  "metrics_version": "1",
+  "dataset_version": "local-editorial-v1",
+  "dataset_sha256": "2cbf9336f5699154cb905a8deebcd2321d7746fe08c0acf0ca557318b5010317",
+  "ranking_version": "local-rules-v7",
+  "catalog_sha256": "9730d0e57dc219884dd0ce8e8b3ca39e107d340ab3264c4f81c8aca94e51f75d",
+  "k": 5,
+  "cases_count": 45,
+  "methodology": "Closed-catalog editorial judgments authored by the development assistant from the query and known work characteristics, before evaluating rankings. Grades: 3 strong fit, 2 relevant, 1 partial fit, omitted titles 0. Not independent human validation, not a held-out test set and not an evaluation of online AI. All catalog titles were considered; limited catalog and subjective judgments constrain conclusions.",
+  "summary": {
+    "precision": 0.733333,
+    "ndcg": 0.922586,
+    "fill_rate": 0.875556,
+    "diversity": 0.853333,
+    "existence_rate": 1.0,
+    "constraint_satisfaction": 1.0,
+    "creator_limit_ok": 1.0,
+    "nonempty": 1.0,
+    "coverage": 0.711111
+  },
+  "modules": {
+    "music": {
+      "precision": 0.706667,
+      "ndcg": 0.918023,
+      "fill_rate": 0.773333,
+      "diversity": 0.76,
+      "existence_rate": 1.0,
+      "constraint_satisfaction": 1.0,
+      "creator_limit_ok": 1.0,
+      "nonempty": 1.0,
+      "coverage": 0.466667
+    },
+    "books": {
+      "precision": 0.666667,
+      "ndcg": 0.925136,
+      "fill_rate": 0.853333,
+      "diversity": 0.813333,
+      "existence_rate": 1.0,
+      "constraint_satisfaction": 1.0,
+      "creator_limit_ok": 1.0,
+      "nonempty": 1.0,
+      "coverage": 0.666667
+    },
+    "reading": {
+      "precision": 0.826667,
+      "ndcg": 0.9246,
+      "fill_rate": 1.0,
+      "diversity": 0.986667,
+      "existence_rate": 1.0,
+      "constraint_satisfaction": 1.0,
+      "creator_limit_ok": 1.0,
+      "nonempty": 1.0,
+      "coverage": 1.0
+    }
+  },
+  "reading_modes": {
+    "FOCUS": {
+      "precision": 0.8,
+      "ndcg": 0.92074,
+      "fill_rate": 1.0,
+      "diversity": 1.0,
+      "existence_rate": 1.0,
+      "constraint_satisfaction": 1.0,
+      "creator_limit_ok": 1.0,
+      "nonempty": 1.0,
+      "coverage": 1.0
+    },
+    "IMMERSIVE": {
+      "precision": 0.866667,
+      "ndcg": 0.920142,
+      "fill_rate": 1.0,
+      "diversity": 1.0,
+      "existence_rate": 1.0,
+      "constraint_satisfaction": 1.0,
+      "creator_limit_ok": 1.0,
+      "nonempty": 1.0,
+      "coverage": 1.0
+    },
+    "CINEMATIC": {
+      "precision": 0.733333,
+      "ndcg": 0.854572,
+      "fill_rate": 1.0,
+      "diversity": 0.933333,
+      "existence_rate": 1.0,
+      "constraint_satisfaction": 1.0,
+      "creator_limit_ok": 1.0,
+      "nonempty": 1.0,
+      "coverage": 1.0
+    },
+    "CALM": {
+      "precision": 0.933333,
+      "ndcg": 0.979737,
+      "fill_rate": 1.0,
+      "diversity": 1.0,
+      "existence_rate": 1.0,
+      "constraint_satisfaction": 1.0,
+      "creator_limit_ok": 1.0,
+      "nonempty": 1.0,
+      "coverage": 1.0
+    },
+    "CUSTOM": {
+      "precision": 0.8,
+      "ndcg": 0.94781,
+      "fill_rate": 1.0,
+      "diversity": 1.0,
+      "existence_rate": 1.0,
+      "constraint_satisfaction": 1.0,
+      "creator_limit_ok": 1.0,
+      "nonempty": 1.0,
+      "coverage": 1.0
+    }
+  },
+  "cases": [
+    {
+      "id": "m01",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Ambre",
+        "An Ending (Ascent)",
+        "Avril 14th",
+        "Clair de lune",
+        "Comptine d'un autre été, l'après-midi"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.6630494284435244,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "m02",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "No Surprises",
+        "Space Song",
+        "The Fellowship of the Ring: The Breaking of the Fellowship"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 1.0,
+        "fill_rate": 0.6,
+        "diversity": 0.6,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "m03",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Don't Stop Me Now",
+        "Walking on Sunshine"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.4,
+        "ndcg": 0.9580414003446834,
+        "fill_rate": 0.4,
+        "diversity": 0.4,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "m04",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Ride of the Valkyries",
+        "The Imperial March",
+        "Time"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 0.8988344109462019,
+        "fill_rate": 0.6,
+        "diversity": 0.6,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "m05",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Blade Runner Blues",
+        "Mesa",
+        "An Ending (Ascent)",
+        "Clair de lune",
+        "Cornfield Chase"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 1.0,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "m06",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Ambre",
+        "Avril 14th",
+        "Clair de lune",
+        "Comptine d'un autre été, l'après-midi",
+        "Gymnopédie No. 1"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 1.0,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "m07",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Spiegel im Spiegel",
+        "Ambre",
+        "Avril 14th",
+        "Gymnopédie No. 1",
+        "On the Nature of Daylight"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 0.936475914927914,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "m08",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Concerning Hobbits",
+        "Ride of the Valkyries",
+        "The Imperial March"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 0.9677327793493801,
+        "fill_rate": 0.6,
+        "diversity": 0.6,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "m09",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Here Comes the Sun",
+        "River Flows in You",
+        "Time",
+        "Walking on Sunshine"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.943624545688305,
+        "fill_rate": 0.8,
+        "diversity": 0.8,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "m10",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Ambre",
+        "An Ending (Ascent)",
+        "Avril 14th",
+        "Clair de lune",
+        "Comptine d'un autre été, l'après-midi"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.8687949224876581,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "m11",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Don't Stop Me Now",
+        "Walking on Sunshine"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.4,
+        "ndcg": 1.0,
+        "fill_rate": 0.4,
+        "diversity": 0.4,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "m12",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "An Ending (Ascent)",
+        "Blade Runner Blues",
+        "Cornfield Chase"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 0.8587958726494572,
+        "fill_rate": 0.6,
+        "diversity": 0.6,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "m13",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Ambre",
+        "An Ending (Ascent)",
+        "Avril 14th",
+        "Clair de lune",
+        "Comptine d'un autre été, l'après-midi"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.8687949224876581,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "m14",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Holocene",
+        "No Surprises",
+        "Space Song"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 1.0,
+        "fill_rate": 0.6,
+        "diversity": 0.6,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "m15",
+      "module": "music",
+      "mode": null,
+      "titles": [
+        "Comptine d'un autre été, l'après-midi",
+        "Concerning Hobbits",
+        "Cornfield Chase",
+        "On the Nature of Daylight",
+        "The Fellowship of the Ring: The Breaking of the Fellowship"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 0.8061941684150765,
+        "fill_rate": 1.0,
+        "diversity": 0.8,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b01",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "O Feiticeiro de Terramar",
+        "O Hobbit",
+        "O Pequeno Príncipe",
+        "O Senhor dos Anéis"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9728979186682316,
+        "fill_rate": 0.8,
+        "diversity": 0.6,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "b02",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "A Mão Esquerda da Escuridão",
+        "Duna",
+        "Fundação",
+        "Frankenstein",
+        "Neuromancer"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9687669867279571,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b03",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "O Cão dos Baskervilles",
+        "Drácula",
+        "Duna",
+        "Neuromancer",
+        "Solaris"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.4,
+        "ndcg": 1.0,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b04",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "Drácula",
+        "Frankenstein",
+        "A Metamorfose",
+        "Jane Eyre",
+        "Neuromancer"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 1.0,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b05",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "Anne de Green Gables",
+        "O Jardim Secreto",
+        "A Volta ao Mundo em Oitenta Dias",
+        "O Hobbit",
+        "O Pequeno Príncipe"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9502380992979097,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b06",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "Jane Eyre",
+        "Orgulho e Preconceito",
+        "A Metamorfose",
+        "A Mão Esquerda da Escuridão",
+        "Frankenstein"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.4,
+        "ndcg": 1.0,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b07",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "O Senhor dos Anéis",
+        "A Volta ao Mundo em Oitenta Dias",
+        "Anne de Green Gables",
+        "O Feiticeiro de Terramar",
+        "O Pequeno Príncipe"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 0.9296142744880715,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b08",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "Fundação",
+        "A Mão Esquerda da Escuridão",
+        "Neuromancer",
+        "Solaris",
+        "Drácula"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.973494864667227,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b09",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "O Feiticeiro de Terramar",
+        "O Hobbit",
+        "O Pequeno Príncipe",
+        "O Senhor dos Anéis"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9828921171931015,
+        "fill_rate": 0.8,
+        "diversity": 0.6,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "b10",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "A Volta ao Mundo em Oitenta Dias",
+        "O Hobbit",
+        "O Senhor dos Anéis",
+        "Anne de Green Gables",
+        "O Cão dos Baskervilles"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 0.8587958726494572,
+        "fill_rate": 1.0,
+        "diversity": 0.8,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b11",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "Neuromancer"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.2,
+        "ndcg": 1.0,
+        "fill_rate": 0.2,
+        "diversity": 0.2,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "b12",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "A Metamorfose",
+        "Frankenstein",
+        "O Pequeno Príncipe",
+        "A Mão Esquerda da Escuridão",
+        "Jane Eyre"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9221452695401202,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b13",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "O Jardim Secreto"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.2,
+        "ndcg": 0.6735439182299785,
+        "fill_rate": 0.2,
+        "diversity": 0.2,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "b14",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "A Mão Esquerda da Escuridão",
+        "Duna",
+        "Fundação",
+        "Neuromancer",
+        "Solaris"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 0.9908183105074706,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "b15",
+      "module": "books",
+      "mode": null,
+      "titles": [
+        "Duna",
+        "Neuromancer",
+        "O Cão dos Baskervilles",
+        "Solaris"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.6538384258952146,
+        "fill_rate": 0.8,
+        "diversity": 0.8,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 0.0
+      }
+    },
+    {
+      "id": "r01",
+      "module": "reading",
+      "mode": "FOCUS",
+      "titles": [
+        "An Ending (Ascent)",
+        "Weightless",
+        "Ambre",
+        "Avril 14th",
+        "Blade Runner Blues"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9159332700480359,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r02",
+      "module": "reading",
+      "mode": "FOCUS",
+      "titles": [
+        "Ambre",
+        "Avril 14th",
+        "Clair de lune",
+        "Comptine d'un autre été, l'après-midi",
+        "Gymnopédie No. 1"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9231437330423532,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r03",
+      "module": "reading",
+      "mode": "FOCUS",
+      "titles": [
+        "Ambre",
+        "Avril 14th",
+        "Clair de lune",
+        "Comptine d'un autre été, l'après-midi",
+        "Gymnopédie No. 1"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9231437330423532,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r04",
+      "module": "reading",
+      "mode": "IMMERSIVE",
+      "titles": [
+        "Mesa",
+        "An Ending (Ascent)",
+        "Blade Runner Blues",
+        "Cornfield Chase",
+        "Ride of the Valkyries"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9172177896475359,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r05",
+      "module": "reading",
+      "mode": "IMMERSIVE",
+      "titles": [
+        "Concerning Hobbits",
+        "Ride of the Valkyries",
+        "Ambre",
+        "Avril 14th",
+        "Clair de lune"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.8994167599480843,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r06",
+      "module": "reading",
+      "mode": "IMMERSIVE",
+      "titles": [
+        "Ambre",
+        "Avril 14th",
+        "Clair de lune",
+        "Comptine d'un autre été, l'après-midi",
+        "Gymnopédie No. 1"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 0.9437905251661792,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r07",
+      "module": "reading",
+      "mode": "CINEMATIC",
+      "titles": [
+        "Cornfield Chase",
+        "The Imperial March",
+        "Mesa",
+        "Time",
+        "Comptine d'un autre été, l'après-midi"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9392116896542794,
+        "fill_rate": 1.0,
+        "diversity": 0.8,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r08",
+      "module": "reading",
+      "mode": "CINEMATIC",
+      "titles": [
+        "Concerning Hobbits",
+        "Comptine d'un autre été, l'après-midi",
+        "The Imperial March",
+        "Ride of the Valkyries",
+        "Cornfield Chase"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.8154347432243103,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r09",
+      "module": "reading",
+      "mode": "CINEMATIC",
+      "titles": [
+        "Comptine d'un autre été, l'après-midi",
+        "Concerning Hobbits",
+        "Time",
+        "Ambre",
+        "Avril 14th"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 0.809068427666209,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r10",
+      "module": "reading",
+      "mode": "CALM",
+      "titles": [
+        "An Ending (Ascent)",
+        "Weightless",
+        "Blade Runner Blues",
+        "Clair de lune",
+        "Saman"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 1.0,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r11",
+      "module": "reading",
+      "mode": "CALM",
+      "titles": [
+        "Clair de lune",
+        "Ambre",
+        "Avril 14th",
+        "Gymnopédie No. 1",
+        "Comptine d'un autre été, l'après-midi"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9392116896542794,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r12",
+      "module": "reading",
+      "mode": "CALM",
+      "titles": [
+        "Clair de lune",
+        "Ambre",
+        "Avril 14th",
+        "Gymnopédie No. 1",
+        "River Flows in You"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 1.0,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r13",
+      "module": "reading",
+      "mode": "CUSTOM",
+      "titles": [
+        "Mesa",
+        "Blade Runner Blues",
+        "The Imperial March",
+        "An Ending (Ascent)",
+        "Cornfield Chase"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 1.0,
+        "ndcg": 1.0,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r14",
+      "module": "reading",
+      "mode": "CUSTOM",
+      "titles": [
+        "Concerning Hobbits",
+        "Ride of the Valkyries",
+        "The Imperial March",
+        "Ambre",
+        "Avril 14th"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.6,
+        "ndcg": 0.920287093242588,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    },
+    {
+      "id": "r15",
+      "module": "reading",
+      "mode": "CUSTOM",
+      "titles": [
+        "Ambre",
+        "Avril 14th",
+        "Clair de lune",
+        "Comptine d'un autre été, l'après-midi",
+        "Gymnopédie No. 1"
+      ],
+      "violations": [],
+      "metrics": {
+        "precision": 0.8,
+        "ndcg": 0.9231437330423532,
+        "fill_rate": 1.0,
+        "diversity": 1.0,
+        "existence_rate": 1.0,
+        "constraint_satisfaction": 1.0,
+        "creator_limit_ok": 1.0,
+        "nonempty": 1.0,
+        "coverage": 1.0
+      }
+    }
+  ],
+  "comparison": {
+    "baseline_ranking_version": "local-rules-v6",
+    "current_ranking_version": "local-rules-v7",
+    "catalog_changed": true,
+    "regressions": [],
+    "case_regressions_count": 0,
+    "case_changes": [
+      {
+        "id": "b03",
+        "module": "books",
+        "mode": null,
+        "titles_before": [
+          "Drácula",
+          "Duna",
+          "Neuromancer",
+          "O Cão dos Baskervilles",
+          "Solaris"
+        ],
+        "titles_after": [
+          "O Cão dos Baskervilles",
+          "Drácula",
+          "Duna",
+          "Neuromancer",
+          "Solaris"
+        ],
+        "metrics": {
+          "ndcg": {
+            "before": 0.5261135977086879,
+            "after": 1.0,
+            "delta": 0.473886
+          }
+        },
+        "regressed_metrics": []
+      },
+      {
+        "id": "m06",
+        "module": "music",
+        "mode": null,
+        "titles_before": [
+          "Ambre",
+          "Avril 14th",
+          "Clair de lune",
+          "Comptine d'un autre été, l'après-midi",
+          "Concerning Hobbits"
+        ],
+        "titles_after": [
+          "Ambre",
+          "Avril 14th",
+          "Clair de lune",
+          "Comptine d'un autre été, l'après-midi",
+          "Gymnopédie No. 1"
+        ],
+        "metrics": {
+          "precision": {
+            "before": 0.8,
+            "after": 1.0,
+            "delta": 0.2
+          },
+          "ndcg": {
+            "before": 0.8687949224876581,
+            "after": 1.0,
+            "delta": 0.131205
+          }
+        },
+        "regressed_metrics": []
+      }
+    ]
+  }
+}

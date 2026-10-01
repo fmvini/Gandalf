@@ -209,6 +209,85 @@ def test_ai_failures_fall_back_without_invented_ai(online, state):
             assert all(call.url.host != "api.groq.com" for call in remote.calls)
 
 
+@pytest.mark.parametrize("state", ["unavailable", "no_key"])
+@pytest.mark.parametrize(
+    "kind,query,tag,term,excluded,reference",
+    [
+        ("music", "piano", "piano", "piano", False, None),
+        ("books", "detetive", "detetive", "detective fiction", False, None),
+        ("music", "calmo sem piano", "piano", "ambient", True, None),
+        ("books", "mistério sem detetive", "detetive", "mystery", True, None),
+        ("music", "Como Ambre, sem piano", "piano", "cozy", True, "Ambre"),
+        (
+            "books",
+            "Como O Cão dos Baskervilles, sem detetive",
+            "detetive",
+            "adventure",
+            True,
+            "O Cão dos Baskervilles",
+        ),
+    ],
+)
+def test_piano_and_detective_online_fallback_uses_metadata_and_constraints(
+    online, monkeypatch, state, kind, query, tag, term, excluded, reference
+):
+    settings, remote = online
+    remote.ai_status = 503
+    if state == "no_key":
+        settings = settings.model_copy(
+            update={
+                "groq_api_key": Settings(_env_file=None, groq_api_key="").groq_api_key
+            }
+        )
+
+    def handle(request):
+        response = remote(request)
+        if request.url.host == "openlibrary.org":
+            data = response.json()
+            data["docs"][0]["subject"] = ["Mystery", "Detective fiction"]
+            return httpx.Response(200, json=data)
+        if request.url.host == "musicbrainz.org":
+            data = response.json()
+            data["recordings"][0]["tags"] = [{"name": "ambient"}, {"name": "piano"}]
+            return httpx.Response(200, json=data)
+        return response
+
+    monkeypatch.setattr(
+        "app.main.external_client",
+        lambda: httpx.AsyncClient(transport=httpx.MockTransport(handle)),
+    )
+    with TestClient(create_app(settings=settings)) as client:
+        response = client.post(
+            f"/api/v1/recommendations/{kind}", json={"query": query, "limit": 10}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["meta"]["degraded"] is True
+        assert data["meta"]["ai_used"] is False
+        assert data["items"]
+        assert term in data["parsed_query"]["search_terms"]
+        assert tag in data["parsed_query"]["excluded_themes" if excluded else "themes"]
+        external_title = "External Fantasy" if kind == "books" else "External Ambient"
+        if excluded:
+            assert all(row["item"]["title"] != external_title for row in data["items"])
+            assert all(tag not in row["item"]["matching_tags"] for row in data["items"])
+        else:
+            assert any(row["item"]["title"] == external_title for row in data["items"])
+            assert all(tag in row["item"]["matching_tags"] for row in data["items"])
+        if reference:
+            assert reference in data["parsed_query"]["references"]
+            assert all(row["item"]["title"] != reference for row in data["items"])
+        catalog_host = "openlibrary.org" if kind == "books" else "musicbrainz.org"
+        catalog_calls = [call for call in remote.calls if call.url.host == catalog_host]
+        assert catalog_calls
+        assert any(
+            term in call.url.params["subject" if kind == "books" else "query"]
+            for call in catalog_calls
+        )
+        if state == "no_key":
+            assert all(call.url.host != "api.groq.com" for call in remote.calls)
+
+
 def test_music_catalog_duration_filters_and_invalid_indices(online):
     settings, remote = online
     remote.kind, remote.invalid_indices = "music", True

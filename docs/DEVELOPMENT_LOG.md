@@ -1,5 +1,37 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Piano e detetive validados no ranking v7
+
+### Implementado
+- Concluída a etapa iniciada em `39a7395`: formalizadas fontes por obra para sete etiquetas de piano e a categoria detetive em O Cão dos Baskervilles, preservando itens/IDs e o visual aprovado.
+- Acrescentados 28 casos de teste para interpretação/negação, descoberta, explicações, referências, exclusões, leitura e fallback online sem IA ou sem chave. Expectativa de versão alinhada a v7; catálogo formatado.
+- Gerados relatórios v7 em K=5/10 contra v6, com gate estrito; proteção agregada e por consulta incorporada a `test_evaluation.py`. Corpus e julgamentos mantidos.
+
+### Arquivos principais alterados
+- `api/app/providers/local_catalog.py`
+- `api/tests/test_books.py`, `api/tests/test_recommendations.py`, `api/tests/test_online.py`, `api/tests/test_evaluation.py`
+- `api/README.md`, `docs/05-API-Specification.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/CONTINUATION.md`
+- `docs/catalog-metadata.md`
+- `docs/eval-reports/2026-10-01-piano-detective.md`
+- `docs/eval-reports/local-v7-piano-detective-k5.json`, `docs/eval-reports/local-v7-piano-detective-k10.json`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Piano descreve obra/edição com piano, sem garantir piano solo ou instrumentação de cada gravação. Detetive é categoria distinta de mistério e participa do desempate por gênero explícito. Cobertura parcial; Saman permanece sem nova etiqueta.
+- Preservadas alterações frontend e documentação de outro terminal, recebidas durante esta sessão. Esse trabalho não foi integrado nem incluído no commit v7.
+- Build, smoke e E2E executados com a interface aprovada de `3732389` em cópia isolada (`.impeccable/v7-approved-validation`) e backend atual; dependências existentes reutilizadas, sem instalação. Isso não valida os componentes pausados da árvore de trabalho.
+
+### Estado atual
+- 220 testes backend, Ruff check e formatação aprovados. Comparação K=5/10 com zero regressões agregadas ou individuais; apenas b03 e m06 mudam. nDCG de b03 chega a 1; Precision@5 de m06 passa de 0,8 para 1.
+- Build, smoke e E2E da interface aprovada passaram; capturas desktop/mobile foram inspecionadas. Processos locais já existentes preservados; API confirmou v7, readiness e quatro consultas positivas/negativas. O E2E iniciou uma instância nova com SQLite temporário.
+- Persistem aviso Starlette/httpx, ausência de revisão humana/conjunto reservado e gates online/PostgreSQL/CI abertos. Execuções de testes exigiram permissão para temporários e subprocessos do Windows.
+- A árvore frontend recebe alterações de componentes 21st.dev de outra sessão, preservadas sem validação neste trabalho. O estado continua mudando; conferir diff/dependências/testes e consultar `docs/HANDOFF_MAESTRI.md` local, se presente.
+
+### Próximos passos
+- Para ranking, usar relatórios v7 como baseline; revisar b03/m06 e os cinco modos com avaliação humana, criar conjunto reservado e obter fontes específicas antes de ampliar instrumentos/subgêneros.
+- Para a interface pausada, ler `docs/HANDOFF_MAESTRI.md` e revisar o diff antes de instalar dependências e concluir integração/testes/créditos. Não tratar os novos componentes como entregues.
+- Continuar os gates de cobertura/termos de provedores, avaliação online real, PostgreSQL/pgvector e CI; não confundir sucesso offline com aprovação desses gates.
+
 ## 2026-10-01 — Ponto de retomada para outro terminal
 
 ### Implementado
