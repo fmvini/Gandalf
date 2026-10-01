@@ -1,6 +1,8 @@
 # Estado da implementação — 2026-09-30
 
-Este documento descreve o código atual. Os documentos numerados incluem o desenho completo do produto. Histórico e continuidade: [DEVELOPMENT_LOG](DEVELOPMENT_LOG.md).
+> **Checkpoint de 2026-10-01:** esta matriz registra a última etapa integralmente validada (v6). O commit `39a7395` já contém o experimento v7 de piano/detetive, ainda incompleto. A verificação atual teve 191 testes aprovados e uma falha de expectativa de versão; o catálogo também precisa de formatação. Para retomar pelo estado real do código, leia [CONTINUATION.md](CONTINUATION.md).
+
+A matriz abaixo descreve a etapa validada em 2026-09-30. Os documentos numerados incluem o desenho completo do produto. Histórico e continuidade: [DEVELOPMENT_LOG](DEVELOPMENT_LOG.md).
 
 ## Execução
 

@@ -1,5 +1,31 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Ponto de retomada para outro terminal
+
+### Implementado
+- Consolidado o histórico, decisões visuais aprovadas, estado do Git, execução local e sequência de retomada em `docs/CONTINUATION.md`, a pedido do usuário.
+- Distinguida a última etapa validada (v6, `b698eb3`) do salvamento incompleto de piano/detetive (v7, `39a7395`). Nenhuma alteração de código nesta etapa documental.
+
+### Arquivos principais alterados
+- `docs/CONTINUATION.md`
+- `docs/DEVELOPMENT_LOG.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+
+### Decisões técnicas
+- Preservar o commit incompleto existente e registrar as pendências, sem apresentar v7 como aceito nem continuar sua implementação durante a transferência.
+- Registrar fontes já pesquisadas e comandos reproduzíveis; artefatos ignorados de `.impeccable/` não substituem relatórios versionados.
+
+### Estado atual
+- Branch `main`, árvore limpa antes deste registro. Interface respondeu HTTP 200 em `http://127.0.0.1:5173/`; API local respondeu v7 e readiness saudável.
+- Nova execução da suíte: 191 testes aprovados e uma falha em `test_health_version_and_readiness_are_honest`, cuja expectativa ainda é v6. A primeira tentativa teve bloqueio de temporários; a repetição com permissão adequada isolou a falha real.
+- Ruff check aprovado; catálogo local precisa de formatação. Fontes ainda não formalizadas no arquivo `docs/catalog-metadata.md` citado pelo código.
+- Visual/animações já entregues e aprovados; testes frontend/build anteriores aprovados, não repetidos nesta etapa documental.
+
+### Próximos passos
+- No novo terminal, ler `docs/CONTINUATION.md` e conferir novamente Git/processos locais.
+- Concluir proveniência e testes de piano/detetive, validar K=5/10 contra v6, atualizar relatórios/documentação e só então aceitar v7 em novo commit local.
+- Preservar o visual aprovado e manter abertos os gates de revisão humana, integrações, infraestrutura e CI.
+
 ## 2026-09-30 — Gêneros explícitos no desempate de livros locais
 
 ### Implementado
