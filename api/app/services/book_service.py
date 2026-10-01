@@ -45,6 +45,8 @@ class BookService:
             )
         prefix = (f"discover:{offset}:" if offset else "discover:") if discovery else ""
         cache_key = (prefix + title.casefold(), limit)
+        if not isinstance(self.provider, LocalBookProvider):
+            cache_key = ("pt-editions-v2:" + cache_key[0], limit)
         async with self._lock:
             cached = self._cache.get(cache_key)
             if cached and cached[0] > monotonic():

@@ -3,6 +3,7 @@ from pathlib import Path
 from uuid import UUID
 
 import httpx
+import pytest
 from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, func, select
@@ -247,7 +248,8 @@ def test_open_library_provider_normalizes_real_response_shape() -> None:
     assert book.publication_year == 1954
     assert book.description == "Uma jornada pela Terra-média."
     assert book.subjects == ["Fantasia", "Aventura"]
-    assert requests[0].url.params["title"] == "O Senhor dos Anéis"
+    assert requests[0].url.params["q"] == "O Senhor dos Anéis"
+    assert requests[0].url.params["lang"] == "pt"
     assert requests[0].url.params["limit"] == "6"
     assert "subject" in requests[0].url.params["fields"]
     assert "description" in requests[0].url.params["fields"]
@@ -267,6 +269,81 @@ def test_open_library_metadata_accepts_work_description_and_limits_size() -> Non
     assert len(book.description or "") == 2000
     assert len(book.subjects) == 12
     assert all(len(subject) <= 120 for subject in book.subjects)
+
+
+def test_portuguese_edition_keeps_canonical_work_identity_and_cover():
+    raw = {
+        "key": "/works/OL20796936W",
+        "title": "The Invisible Life of Addie LaRue",
+        "author_name": ["V. E. Schwab"],
+        "cover_i": 1,
+    }
+    original = normalize_book(raw)
+    localized = normalize_book(
+        {
+            **raw,
+            "editions": {
+                "docs": [
+                    {"title": "The Invisible Life of Addie LaRue", "language": ["eng"]},
+                    {
+                        "title": "A vida invisível de Addie LaRue",
+                        "language": ["por"],
+                        "cover_i": 2,
+                    },
+                ]
+            },
+        }
+    )
+    assert localized.title == "A vida invisível de Addie LaRue"
+    assert localized.id == original.id and localized.external_id == original.external_id
+    assert localized.cover_url == "https://covers.openlibrary.org/b/id/2-M.jpg"
+
+
+def test_translation_alias_does_not_rename_another_authors_book():
+    raw = {
+        "key": "/works/OL265426W",
+        "title": "Looking for Alaska",
+        "author_name": ["Peter Jenkins"],
+    }
+    assert normalize_book(raw).title == "Looking for Alaska"
+    raw.update(key="/works/OL2714465W", author_name=["John Green"])
+    assert normalize_book(raw).title == "Quem é você, Alasca?"
+
+
+@pytest.mark.parametrize(
+    "title", ["Quem é você, Alasca?", "quem e voce alasca", "Looking for Alaska"]
+)
+def test_portuguese_lookup_alias_queries_real_work_and_author(title):
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "numFound": 1,
+                "docs": [
+                    {
+                        "key": "/works/OL2714465W",
+                        "title": "Looking for Alaska",
+                        "author_name": ["John Green"],
+                    }
+                ],
+            },
+        )
+
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+            return await OpenLibraryProvider(client, request_interval_seconds=0).search(
+                title, 6
+            )
+
+    result = asyncio.run(run())
+    assert result.items[0].title == "Quem é você, Alasca?"
+    assert result.items[0].provider == "open_library"
+    assert requests[0].url.params["q"] == "Looking for Alaska"
+    assert requests[0].url.params["author"] == "John Green"
+    assert requests[0].url.params["lang"] == "pt"
 
 
 def test_open_library_timeout_is_mapped_to_domain_error() -> None:

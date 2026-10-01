@@ -1,14 +1,24 @@
 # Ponto de retomada — 2026-10-01
 
-## Renovação de livros e duração de trilhas concluídas
+## Correção de trilhas reais e títulos em português
+
+Leitura online agora exige a meta atendida apenas com durações conhecidas do MusicBrainz: faixas de 90 segundos a 10 minutos, até 60 faixas/quatro por artista; oito páginas de 50 candidatos por termo, até três termos. A IA ordena uma amostra sem limitar a quantidade. Falha/cota da IA continua por metadados. Sem músicas locais/estimativas para completar online; fonte insuficiente retorna `503 SOUNDTRACK_INCOMPLETE` e a interface apresenta erro. Offline mantém comportamento limitado anterior. Implementação isolada em `api/app/services/online_soundtrack.py`.
+
+Busca Open Library usa `q`/`lang=pt`, com títulos/capas das edições portuguesas; descoberta filtra português. Alias verificado em `api/app/providers/portuguese_titles.py` resolve “Quem é você, Alasca?”/“Looking for Alaska” de John Green quando a edição não está indexada. Demais títulos sem edição portuguesa informada permanecem na língua da fonte. Alias não cria registros locais; conservar ID/autor reais e adicionar novos aliases somente com fonte editorial verificada. Cache externo versionado evita listas antigas em inglês.
+
+293 testes backend, Ruff, build/suíte frontend e comparação estrita v7 K=5/10 aprovados. API online reiniciada na porta 8000, frontend 5173 preservado. Pedido exato do usuário: Alasca, Foco, instrumental, chuva/drama, 90 minutos → 20 faixas MusicBrainz, 5.517.572 ms (91 min 57 s), duração conhecida, IA ativa e sem degradação. Buscas reais por Alasca, Addie LaRue, O Problema dos Três Corpos e Devoradores de estrelas passaram. Este é um teste pontual, não garantia de disponibilidade futura. Evidência ignorada em `.impeccable/runtime/live-request-v2.json`.
+
+Continuar pela integração de playlists na conta abaixo; validar consultas online variadas e afinidade musical sem ampliar cotas. Não reinstalar a versão anterior que aceitava 20 minutos como sucesso de um pedido de 90.
+
+## Renovação de livros
 
 “Ver outros livros” mantém o pedido enviado e exclui IDs já exibidos; conserva lista durante espera/erro/cancelamento/esgotamento. API de livros aceita `excluded_book_ids`/`offset`, informa `meta.has_more`/`next_offset`, e pagina Open Library com cache por página. Histórico somente na página atual, sem feedback persistente.
 
-Leitura online transmite duração restante ao Groq e busca novos lotes (até seis, máximo 60 faixas), mantendo descrição musical, filtros, deduplicação e duas faixas por artista. `playlist` informa `target_duration_ms`, `target_met` e `shortfall_ms`, além de duração/estimativa. Groq 429 respeita Retry-After curto uma vez por chamada e contabiliza cada tentativa; interpretação compartilhada entre lotes evita chamadas redundantes. Salvamento por origem aceita até 60 faixas; manual continua 25.
+`playlist` informa meta/duração; o contrato online vigente está acima. Groq 429 respeita Retry-After curto uma vez por chamada e contabiliza cada tentativa. Salvamento por origem aceita até 60 faixas; manual continua 25.
 
-Verificações e teste online estão na entrada mais recente do log: livros renovados sem repetição; trilha real de jazz para Duna com 26 faixas/95 minutos (inclui estimativas), meta de 90 atendida com IA/MusicBrainz. API online e frontend preservados nas portas 8000/5173. Reiniciar só a instância identificada e usar `start-local.ps1 -Online`; não alterar chaves/cotas.
+Verificações estão na entrada mais recente do log. API online e frontend preservados nas portas 8000/5173. Reiniciar só a instância identificada e usar `start-local.ps1 -Online`; não alterar chaves/cotas.
 
-Próxima entrega de produto continua sendo integração de playlists na conta, abaixo. Testar a renovação e trilhas de 90/120 minutos com consultas do usuário antes de ampliar limites de recuperação; resultados podem ser curtos por disponibilidade/metadados/cotas.
+Próxima entrega de produto continua sendo integração de playlists na conta, abaixo. Testar a renovação e trilhas de 90/120 minutos com consultas do usuário; falta de material suficiente agora gera erro no modo online.
 
 ## Instância online ativada a pedido do usuário
 

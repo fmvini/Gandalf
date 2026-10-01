@@ -4,14 +4,10 @@ from uuid import uuid4
 from app.ai.groq import Intent
 from app.core.exceptions import AppError
 from app.providers.local_catalog import BOOKS, MUSIC, normalize
-from app.schemas.recommendation import DiscoveryRequest, MusicFilters
 from app.services.music_filters import matches_music_filters, resolve_music_filters
-from app.services.reading_duration import reading_summary, track_duration
+from app.services.online_soundtrack import generate_soundtrack
 from app.services.recommendation_service import RecommendationService, interpret
 from app.services.references import resolve_references
-
-MAX_SOUNDTRACK_ROUNDS = 6
-MAX_SOUNDTRACK_TRACKS = 60
 
 
 def item_key(item):
@@ -369,95 +365,5 @@ class OnlineRecommendationService(RecommendationService):
         return self.remember(result)
 
     async def soundtrack(self, book, body):
-        contexts = {
-            "FOCUS": "música calma instrumental para foco",
-            "CALM": "música calma",
-            "CINEMATIC": "trilha cinematográfica",
-            "IMMERSIVE": "música imersiva",
-            "CUSTOM": "música",
-        }
-        filters = MusicFilters(
-            vocals="none"
-            if body.vocals != "ANY" or body.mode == "FOCUS"
-            else "optional",
-            energy="low" if body.mode in {"FOCUS", "CALM"} else None,
-        )
-        # User music preferences precede book metadata so they cannot be cut off.
-        query = f"{contexts[body.mode]}. Preferências musicais: {body.context}. Para ler {book.title[:200]}. Temas: {', '.join(book.subjects[:6])[:240]}"
-        target = body.target_duration_min * 60000
-        selected, total = [], 0
-        seen_ids, seen_keys = set(), set()
-        artist_counts = Counter()
-        warnings = []
-        result = None
-        ai_used = degraded = False
-        intent_cache = {}
-        for round_index in range(MAX_SOUNDTRACK_ROUNDS):
-            batch = await self._online(
-                "music",
-                DiscoveryRequest(query=query[:1000], filters=filters, limit=25),
-                excluded_ids=seen_ids,
-                excluded_keys=seen_keys,
-                artist_counts=artist_counts,
-                offset=round_index * 15,
-                target_duration_ms=target - total,
-                intent_cache=intent_cache,
-            )
-            if result is None:
-                result = batch
-            ai_used |= batch["meta"]["ai_used"]
-            degraded |= batch["meta"]["degraded"]
-            warnings.extend(batch["meta"]["warnings"])
-            added = 0
-            for row in batch["items"]:
-                item = row["item"]
-                key = item_key(item)
-                if (
-                    item["id"] in seen_ids
-                    or key in seen_keys
-                    or artist_counts[item["artist"]] >= 2
-                ):
-                    continue
-                seen_ids.add(item["id"])
-                seen_keys.add(key)
-                artist_counts[item["artist"]] += 1
-                selected.append({**row, "position": len(selected) + 1})
-                total += track_duration(item)[0]
-                added += 1
-                if total >= target or len(selected) >= MAX_SOUNDTRACK_TRACKS:
-                    break
-            if total >= target or len(selected) >= MAX_SOUNDTRACK_TRACKS:
-                break
-            if not added and not batch["meta"]["catalog_has_more"]:
-                break
-        result["items"] = selected
-        result["playlist"] = reading_summary(selected, target)
-        result["meta"] = {
-            "mode": "online",
-            "ai_used": ai_used,
-            "degraded": degraded,
-            "sources": sorted(
-                {row["item"].get("provider", "local") for row in selected}
-            ),
-            "retrieval_rounds": round_index + 1,
-            "hint": "Trilha selecionada por IA."
-            if ai_used
-            else "Trilha classificada por regras.",
-        }
-        if "musicbrainz" in result["meta"]["sources"]:
-            result["meta"]["hint"] += (
-                " Metadados: MusicBrainz; energia e vocais estimados pela IA quando informados."
-            )
-        if "local" in result["meta"]["sources"]:
-            result["meta"]["hint"] += " Inclui seleção do catálogo local."
-        if warnings:
-            result["meta"]["hint"] += " " + " ".join(dict.fromkeys(warnings))
-        if result["playlist"]["duration_estimated"]:
-            result["meta"]["hint"] += (
-                " Faixas sem duração conhecida são estimadas em 5 minutos."
-            )
-        if total < target:
-            result["meta"]["hint"] += (
-                " A seleção disponível não preenche a duração solicitada."
-            )
+        result = await generate_soundtrack(self.ai, self.music, book, body)
         return self.remember(result)

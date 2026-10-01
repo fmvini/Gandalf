@@ -108,9 +108,12 @@ try {
     const body = route.request().postDataJSON()
     assert.equal(body.target_duration_min, 90)
     assert.equal(body.context, 'Piano suave para ler')
+    if (shortfall) return route.fulfill({ status: 503, json: { error: {
+      code: 'SOUNDTRACK_INCOMPLETE', message: 'Não foi possível montar 90 minutos de faixas reais. Tente novamente.', request_id: 'test' }
+    } })
     return route.fulfill({ json: {
-      recommendation_id: null, items: Array.from({ length: shortfall ? 5 : 18 }, (_, i) => ({ position: i + 1, item: { id: 'track-' + i, title: 'Piano de teste ' + (i + 1), artist: 'Artista de teste ' + (i + 1), duration_ms: 300000 } })),
-      playlist: { tracks_count: shortfall ? 5 : 18, total_duration_ms: (shortfall ? 25 : 90) * 60000, target_duration_ms: 5400000, target_met: !shortfall, shortfall_ms: shortfall ? 3900000 : 0, duration_estimated: shortfall },
+      recommendation_id: null, items: Array.from({ length: 18 }, (_, i) => ({ position: i + 1, item: { id: 'track-' + i, title: 'Piano de teste ' + (i + 1), artist: 'Artista de teste ' + (i + 1), duration_ms: 300000 } })),
+      playlist: { tracks_count: 18, total_duration_ms: 90 * 60000, target_duration_ms: 5400000, target_met: true, shortfall_ms: 0, duration_estimated: false },
     } })
   })
   await page.goto(base + '/read-with-music')
@@ -126,7 +129,9 @@ try {
   await page.getByLabel('Duração', { exact: true }).selectOption('90')
   shortfall = true
   await page.getByRole('button', { name: 'Criar minha trilha', exact: true }).click()
-  await page.getByText(/Duração estimada: 25 min · Pedido: 90 min. Ainda faltam 65 min/).waitFor()
+  await page.getByText('Não foi possível montar 90 minutos de faixas reais. Tente novamente.', { exact: true }).waitFor()
+  assert.equal(await page.getByText(/Duração das faixas:/).count(), 0)
+  assert.equal(await page.getByRole('heading', { name: 'Piano de teste 1', exact: true }).count(), 0)
   await capture('reading-short')
   assert.deepEqual(errors, [])
   console.log('Continuation UI passed: reroll, retry, cancellation, exhaustion, duration and responsive states.')

@@ -6,10 +6,11 @@ from uuid import NAMESPACE_URL, uuid5
 import httpx
 
 from app.core.exceptions import UpstreamError, UpstreamRateLimited, UpstreamTimeout
+from app.providers.portuguese_titles import lookup_alias, translated_title
 from app.schemas.book import BookItem, BookSearchResponse
 
 WORK_KEY = re.compile(r"(?:/works/)?(OL\d+W)")
-SEARCH_FIELDS = "key,title,author_name,first_publish_year,cover_i,subject,description"
+SEARCH_FIELDS = "key,title,author_name,first_publish_year,cover_i,subject,description,editions,editions.key,editions.title,editions.language,editions.cover_i"
 MAX_DESCRIPTION_LENGTH = 2000
 MAX_SUBJECTS = 12
 MAX_SUBJECT_LENGTH = 120
@@ -53,16 +54,43 @@ def normalize_book(raw: object) -> BookItem | None:
     if not match:
         return None
     external_id = match.group(1)
+    editions = raw.get("editions")
+    edition_rows = editions.get("docs", []) if isinstance(editions, dict) else []
+    portuguese = (
+        next(
+            (
+                edition
+                for edition in edition_rows
+                if isinstance(edition, dict)
+                and isinstance(edition.get("title"), str)
+                and edition["title"].strip()
+                and isinstance(edition.get("language"), list)
+                and "por" in edition["language"]
+            ),
+            None,
+        )
+        if isinstance(edition_rows, list)
+        else None
+    )
+    if portuguese is not None:
+        title = portuguese["title"]
     authors = raw.get("author_name")
+    authors = (
+        [name for name in authors if isinstance(name, str) and name.strip()]
+        if isinstance(authors, list)
+        else []
+    )
+    if portuguese is None:
+        title = translated_title(title, authors) or title
     cover_id = raw.get("cover_i")
+    if portuguese is not None and type(portuguese.get("cover_i")) is int:
+        cover_id = portuguese["cover_i"]
     year = raw.get("first_publish_year")
     url = f"https://openlibrary.org/works/{external_id}"
     return BookItem(
         id=uuid5(NAMESPACE_URL, url),
         title=title.strip(),
-        authors=[name for name in authors if isinstance(name, str) and name.strip()]
-        if isinstance(authors, list)
-        else [],
+        authors=authors,
         publication_year=year
         if isinstance(year, int) and not isinstance(year, bool) and year > 0
         else None,
@@ -95,13 +123,24 @@ class OpenLibraryProvider:
         self._last_request_at = 0.0
 
     async def search(self, title: str, limit: int) -> BookSearchResponse:
-        return await self._search({"title": title}, limit)
+        # Unfielded search also indexes edition titles, including translations.
+        alias = lookup_alias(title)
+        query = {"q": alias[0] if alias else title, "lang": "pt"}
+        if alias:
+            query["author"] = alias[2]
+        return await self._search(query, limit)
 
     async def discover(
         self, subject: str, limit: int, *, offset: int = 0
     ) -> BookSearchResponse:
         return await self._search(
-            {"subject": subject[:180], **({"offset": offset} if offset else {})}, limit
+            {
+                "subject": subject[:180],
+                "lang": "pt",
+                "language": "por",
+                **({"offset": offset} if offset else {}),
+            },
+            limit,
         )
 
     async def _search(self, query: dict, limit: int) -> BookSearchResponse:

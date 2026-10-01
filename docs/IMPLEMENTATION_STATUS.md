@@ -1,6 +1,8 @@
 # Estado da implementação — 2026-10-01
 
-> **Novos livros e trilhas por duração:** interface “Ver outros livros”, exclusões acumuladas e paginação/cache por página; leitura online envia meta ao Groq e recupera até seis lotes/60 faixas, com duração conhecida/estimada, meta e déficit visíveis. Groq 429 respeita cooldown curto uma vez, sem ampliar cota local. Salvamento por origem aceita 60 faixas; manual 25. Testes automatizados e amostras reais online aprovados (livros sem repetição e trilha de 26 faixas/cerca de 95 minutos, incluindo estimativas, para meta de 90). Detalhes e limites no log.
+> **Correção de duração e idioma:** leitura online usa só faixas reais MusicBrainz de duração conhecida (90 s–10 min), até oito páginas de 50 candidatos por termo, 60 faixas/quatro por artista. Sucesso exige a duração pedida; insuficiência retorna `503 SOUNDTRACK_INCOMPLETE`, sem complemento local/estimado. IA não limita a quantidade. Busca de livros por títulos das edições, prioridade português e alias verificado de Alasca/John Green. Teste real com o pedido exato: 20 faixas, 91 min 57 s, meta 90, IA ativa/sem degradação. 293 testes backend, Ruff, build/suíte frontend e gates v7 aprovados. Detalhes e limitações no log.
+
+> **Novos livros:** interface “Ver outros livros”, exclusões acumuladas e paginação/cache por página. Salvamento por origem aceita 60 faixas; manual 25. Groq mantém cota e retry limitados anteriores.
 
 > **Instância online para teste do usuário:** frontend em `http://127.0.0.1:5173`, API/Swagger em `http://127.0.0.1:8000/docs`; readiness 200, Open Library/MusicBrainz e Groq `openai/gpt-oss-20b` ativos. Buscas reais e duas descobertas finais com fontes externas/`ai_used=true`/`degraded=false` verificadas; primeira tentativa acionou fallback transitório. Este registro pontual não fecha gates online. Verificar processos antes de reiniciar; usar `start-local.ps1 -Online` para manter internet. Detalhes no log.
 

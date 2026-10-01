@@ -68,8 +68,19 @@ class MusicBrainzProvider:
         self.lock = asyncio.Lock()
         self.last_call = 0.0
 
-    async def search(self, query, limit=20, *, by_tag=False, offset=0):
+    async def search(
+        self,
+        query,
+        limit=20,
+        *,
+        by_tag=False,
+        offset=0,
+        reading=False,
+        instrumental=False,
+    ):
         key = ("tag:" if by_tag else "text:") + query.strip().casefold()
+        if reading:
+            key = f"reading-v2:{instrumental}:" + key
         if offset:
             key = f"offset:{offset}:" + key
         async with self.lock:
@@ -81,6 +92,11 @@ class MusicBrainzProvider:
                 await asyncio.sleep(self.interval - elapsed)
             self.last_call = monotonic()
             search = ("tag:" if by_tag else "") + literal(query) + " AND video:false"
+            if reading:
+                search += " AND dur:[90000 TO 600000] AND status:official"
+                search += ' AND -secondarytype:spokenword AND -secondarytype:audiobook AND -secondarytype:"dj-mix"'
+                if instrumental:
+                    search += " AND tag:instrumental"
             try:
                 response = await self.client.get(
                     "https://musicbrainz.org/ws/2/recording",
@@ -112,6 +128,17 @@ class MusicBrainzProvider:
                 if (item := normalize_recording(raw))
             ]
             items = list({item["id"]: item for item in items}.values())
+            if reading:
+                items = [
+                    item
+                    for item in items
+                    if type(item.get("duration_ms")) is int
+                    and 90000 <= item["duration_ms"] <= 600000
+                ]
+                for item in items:
+                    if "instrumental" in {tag.casefold() for tag in item["tags"]}:
+                        item["has_vocals"] = False
+                        item["classification_source"] = "provider_tags"
             count = payload.get("count")
             has_more = (
                 count > offset + limit

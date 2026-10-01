@@ -1,5 +1,4 @@
 import asyncio
-from collections import Counter
 from uuid import UUID
 
 import httpx
@@ -51,16 +50,20 @@ class AI:
 
 
 class Music:
-    def __init__(self, duration=300000, pages=6, duplicate=False):
+    def __init__(self, duration=300000, pages=6, duplicate=False, page_size=50):
         self.duration, self.pages, self.duplicate = duration, pages, duplicate
+        self.page_size = page_size
         self.offsets = []
 
-    async def search(self, term, limit, *, by_tag=False, offset=0):
+    async def search(
+        self, term, limit, *, by_tag=False, offset=0, reading=False, instrumental=False
+    ):
+        assert reading and instrumental and by_tag and limit == 50
         self.offsets.append(offset)
-        page = offset // 15
+        page = offset // 50
         items = []
         if page < self.pages:
-            for i in range(15):
+            for i in range(self.page_size):
                 number = offset + i
                 items.append(
                     {
@@ -69,7 +72,7 @@ class Music:
                         "artist": f"Artist {number}",
                         "provider": "musicbrainz",
                         "duration_ms": self.duration,
-                        "tags": ["ambient"],
+                        "tags": ["ambient", "instrumental"],
                         "has_vocals": None,
                         "energy": None,
                     }
@@ -102,12 +105,10 @@ class Books:
 
 
 @pytest.mark.parametrize(
-    "duration,estimated,count",
-    [(300000, False, 18), (None, True, 18), (180000, False, 30)],
+    "duration,count",
+    [(300000, 18), (180000, 30)],
 )
-def test_reading_continues_after_five_choices_until_ninety_minutes(
-    duration, estimated, count
-):
+def test_reading_continues_after_five_choices_until_ninety_minutes(duration, count):
     ai, music = AI(), Music(duration=duration)
     service = OnlineRecommendationService(ai, None, music)
     book = BOOKS[0].model_copy(
@@ -127,59 +128,74 @@ def test_reading_continues_after_five_choices_until_ninety_minutes(
     assert summary["target_met"] is True
     assert summary["shortfall_ms"] == 0
     assert summary["target_duration_ms"] == summary["total_duration_ms"] == 5400000
-    assert summary["duration_estimated"] is estimated
-    assert music.offsets == list(range(0, len(music.offsets) * 15, 15))
+    assert summary["duration_estimated"] is False
+    assert set(music.offsets) == {0}
     assert all(context in query for query, _, _ in ai.selections)
-    assert [kw["target_duration_ms"] for _, _, kw in ai.selections] == [
-        5400000 - i * 5 * (duration or 300000) for i in range(len(ai.selections))
-    ]
+    assert [kw["target_duration_ms"] for _, _, kw in ai.selections] == [5400000]
     assert len({row["item"]["id"] for row in result["items"]}) == count
     assert ai.interpretations == 1
     last = result["items"][-1]
     assert service.explanation(result["recommendation_id"], last["item"]["id"])["text"]
 
 
-def test_reading_exhaustion_reports_actual_shortfall_and_rejects_duplicate_recordings():
-    ai, music = AI(), Music(pages=2, duplicate=True)
+def test_reading_exhaustion_is_an_error_not_a_twenty_minute_success():
+    ai, music = AI(), Music(pages=1, page_size=4)
     service = OnlineRecommendationService(ai, None, music)
+    with pytest.raises(AppError) as caught:
+        asyncio.run(
+            service.soundtrack(
+                BOOKS[0], ReadingRequest(book_id=BOOKS[0].id, target_duration_min=90)
+            )
+        )
+    assert caught.value.status_code == 503
+    assert caught.value.code == "SOUNDTRACK_INCOMPLETE"
+    assert "4 faixas" in caught.value.message and "20 minutos" in caught.value.message
+
+
+@pytest.mark.parametrize("duration", [None, True, 1000, 1200000])
+def test_reading_never_invents_duration_or_uses_long_compilations(duration):
+    music = Music(duration=duration, pages=100)
+    service = OnlineRecommendationService(AI(choose=25), None, music)
+    with pytest.raises(AppError) as caught:
+        asyncio.run(
+            service.soundtrack(
+                BOOKS[0], ReadingRequest(book_id=BOOKS[0].id, target_duration_min=120)
+            )
+        )
+    assert caught.value.code == "SOUNDTRACK_INCOMPLETE"
+    assert "0 faixas" in caught.value.message
+    assert set(music.offsets) == set(range(0, 400, 50))
+
+
+@pytest.mark.parametrize("choose,fail", [(1, False), (0, False), (5, True)])
+def test_reading_ai_omissions_or_quota_do_not_cap_playlist_length(choose, fail):
+    music = Music(pages=100)
+    service = OnlineRecommendationService(AI(choose=choose, fail=fail), None, music)
     result = asyncio.run(
         service.soundtrack(
             BOOKS[0], ReadingRequest(book_id=BOOKS[0].id, target_duration_min=90)
         )
     )
-    keys = [(r["item"]["title"], r["item"]["artist"]) for r in result["items"]]
-    assert len(keys) == len(set(keys)) == 10
-    assert result["playlist"]["target_met"] is False
-    assert result["playlist"]["shortfall_ms"] == 40 * 60000
-    assert "não preenche" in result["meta"]["hint"]
-    assert len(music.offsets) <= 3
+    assert set(music.offsets) == {0}
+    assert result["playlist"]["tracks_count"] == 18
+    assert result["playlist"]["shortfall_ms"] == 0
+    assert result["playlist"]["duration_estimated"] is False
+    assert result["meta"]["degraded"] is fail
+    assert result["meta"]["sources"] == ["musicbrainz"]
 
 
-def test_reading_limits_rounds_and_creator_repeats_when_duration_is_short():
-    music = Music(duration=1000, pages=100)
-    service = OnlineRecommendationService(AI(choose=25), None, music)
-    result = asyncio.run(
-        service.soundtrack(
-            BOOKS[0], ReadingRequest(book_id=BOOKS[0].id, target_duration_min=120)
-        )
-    )
-    assert len(result["items"]) == 60
-    assert len(music.offsets) == 4
-    assert max(Counter(row["item"]["artist"] for row in result["items"]).values()) <= 2
-    assert result["playlist"]["target_met"] is False
-
-
-def test_reading_stops_after_six_rounds_when_ai_selects_too_few_tracks():
-    music = Music(pages=100)
+def test_reading_paginates_and_deduplicates_by_title_artist():
+    music = Music(duration=180000, page_size=15, pages=4, duplicate=True)
     service = OnlineRecommendationService(AI(choose=1), None, music)
     result = asyncio.run(
         service.soundtrack(
             BOOKS[0], ReadingRequest(book_id=BOOKS[0].id, target_duration_min=90)
         )
     )
-    assert len(music.offsets) == 6
-    assert result["playlist"]["tracks_count"] == 6
-    assert result["playlist"]["shortfall_ms"] == 3600000
+    keys = [(row["item"]["title"], row["item"]["artist"]) for row in result["items"]]
+    assert len(keys) == len(set(keys)) == 30
+    assert set(music.offsets) == {0, 50, 100}
+    assert result["playlist"]["target_met"] is True
 
 
 def test_reading_creator_limit_applies_across_all_pages():
@@ -192,13 +208,45 @@ def test_reading_creator_limit_applies_across_all_pages():
 
     music = SameArtist(pages=100)
     service = OnlineRecommendationService(AI(choose=25), None, music)
+    with pytest.raises(AppError) as caught:
+        asyncio.run(
+            service.soundtrack(
+                BOOKS[0], ReadingRequest(book_id=BOOKS[0].id, target_duration_min=90)
+            )
+        )
+    assert "4 faixas" in caught.value.message
+    assert set(music.offsets) == set(range(0, 400, 50))
+
+
+def test_reading_sixty_track_limit_cannot_be_reported_as_120_minutes():
+    music = Music(duration=90000, pages=100)
+    service = OnlineRecommendationService(AI(choose=1), None, music)
+    with pytest.raises(AppError) as caught:
+        asyncio.run(
+            service.soundtrack(
+                BOOKS[0], ReadingRequest(book_id=BOOKS[0].id, target_duration_min=120)
+            )
+        )
+    assert "60 faixas" in caught.value.message and "90 minutos" in caught.value.message
+    assert set(music.offsets) == {0, 50}
+
+
+def test_reading_deduplicates_identical_ids_with_different_labels():
+    class ChangedLabels(Music):
+        async def search(self, *args, **kwargs):
+            data = await super().search(*args, **kwargs)
+            for i, item in enumerate(data["items"]):
+                item["id"] = str(UUID(int=1000 + i // 2))
+            return data
+
+    service = OnlineRecommendationService(AI(), None, ChangedLabels())
     result = asyncio.run(
         service.soundtrack(
             BOOKS[0], ReadingRequest(book_id=BOOKS[0].id, target_duration_min=90)
         )
     )
-    assert len(result["items"]) == 2
-    assert result["playlist"]["target_met"] is False
+    ids = [row["item"]["id"] for row in result["items"]]
+    assert len(ids) == len(set(ids)) == 18
 
 
 @pytest.mark.parametrize("fail", [False, True])

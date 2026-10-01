@@ -1,5 +1,34 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Trilhas reais completas e busca por títulos em português
+
+### Implementado
+- Corrigida leitura online que podia devolver quatro/cinco músicas e cerca de 20 minutos para uma meta de 90. A IA interpreta/ordena uma amostra, mas suas poucas escolhas não limitam o conjunto de faixas compatíveis; a busca continua até atender à duração ou esgotar os limites.
+- Sessões online usam somente gravações reais MusicBrainz de lançamentos oficiais, com duração conhecida de 90 segundos a 10 minutos. Consulta exclui spokenword/audiobook/dj-mix; instrumental depende de identificação na fonte. Não completa com músicas locais ou cinco minutos estimados. Sucesso exige a meta; insuficiência retorna `503 SOUNDTRACK_INCOMPLETE`, com contagem/minutos encontrados. Interface existente limpa resultados e apresenta o erro.
+- Contexto musical precede o livro e orienta buscas por ambient/piano/soundtrack no pedido de chuva, foco e drama. Até três termos, oito páginas de 50 candidatos por termo, 60 faixas e quatro por artista. Deduplica IDs e título/artista. Falha/cota Groq continua por metadados sem ampliar o limite diário.
+- Busca Open Library alcança títulos de edições (`q`, `lang=pt`); descoberta filtra português. Título/capa de edição portuguesa conservam identidade da obra. Alias editorial verificado resolve a edição brasileira “Quem é você, Alasca?”/“Looking for Alaska” de John Green quando falta no índice; não traduz títulos especulativamente nem cria catálogo fictício. Cache externo versionado evita listas antigas em inglês.
+
+### Arquivos principais alterados
+- `api/app/providers/musicbrainz.py`, `api/app/providers/open_library.py`, `api/app/providers/portuguese_titles.py`
+- `api/app/services/online_soundtrack.py`, `api/app/services/online_recommendations.py`, `api/app/services/book_service.py`
+- `api/tests/test_books.py`, `api/tests/test_continuation.py`, `api/tests/test_online.py`, `frontend/tests/continuation.mjs`
+- `api/README.md`, `docs/05-API-Specification.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Separado gerador de sessões online da descoberta de músicas/livros, preservando ranking e catálogo offline. Catálogo externo amplo completa a duração; classificação/ordenação da IA não é uma lista fechada de quatro/cinco itens.
+- A última faixa permanece inteira e pode ultrapassar a meta. Duração conhecida e identidade do catálogo são requisitos para sucesso online; falta de material é erro explícito, sem playlist curta apresentada como concluída. Limite de quatro faixas por artista vale apenas para leitura online; descoberta/local mantêm seus limites.
+- Traduções vêm das edições ou de alias com título/autor verificados pela editora. Fonte de Alasca registrada em `portuguese_titles.py` e na especificação. Sem migração, dependência nova, alteração de chaves/modelo/cota ou edição visual.
+
+### Estado atual
+- 293 testes backend aprovados, Ruff/formatação, build e suíte frontend completa aprovados. Testes cobrem IA omitindo escolhas/indisponível, duração desconhecida ou imprópria, quatro faixas insuficientes, paginação, deduplicação, artista/60 faixas, persistência de playlist real, edição portuguesa, alias e rejeição de tradução para autor homônimo. Gates estritos v7 K=5/10 sem mudanças/regressões no ranking local.
+- API do projeto identificada/reiniciada online na porta 8000, frontend 5173 preservado, readiness 200. Pedido exato: John Green/Alasca, `FOCUS`, `INSTRUMENTAL`, 90 minutos, “clima chuvoso, musica sem letra para conseguir focar, mas com um toque de drama para combinar com a historia” → 20 faixas MusicBrainz únicas, todas instrumentais identificadas e com duração conhecida, total 5.517.572 ms (91 min 57 s), `target_met=true`, `duration_estimated=false`, `ai_used=true`, `degraded=false`. Evidência local ignorada: `.impeccable/runtime/live-request-v2.json`.
+- Buscas reais por “Quem é você, Alasca?” e “Looking for Alaska” retornam a mesma obra em português; Addie LaRue, O Problema dos Três Corpos e Devoradores de estrelas também retornaram títulos portugueses reais. Obras sem edição portuguesa informada/alias verificado conservam título da fonte. Disponibilidade e afinidade dos provedores não são garantidas por esta amostra. Sem reprodução/exportação de áudio; integração de playlists na interface pendente.
+
+### Próximos passos
+- Usuário repetir o pedido de Alasca em `http://127.0.0.1:5173` e avaliar afinidade das faixas, além da duração; testar outras descrições/90–120 minutos e recuperação do erro de fonte insuficiente.
+- Ampliar avaliação online de títulos portugueses/edições ausentes e atmosferas musicais. Novos aliases exigem fonte editorial verificável; não inventar traduções via IA nem ampliar cotas para compensar busca inadequada.
+- Retomar integração de salvar/listar/detalhar/excluir playlists na conta conforme `docs/CONTINUATION.md`; preservar contratos de duração conhecida online e limites do modo offline.
+
 ## 2026-10-01 — Novos livros e trilhas que buscam a duração pedida
 
 ### Implementado

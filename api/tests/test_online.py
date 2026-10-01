@@ -111,6 +111,23 @@ class Remote:
             )
         if request.url.host == "musicbrainz.org":
             assert "Gandalf/" in request.headers["User-Agent"]
+            if "dur:[" in request.url.params["query"]:
+                return httpx.Response(
+                    200,
+                    json={
+                        "count": 4,
+                        "recordings": [
+                            {
+                                "id": str(UUID(int=i + 500)),
+                                "title": f"Real reading track {i}",
+                                "artist-credit": [{"name": f"Reading artist {i}"}],
+                                "length": 240000,
+                                "tags": [{"name": "ambient"}, {"name": "instrumental"}],
+                            }
+                            for i in range(4)
+                        ],
+                    },
+                )
             return httpx.Response(
                 200,
                 json={
@@ -239,9 +256,9 @@ def test_real_adapter_reading_sends_duration_goal_and_retrieves_ninety_minutes(
                             "title": f"Quiet music {offset + i}",
                             "artist-credit": [{"name": f"Artist {offset + i}"}],
                             "length": 300000,
-                            "tags": [{"name": "ambient"}],
+                            "tags": [{"name": "ambient"}, {"name": "instrumental"}],
                         }
-                        for i in range(15)
+                        for i in range(int(request.url.params["limit"]))
                     ],
                 },
             )
@@ -289,10 +306,13 @@ def test_real_adapter_reading_sends_duration_goal_and_retrieves_ninety_minutes(
         assert result["playlist"]["total_duration_ms"] == 5400000
         assert result["playlist"]["duration_estimated"] is False
         assert result["meta"]["ai_used"] is True
-        assert goals == [5400000, 3900000, 2400000, 900000]
+        assert goals == [5400000]
         assert set(durations) == {300000}
         calls = [r for r in remote.calls if r.url.host == "musicbrainz.org"]
-        assert [int(r.url.params.get("offset", "0")) for r in calls] == [0, 15, 30, 45]
+        assert {int(r.url.params.get("offset", "0")) for r in calls} == {0}
+        assert all(r.url.params["limit"] == "50" for r in calls)
+        assert all("dur:[90000 TO 600000]" in r.url.params["query"] for r in calls)
+        assert all("AND tag:instrumental" in r.url.params["query"] for r in calls)
 
 
 def test_online_reading_playlist_persists_without_additional_provider_calls(online):
@@ -504,30 +524,21 @@ def test_unknown_vocals_are_not_treated_as_instrumental(online):
         assert data["items"] == []
 
 
-def test_reading_external_book_uses_known_recording_duration(online):
+def test_reading_external_book_rejects_incomplete_real_recordings(online):
     settings, remote = online
     remote.kind = "music"
     with TestClient(create_app(settings=settings)) as client:
         book = client.get("/api/v1/books/search?q=External").json()["items"][0]
-        data = client.post(
+        response = client.post(
             "/api/v1/recommendations/read-with-music",
             json={"book_id": book["id"], "mode": "FOCUS", "target_duration_min": 30},
-        ).json()
-        assert data["items"]
-        assert data["items"][0]["item"]["duration_ms"] == 240000
-        assert data["playlist"]["tracks_count"] == len(data["items"]) > 1
-        assert (
-            data["playlist"]["total_duration_ms"]
-            == 240000 + (len(data["items"]) - 1) * 300000
         )
-        assert data["playlist"]["duration_estimated"] is True
-        assert data["playlist"]["target_duration_ms"] == 1800000
-        assert (
-            data["playlist"]["shortfall_ms"]
-            == 1800000 - data["playlist"]["total_duration_ms"]
-        )
-        assert data["playlist"]["target_met"] is False
-        assert "não preenche" in data["meta"]["hint"]
+        assert response.status_code == 503
+        data = response.json()
+        assert data["error"]["code"] == "SOUNDTRACK_INCOMPLETE"
+        assert "4 faixas" in data["error"]["message"]
+        assert "16 minutos" in data["error"]["message"]
+        assert "items" not in data
 
 
 def test_catalog_failure_preserves_local_picker_and_recommendations(online):
