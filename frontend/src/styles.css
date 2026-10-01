@@ -93,10 +93,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .button-secondary { background: var(--soft); color: var(--text); border-color: var(--line); }
 .button-secondary:hover { border-color: var(--accent); }
 .filters { margin-top: 15px; }
-.filters summary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 0; color: var(--muted); font-size: .87rem; cursor: pointer; }
 .filter-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
-.filter-grid label { flex: 1; min-width: 170px; font-size: .84rem; }
-.filter-grid select { display: block; width: 100%; margin-top: 7px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 9px; padding: 12px; }
 .search-empty { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 24px 4px; color: var(--muted); }
 .search-empty > svg { color: var(--accent-strong); }
 .search-empty p { margin: 0; font-size: .88rem; }
@@ -135,7 +132,6 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .result-tags span { color: var(--accent-strong); font-size: .75rem; }
 .result-tags span + span::before { content: "·"; color: var(--muted); margin-right: 8px; }
 .why { margin-top: 14px; font-size: .82rem; }
-.why summary { color: var(--accent-strong); cursor: pointer; width: fit-content; }
 .why p { color: var(--muted); max-width: 68ch; margin: 8px 0 0; }
 .result-link { display: inline-flex; align-items: center; gap: 5px; color: var(--accent-strong); font-size: .87rem; font-weight: 700; white-space: nowrap; padding: 8px 0; }
 .result-link:hover { text-decoration: underline; text-underline-offset: 4px; }

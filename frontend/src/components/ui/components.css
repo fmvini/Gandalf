@@ -1,0 +1,60 @@
+.accordion-heading { margin: 0; font: inherit; letter-spacing: normal; }
+.accordion-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; min-height: 44px; border: 0; padding: 8px 0; background: transparent; color: var(--accent-strong); font: inherit; text-align: left; }
+.accordion-trigger > span { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.accordion-trigger > svg { flex: none; transition: transform 180ms ease-out; }
+.accordion-trigger[data-state="open"] > svg { transform: rotate(180deg); }
+.accordion-content { overflow: hidden; }
+.accordion-content[data-state="open"] { animation: accordion-open 180ms ease-out; }
+.accordion-content[data-state="closed"] { animation: accordion-close 180ms ease-out; }
+.accordion-body { padding: 4px 2px 10px; }
+@keyframes accordion-open { from { height: 0; } to { height: var(--radix-accordion-content-height); } }
+@keyframes accordion-close { from { height: var(--radix-accordion-content-height); } to { height: 0; } }
+.filters .accordion-trigger { color: var(--muted); font-size: .87rem; }
+.filter-count { padding: 2px 7px; border-radius: 999px; background: var(--soft); color: var(--text); font-size: .75rem; }
+.filter-grid { align-items: start; margin: 0; gap: 24px; }
+.preference-group { flex: 1; min-width: min(100%, 260px); }
+.preference-label { display: block; margin-bottom: 9px; font-size: .84rem; font-weight: 700; }
+.preference-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.preference-choice { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; background: var(--bg); color: var(--muted); font-size: .84rem; transition: background-color 180ms ease-out, border-color 180ms ease-out; }
+.preference-choice:hover { border-color: var(--accent); color: var(--text); }
+.preference-choice[data-state="on"] { color: var(--text); background: var(--soft); border-color: var(--accent); }
+.preference-check { flex: none; visibility: hidden; }
+.preference-choice[data-state="on"] .preference-check { visibility: visible; }
+.filter-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-top: 20px; }
+.filter-actions p { margin: 0; color: var(--muted); font-size: .8rem; }
+.filter-actions .text-button { font-size: .82rem; min-height: 44px; }
+.why .accordion-body { padding-top: 0; }
+.why p { margin-top: 0; }
+.explanation-retry { min-height: 44px; margin-top: 6px; }
+.submitted-preferences { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: .82rem; margin-block: 16px; }
+.submitted-preferences span { padding: 5px 9px; border-radius: 8px; background: var(--soft); color: var(--text); }
+.result-skeletons { margin-top: 24px; }
+.result-placeholder { display: flex; gap: 22px; padding: 23px 4px; border-bottom: 1px solid var(--line); }
+.skeleton { background: var(--soft); border-radius: 8px; animation: skeleton-pulse 1.8s ease-in-out infinite; }
+.skeleton-art { width: 106px; height: 106px; flex: none; }
+.books .skeleton-art { width: 100px; height: 143px; }
+.playlist .skeleton-art { width: 28px; height: 32px; }
+.skeleton-copy { flex: 1; display: grid; align-content: start; gap: 12px; padding-top: 6px; min-width: 0; }
+.skeleton-title { height: 26px; width: min(70%, 420px); }
+.skeleton-author { height: 14px; width: min(50%, 260px); }
+.skeleton-detail { height: 14px; width: min(85%, 550px); margin-top: 6px; }
+@keyframes skeleton-pulse { 50% { opacity: .5; } }
+.playlist-list .playlist-track-main { min-width: 0; }
+.playlist-track-main > strong { overflow-wrap: anywhere; }
+.playlist-list .why { margin-top: 4px; }
+.playlist-list .why .accordion-trigger { font-size: .82rem; }
+.playlist-list .why .accordion-trigger > span { color: var(--accent-strong); font-size: inherit; }
+.playlist-list .track-duration { white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) {
+  .result-placeholder { gap: 13px; }
+  .skeleton-art { width: 76px; height: 76px; }
+  .books .skeleton-art { width: 72px; height: 100px; }
+  .playlist-list li { gap: 10px; align-items: start; }
+  .playlist-list .track-duration { padding-top: 4px; }
+  .preference-group { min-width: 100%; }
+  .preference-choice { padding-inline: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .accordion-content, .skeleton { animation: none !important; }
+  .accordion-trigger > svg, .preference-choice { transition: none; }
+}

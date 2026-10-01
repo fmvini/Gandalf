@@ -51,26 +51,59 @@ try {
   page.setDefaultTimeout(10_000)
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
+  const reviewDir = resolve('..', '.impeccable', 'review')
+  await mkdir(reviewDir, { recursive: true })
+  async function reviewVariants(flow) {
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: width === 1440 ? 900 : 844 })
+      for (const theme of ['dark', 'light']) {
+        await page.evaluate(theme => document.documentElement.setAttribute('data-theme', theme), theme)
+        await page.evaluate(() => document.fonts.ready)
+        await page.waitForFunction(() => document.getAnimations().every(animation =>
+          animation.effect?.getComputedTiming().iterations === Infinity || animation.playState === 'finished'))
+        const contrasts = await page.locator('.preference-choice').evaluateAll(elements => {
+          const luminance = color => {
+            const rgb = color.match(/[\d.]+/g).slice(0, 3).map(value => Number(value) / 255)
+            const linear = rgb.map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4)
+            return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722
+          }
+          return elements.map(element => {
+            const style = getComputedStyle(element)
+            const values = [luminance(style.color), luminance(style.backgroundColor)].sort((a, b) => b - a)
+            return { label: element.textContent, ratio: (values[0] + .05) / (values[1] + .05) }
+          })
+        })
+        assert.ok(contrasts.every(item => item.ratio >= 4.5), `${theme} preference contrast: ${JSON.stringify(contrasts)}`)
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${flow} ${width}px ${theme} fits`)
+        await page.screenshot({ path: resolve(reviewDir, `components-${flow}-${width}-${theme}.png`), fullPage: true })
+      }
+    }
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
+  }
   // The complete public flow must work without any external browser resources.
   await page.route('**/*', route => new URL(route.request().url()).origin === base ? route.continue() : route.abort())
   await page.goto(base + '/music')
   await page.getByRole('textbox', { name: 'Seu pedido' }).fill('Músicas calmas para estudar')
   await page.getByText('Ajustar preferências').click()
-  await page.getByRole('combobox', { name: 'Vocais' }).selectOption('none')
-  await page.getByRole('combobox', { name: 'Energia' }).selectOption('low')
+  await page.getByRole('radiogroup', { name: 'Vocais' }).getByRole('radio', { name: 'Instrumental', exact: true }).click()
+  await page.getByRole('radiogroup', { name: 'Energia' }).getByRole('radio', { name: 'Baixa', exact: true }).click()
   await page.getByRole('button', { name: /Encontrar sugestões/ }).click()
   await page.getByText(/Catálogo local selecionado/).waitFor()
   assert.ok(await page.locator('.result-row').count() > 0)
-  await page.locator('.why summary').first().click()
+  await page.getByRole('button', { name: 'Por que esta sugestão?', exact: true }).first().click()
   await page.getByText(/Temas em comum:.*Classificação editorial/).first().waitFor()
   assert.match(await page.getByRole('link', { name: /Buscar no YouTube:/ }).first().getAttribute('href'), /^https:\/\/www.youtube.com\/results/)
+  await reviewVariants('music')
 
   await page.goto(base + '/books')
   await page.getByRole('textbox', { name: 'Seu pedido' }).fill('Fantasia com construção de mundo sem romance')
   await page.getByRole('button', { name: /Encontrar sugestões/ }).click()
   await page.getByRole('heading', { name: 'O Hobbit', exact: true }).waitFor()
-  const reviewDir = resolve('..', '.impeccable', 'review')
-  await mkdir(reviewDir, { recursive: true })
+  await page.getByRole('button', { name: 'Por que esta sugestão?', exact: true }).first().click()
+  await page.getByText(/Temas em comum:/).first().waitFor()
+  await reviewVariants('books')
   await page.screenshot({ path: resolve(reviewDir, 'live-books.png'), fullPage: true })
   await page.getByRole('textbox', { name: 'Seu pedido' }).fill('xyzabcdefgh')
   await page.getByRole('button', { name: /Encontrar sugestões/ }).click()
@@ -83,6 +116,9 @@ try {
   await page.getByText(/Duração estimada em 5 minutos/).waitFor()
   assert.ok(await page.locator('.playlist-list li').count() > 0)
   assert.ok(await page.getByRole('link', { name: /Buscar no YouTube:/ }).count() > 0)
+  await page.getByRole('button', { name: 'Por que esta sugestão?', exact: true }).first().click()
+  await page.getByText(/Temas em comum:/).first().waitFor()
+  await reviewVariants('reading')
   await page.screenshot({ path: resolve(reviewDir, 'live-reading.png'), fullPage: true })
   await page.setViewportSize({ width: 390, height: 844 })
   await page.screenshot({ path: resolve(reviewDir, 'live-reading-mobile.png'), fullPage: true })

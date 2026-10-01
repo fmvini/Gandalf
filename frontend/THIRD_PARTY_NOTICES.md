@@ -2,18 +2,23 @@
 
 ## Componentes disponíveis no 21st.dev
 
-As adaptações usam as fontes públicas dos autores. O marketplace `21st` está instalado; o CLI de busca exigiu autenticação e não foi utilizado para baixar componentes.
+As adaptações usam as fontes dos autores. Accordion e Toggle Group foram recuperados pelo MCP autenticado do 21st.dev em 01/10/2026; Skeleton usa a fonte pública do shadcn. A consulta é uma ferramenta de desenvolvimento, sem chave ou chamadas ao 21st no produto.
 
 - `src/components/ui/animated-tabs.tsx`: baseado em [Animated Tabs de Chetan Verma](https://ui.chetanverma.com/components/animated-tabs), [disponível no 21st.dev](https://docs.21st.dev/@chetanverma16/components/animated-tabs). [Fonte original](https://github.com/chetanverma16/chetanverma-ui/blob/main/contents/components/animated-tabs/index.mdx), [licença](https://github.com/chetanverma16/chetanverma-ui/blob/main/LICENSE). Adaptado para grupo de escolhas controlado, ícones, temas e movimento reduzido, sem semântica de painéis de abas.
 - `src/components/ui/three-d-carousel.tsx`: baseado em [3D Carousel do Cult UI](https://www.cult-ui.com/docs/components/three-d-carousel), [coleção no 21st.dev](https://docs.21st.dev/blog/cult-ui-components). [Fonte original](https://github.com/nolly-studio/cult-ui/blob/main/apps/www/registry/default/ui/three-d-carousel.tsx), [licença](https://github.com/nolly-studio/cult-ui/blob/main/LICENSE.md). Adaptado para três capas em perspectiva, navegação por botões/teclado/arraste, anúncio do livro ativo e preferência por movimento reduzido; sem cilindro, modal ou avanço automático.
 
-Os dois componentes são distribuídos sob a licença MIT:
+- `src/components/ui/accordion.tsx`: [Accordion de shadcn no 21st.dev](https://21st.dev/@shadcn/components/accordion), demo 1530. Adaptado para painel único recolhível, preferências e explicações carregadas sob demanda; primitivas Radix, tokens locais e movimento reduzido.
+- `src/components/ui/toggle-group.tsx`: [Toggle Group de shadcn no 21st.dev](https://21st.dev/@shadcn/components/toggle-group), demo 252. Adaptado para seleção única obrigatória de vocais/energia, opção indiferente, indicador de seleção e navegação por teclado Radix.
+- `src/components/ui/skeleton.tsx`: [Skeleton de shadcn no 21st.dev](https://21st.dev/@shadcn/components/skeleton), [fonte pública](https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/skeleton.tsx). Adaptado para placeholders decorativos de músicas, livros e trilhas, preservando mensagens/cancelamento e movimento reduzido.
+
+Os componentes shadcn são cobertos pela [licença MIT](https://github.com/shadcn-ui/ui/blob/main/LICENSE.md). Os componentes adaptados acima são distribuídos sob a licença MIT:
 
 ```text
 MIT License
 
 Copyright (c) 2024 chetanverma
 Copyright (c) 2023 Jordan-Gilliam
+Copyright (c) 2023 shadcn
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

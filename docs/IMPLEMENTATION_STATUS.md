@@ -1,6 +1,6 @@
 # Estado da implementação — 2026-10-01
 
-> **Checkpoint de 2026-10-01:** etapa v7 de piano/detetive validada: fontes documentadas, 220 testes backend, Ruff e comparação estrita K=5/10 contra v6 sem perdas. Build, smoke e E2E passaram usando a interface aprovada do commit `3732389` em cópia isolada com o backend atual. Há alterações frontend de outro terminal em andamento na árvore de trabalho, não validadas nesta etapa; consulte o arquivo local não versionado `docs/HANDOFF_MAESTRI.md`, se presente, e confira o diff atual. Sua integração não faz parte da entrega v7.
+> **Checkpoint de 2026-10-01:** v7 de piano/detetive validado e preservado no commit `f120676`: 220 testes backend, Ruff/formatação e comparação estrita K=5/10 contra v6 sem perdas. A continuação de UI concluiu Accordion/Toggle Group/Skeleton e explicações compartilhadas; build, smoke, testes de componentes e E2E com API real passaram na árvore atual. Desktop 1440 px e mobile 390/320 px revisados nos dois temas, com contraste dos filtros e movimento reduzido verificados. Histórico em [HANDOFF_MAESTRI.md](HANDOFF_MAESTRI.md) e no log.
 
 A matriz abaixo descreve as etapas validadas até v7. Os documentos numerados incluem o desenho completo do produto. Histórico e continuidade: [DEVELOPMENT_LOG](DEVELOPMENT_LOG.md) e [CONTINUATION](CONTINUATION.md).
 
@@ -26,8 +26,8 @@ A matriz abaixo descreve as etapas validadas até v7. Os documentos numerados in
 | IA | Groq com schemas validados, timeout, cache e limite diário persistido | Não segue integralmente ADR-0002: IA também pontua; sem embeddings ou avaliação real no corpus |
 | Descoberta | Três fluxos públicos, filtros, exclusões, referências por título, diversidade e explicações; livros locais priorizam gêneros explícitos em empates; piano/detetive com fontes por obra e fallback online testado sem IA | Cobertura parcial de instrumentos/subgêneros; personalização e persistência de recomendações |
 | Leitura | Cinco modos, preferência vocal e duração-alvo estimada; CALM favorece atmosfera e CINEMATIC favorece diversidade/etiqueta cinematográfica em empates, com avaliação v4/v5 | Revisão humana da diferenciação; playlists persistentes |
-| Interface | Home imersiva com capas e animações acessíveis, música/livros/leitura, ajustes, temas, responsividade, loading/erro/vazio | Login, histórico, salvos, feedback, perfil |
-| Qualidade | 220 testes backend, corpus de 45 consultas, baselines v3–v7 K=5/10 e comparação por caso com gate estrito opcional | Frontend pausado precisa de validação própria; julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
+| Interface | Home imersiva, três fluxos, temas; Accordion Radix em filtros/explicações, Toggle Group com limpeza e filtros submetidos, Skeletons acessíveis nos carregamentos; explicações lazy/cache/retry inclusive nas trilhas | Login, histórico, salvos, feedback, perfil |
+| Qualidade | 220 testes backend, smoke/componentes/E2E frontend, corpus de 45 consultas, baselines v3–v7 K=5/10 e comparação por caso com gate estrito opcional | Julgamentos do assistente, sem revisão humana independente ou conjunto reservado |
 
 ## Contrato online efetivo
 

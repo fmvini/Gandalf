@@ -1,5 +1,37 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Accordion, Toggle Group e Skeleton integrados
+
+### Implementado
+- Concluído o handoff de UI: dependências Radix instaladas; Accordion em preferências e explicações, Toggle Group de vocais/energia e Skeletons nos carregamentos de música, livros e trilhas. Removidos os usos de `Why` e estilos antigos de summary/select.
+- Preferências permitem teclado e limpeza, preservam os valores HTTP e exibem os filtros usados na busca. Mudanças posteriores no formulário avisam que é necessário buscar novamente.
+- `Explanation` compartilhado busca somente ao abrir, reutiliza respostas, oferece retry explícito e aborta ao desmontar; também presente nas faixas de leitura.
+- Testes e créditos/licença atualizados. Trabalho backend paralelo reconciliado com o commit `f120676`, preservado integralmente e validado com a nova UI.
+
+### Arquivos principais alterados
+- `frontend/src/components/ui/accordion.tsx`, `frontend/src/components/ui/toggle-group.tsx`, `frontend/src/components/ui/skeleton.tsx`, `frontend/src/components/ui/components.css`
+- `frontend/src/components/Explanation.tsx`, `frontend/src/pages/Discovery.tsx`, `frontend/src/pages/ReadWithMusic.tsx`, `frontend/src/main.tsx`, `frontend/src/styles.css`
+- `frontend/package.json`, `frontend/package-lock.json`, `frontend/THIRD_PARTY_NOTICES.md`
+- `frontend/tests/components.mjs`, `frontend/tests/smoke.mjs`, `frontend/tests/live.mjs`
+- `DESIGN.md`, `docs/HANDOFF_MAESTRI.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Instalação com `NODE_OPTIONS=--use-system-ca` temporário; TLS permaneceu validado e a configuração anterior foi restaurada. Nenhuma nova consulta de código ao 21st, acesso à chave ou alteração em `api/.env` nesta continuação.
+- Radix mantém papéis radiogroup/radio e navegação por setas; opções indiferentes são omitidas da requisição. Filtros submetidos ficam separados do formulário; componentes de resultado usam a identidade da recomendação para evitar cache de explicação de uma busca anterior.
+- Skeletons têm `aria-hidden`; mensagens e cancelamento continuam reais. Accordion, Skeleton e escolhas respeitam movimento reduzido. Créditos shadcn/MIT registrados com fontes e URLs do catálogo.
+- Servidores existentes em 5173/8000 foram verificados e preservados. Smoke/E2E usam portas temporárias e SQLite isolado, sem tocar nos dados de `api/.local`.
+
+### Estado atual
+- `npm test` (smoke, componentes e E2E real offline) e `npm run build` aprovados. Cobertura de teclado, filtros none/required/low/medium/high e omissão, snapshot/limpeza, explicações lazy/cache/retry, cancelamento, troca de livro e respostas antigas.
+- 220 testes backend, Ruff check e formatação aprovados. Comparação estrita v6→v7 em K=5/10 confirma zero regressões agregadas ou por consulta. Persiste o aviso de depreciação Starlette/httpx já conhecido.
+- Capturas dos três fluxos com API real em 1440/390/320 px, claro/escuro, sem overflow; contraste dos filtros ≥4,5:1. Loading capturado em desktop escuro/mobile claro; movimento reduzido verificado e console sem erros no E2E. Capturas reproduzíveis em `.impeccable/review/components-*`, ignoradas pelo Git. Detector Impeccable não encontrou ocorrências.
+- Frontend existente serve os componentes atualizados; API existente retorna v7 e readiness saudável. A integração de UI está concluída; gates de provedores, revisão humana, PostgreSQL e CI continuam abertos.
+
+### Próximos passos
+- Revisar b03/m06 e os cinco modos de leitura com avaliação humana usando os relatórios v7; criar conjunto reservado antes de novos ajustes do ranking.
+- Para evolução da UI, iniciar persistência de playlists/salvos e conectar registro/login aos endpoints existentes, com contratos e estados de conta definidos conforme o roadmap.
+- Concluir cobertura/termos dos provedores, avaliação online real e infraestrutura/CI. Não repetir `.impeccable/integrate-components.py`; o handoff original está preservado como histórico.
+
 ## 2026-10-01 — Piano e detetive validados no ranking v7
 
 ### Implementado
@@ -31,6 +63,45 @@
 - Para ranking, usar relatórios v7 como baseline; revisar b03/m06 e os cinco modos com avaliação humana, criar conjunto reservado e obter fontes específicas antes de ampliar instrumentos/subgêneros.
 - Para a interface pausada, ler `docs/HANDOFF_MAESTRI.md` e revisar o diff antes de instalar dependências e concluir integração/testes/créditos. Não tratar os novos componentes como entregues.
 - Continuar os gates de cobertura/termos de provedores, avaliação online real, PostgreSQL/pgvector e CI; não confundir sucesso offline com aprovação desses gates.
+
+## 2026-10-01 — Componentes 21st.dev iniciados; pausa solicitada
+
+### Implementado
+- Analisados o registro de desenvolvimento, estado da implementação, contexto de produto/design e fluxos/testes da interface. Preservar o visual aprovado e ampliar os fluxos atuais foi a direção escolhida.
+- Iniciados frontend em `http://127.0.0.1:5173` e API local em `http://127.0.0.1:8000` usando `start-local.ps1`, sem ativar o modo online.
+- Autenticação 21st.dev confirmada com `API_KEY_21st` em `api/.env`, sem expor ou versionar a chave. Accordion (demo 1530) e Toggle Group (demo 252), ambos do shadcn, foram obtidos pelo endpoint MCP autenticado.
+- Criados componentes de Accordion, Toggle Group, Skeleton e explicação compartilhada. **Integração incompleta:** não considerar esses recursos entregues.
+- Criado `docs/HANDOFF_MAESTRI.md` com o estado exato, bloqueio de instalação e comandos para continuidade.
+
+### Arquivos principais alterados
+- `frontend/src/components/ui/accordion.tsx`
+- `frontend/src/components/ui/toggle-group.tsx`
+- `frontend/src/components/ui/skeleton.tsx`
+- `frontend/src/components/ui/components.css`
+- `frontend/src/components/Explanation.tsx`
+- `frontend/src/main.tsx`
+- `frontend/src/pages/Discovery.tsx`
+- `docs/HANDOFF_MAESTRI.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Manter primitivas Radix dos componentes shadcn para semântica e navegação por teclado; adaptar estilos aos tokens existentes.
+- Skeleton consultado na fonte pública MIT do shadcn; créditos/licença ainda precisam ser atualizados em `frontend/THIRD_PARTY_NOTICES.md`.
+- Usadas as duas consultas gratuitas de código disponíveis no 21st. Cota informada pelo serviço: zero restantes até `2026-10-02T00:00:00Z`. Nenhum plano pago ou geração hospedada ativado.
+
+### Estado atual
+- Trabalho interrompido por pedido explícito do usuário, antes de instalar dependências, concluir integração ou executar testes/build.
+- `npm install @radix-ui/react-accordion @radix-ui/react-toggle-group` falhou com `UNABLE_TO_VERIFY_LEAF_SIGNATURE`. Node v24.16.0 oferece `--use-system-ca`; tentativa com esse recurso ainda não realizada. Não desativar validação TLS.
+- **Interface em estado intermediário:** `Discovery.tsx` já importa os novos componentes e removeu a função `Why`, mas ainda contém usos de `<Why>`. As dependências Radix ainda não foram instaladas. Build deve ser considerado quebrado até concluir a integração.
+- `ReadWithMusic.tsx`, testes e créditos ainda não receberam as alterações planejadas. Nenhum teste/build executado nesta etapa; nenhum commit realizado porque a implementação está incompleta e não validada.
+- Scripts temporários e respostas do 21st estão em `.impeccable/`, ignorada pelo Git; não são dependências do produto.
+- Ao encerrar, surgiram alterações adicionais de backend/testes e relatórios v7 no mesmo checkout, não produzidas nem revisadas nesta sessão. Lista e orientação de preservação em `docs/HANDOFF_MAESTRI.md`; reconciliar antes de commitar. API pronta e frontend HTTP 200 confirmados, sem validar a interface parcial.
+
+### Próximos passos
+- Ler `docs/HANDOFF_MAESTRI.md`; instalar as dependências usando a confiança de certificados do sistema.
+- Revisar e executar uma única vez `.impeccable/integrate-components.py` (preparado, ainda não executado), ou completar manualmente a integração equivalente.
+- Atualizar testes para filtros Radix e explicações em músicas/livros/trilhas; validar retry, cancelamento, preferências aplicadas e movimento reduzido.
+- Atualizar créditos, executar testes frontend/backend e build, revisar desktop/mobile/temas, atualizar documentação e fazer commit local apenas após aprovação dos checks. Não fazer push.
 
 ## 2026-10-01 — Ponto de retomada para outro terminal
 

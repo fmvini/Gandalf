@@ -1,5 +1,9 @@
 # Ponto de retomada — 2026-10-01
 
+## Atualização após a integração de UI
+
+Accordion/Toggle Group/Skeleton foram concluídos após o commit backend `f120676`, com dependências, explicações compartilhadas, testes, créditos e revisão desktop/mobile nos dois temas. As referências abaixo a frontend pausado são históricas. A partir daqui, ler a entrada mais recente de `docs/DEVELOPMENT_LOG.md` e [HANDOFF_MAESTRI.md](HANDOFF_MAESTRI.md); não repetir o script de integração.
+
 ## Atualização após concluir piano/detetive
 
 A etapa `local-rules-v7` foi validada nesta continuação. O checkpoint abaixo é histórico: suas pendências de piano/detetive, falha de versão e formatação já foram resolvidas. Leia a entrada mais recente de `DEVELOPMENT_LOG.md` e a matriz atual antes de seguir instruções antigas.

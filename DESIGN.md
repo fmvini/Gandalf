@@ -137,6 +137,11 @@ Campos e painéis usam cantos de 10 a 18px. A busca principal tem raio de 12px, 
 - Grupo de escolhas Música/Livros/Ler com música usa botões pressionáveis e destaque que acompanha a seleção; não representa painéis de abas.
 - Origem e adaptações dos componentes estão em `frontend/THIRD_PARTY_NOTICES.md`.
 
+### Preferências, explicações e carregamento
+
+- Preferências musicais usam Accordion e escolhas Radix de seleção única, com opção Tanto faz, indicação visual de seleção e limpeza. Resultados conservam os filtros submetidos; alterações posteriores pedem uma nova busca.
+- Explicações nos três fluxos usam Accordion com busca ao abrir, cache por resultado e retry explícito. Skeletons são decorativos e acompanham as mensagens reais de carregamento/cancelamento; sua pulsação e a expansão do Accordion são removidas com movimento reduzido.
+
 ### Movimento
 
 - Abertura da Home com deslocamentos curtos e conteúdo já visível; sequência de até 550ms com saída suave.
