@@ -1,5 +1,13 @@
 # Ponto de retomada — 2026-10-01
 
+## Instância online ativada a pedido do usuário
+
+Sistema em execução para testes reais: interface `http://127.0.0.1:5173`, Swagger `http://127.0.0.1:8000/docs`. API offline anterior foi substituída por `local.py` com `GANDALF_ONLINE=1`; frontend existente preservado. `/system/status` confirma catálogo online e Groq `openai/gpt-oss-20b` configurado, limite existente de 50 chamadas/dia; readiness 200 com schema migrado. Logs ignorados em `.impeccable/runtime/online-api.*.log`.
+
+Busca real de músicas (GoGo Penguin/MusicBrainz) e livros (Project Hail Mary/Open Library) passou. Descobertas musicais/literárias finais retornaram fontes externas com `ai_used=true`, `degraded=false`. Primeira tentativa teve fallback por indisponibilidade transitória; não confundir essas amostras com aprovação completa dos gates online. Catálogo local permanece como fallback/complemento. Ler a entrada mais recente do log.
+
+Verificar processos/portas antes de retomar: este é um registro pontual, não garantia de que ainda estejam ativos. Para reiniciar preservando internet, usar `./start-local.ps1 -Online` após encerrar somente a instância identificada do projeto; o comando sem `-Online` volta ao modo offline. Chaves ficam em `api/.env`, sem exposição no frontend/Git. A próxima entrega de código continua sendo integrar playlists à interface, conforme abaixo.
+
 ## Atualização após persistir playlists na API
 
 POST/GET/GET por ID/DELETE em `/api/v1/playlists` implementados com Bearer e filtro por proprietário. Criação manual aceita 1–25 IDs únicos do catálogo; origem aceita somente trilha de leitura pública ainda no cache do processo, inteira ou um subconjunto ordenado. Metadados/ordem ficam copiados em banco; duração real e estimada continuam distintas. Não há telas de playlists, favoritos, histórico ou edição nesta etapa.

@@ -1,5 +1,7 @@
 # Estado da implementação — 2026-10-01
 
+> **Instância online para teste do usuário:** frontend em `http://127.0.0.1:5173`, API/Swagger em `http://127.0.0.1:8000/docs`; readiness 200, Open Library/MusicBrainz e Groq `openai/gpt-oss-20b` ativos. Buscas reais e duas descobertas finais com fontes externas/`ai_used=true`/`degraded=false` verificadas; primeira tentativa acionou fallback transitório. Este registro pontual não fecha gates online. Verificar processos antes de reiniciar; usar `start-local.ps1 -Online` para manter internet. Detalhes no log.
+
 > **Playlists básicas na API:** migração 0006 e POST/GET/GET por ID/DELETE com isolamento entre contas, faixas em ordem e metadados preservados após reinício. [Contrato](05-API-Specification.md#7-playlists-playlists) e [ADR-0014](adr/0014-owner-scoped-playlists.md). Integração frontend, favoritos/histórico, edição e PostgreSQL real ainda pendentes.
 
 > **Checkpoint de 2026-10-01:** v7 de piano/detetive validado e preservado no commit `f120676`: 220 testes backend, Ruff/formatação e comparação estrita K=5/10 contra v6 sem perdas. A continuação de UI concluiu Accordion/Toggle Group/Skeleton e explicações compartilhadas; build, smoke, testes de componentes e E2E com API real passaram na árvore atual. Desktop 1440 px e mobile 390/320 px revisados nos dois temas, com contraste dos filtros e movimento reduzido verificados. Histórico em [HANDOFF_MAESTRI.md](HANDOFF_MAESTRI.md) e no log.

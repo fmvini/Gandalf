@@ -1,5 +1,32 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Instância local online para testes reais
+
+### Implementado
+- A pedido do usuário, substituída a API offline identificada na porta 8000 por `local.py` com `GANDALF_ONLINE=1`, em segundo plano. Frontend existente na porta 5173 preservado; banco/segredo locais mantidos e migração 0006 aplicada pelo iniciador.
+- Configuração online existente de `api/.env` carregada sem exibir chaves: Groq configurado com `openai/gpt-oss-20b`, limite local de 50 chamadas/dia; Open Library e MusicBrainz ativos. Sem mudança de dependências, código, segredo, faturamento ou limite.
+- Conferidas buscas externas e descoberta com IA real em músicas/livros. Diagnóstico temporário em `.impeccable/runtime/` mostrou HTTP 200 da seleção estruturada Groq e da busca por tag MusicBrainz, sem registrar corpos de erro/chaves.
+
+### Arquivos principais alterados
+- `docs/DEVELOPMENT_LOG.md`
+- `docs/CONTINUATION.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+
+### Decisões técnicas
+- API iniciada com `Start-Process -WindowStyle Hidden`; logs de execução em `.impeccable/runtime/online-api.stdout.log` e `online-api.stderr.log`, ignorados pelo Git. Mantido frontend já ligado à API na porta 8000, sem encerrar processos alheios ao projeto.
+- Validada a presença da chave apenas como booleano. Testes online usam conta/limites já configurados e não ativam cobrança nem substituem os testes offline reprodutíveis.
+
+### Estado atual
+- Interface: `http://127.0.0.1:5173` (HTTP 200). Swagger: `http://127.0.0.1:8000/docs`. `/health/ready` retorna 200 com banco/schema ok; `/api/v1/system/status` retorna `catalog=online`, Groq configurado e `gpu_used=false`.
+- Busca musical por GoGo Penguin retornou cinco gravações MusicBrainz, incluindo Atomised/Embers. Busca por Project Hail Mary retornou obras Open Library, incluindo Andy Weir. Descoberta musical de jazz/saxofone/piano retornou faixas de Steve Swallow; descoberta de ficção científica/exploração espacial retornou Project Hail Mary, The Dark Forest e outras obras externas. Nas duas descobertas finais: `ai_used=true`, `degraded=false`, fontes externas.
+- A primeira descoberta apresentou indisponibilidade transitória de IA/catálogo e acionou fallback local. Diagnóstico e nova tentativa passaram; causa precisa dessa primeira falha não foi determinada. Uma amostra real bem-sucedida não fecha gates de cobertura/licenças, qualidade do corpus online ou estabilidade dos provedores. Catálogo local continua como fallback e pode compor resultados online; não há reprodução de áudio/exportação.
+- Etapa de playlists concluída no commit local `40e0eea`; 258 testes backend, Ruff, ranking K=5/10, build e suíte frontend aprovados antes da ativação online. Nenhum push ou deploy público.
+
+### Próximos passos
+- Usuário testar os três fluxos na interface ou via Swagger; conferir mensagens de IA/fonte nos resultados e reportar consultas que retornem vazio/fallback ou obras inadequadas. Para busca direta usar `/api/v1/music/search` e `/api/v1/books/search`; discovery usa `/api/v1/recommendations/music` e `/api/v1/recommendations/books`.
+- Para reiniciar no mesmo modo, identificar/encerrar a instância do projeto nas portas 8000/5173 e executar `./start-local.ps1 -Online`; não executar sem `-Online` se quiser manter acesso aos catálogos externos. Não duplicar processos nem expor `api/.env`.
+- Retomar a integração de playlists na interface conforme a entrada anterior e `docs/CONTINUATION.md`; manter avaliações online amplas, revisão humana, PostgreSQL e CI hospedada como pendências.
+
 ## 2026-10-01 — Playlists persistentes por conta na API
 
 ### Implementado
