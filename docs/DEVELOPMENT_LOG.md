@@ -1,5 +1,37 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Schema de favoritos individuais por conta
+
+### Implementado
+- Modelo `Favorite` exportado por `app.models` e migração reversível `0008_favorites`, após `0007_recommendation_results`.
+- Favoritos de música/livro com UUID4, proprietário obrigatório, snapshot JSON/JSONB somente do item, identidade pública do provedor, origem da recomendação e data do banco. CHECK de tipo, unicidade por conta/tipo/item e índices para listagem por conta/com filtro de tipo.
+- Testes de upgrade/downgrade, paridade modelo/schema, UUID/data default, campos obrigatórios, FK/tipos, unicidade entre contas/tipos, cascata, sobrevivência à remoção da origem/catálogo e preservação das tabelas anteriores.
+
+### Arquivos principais alterados
+- `api/app/models/favorite.py`
+- `api/app/models/__init__.py`
+- `api/alembic/versions/0008_favorites.py`
+- `api/tests/test_migrations.py`
+- `docs/04-Data-Model.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Única FK: `user_id` → `users.id` com CASCADE. `item_id` e `source_recommendation_id` não referenciam catálogo/cache: favorito não exige catalogar o item e permanece após expiração da origem.
+- UUID4 é default do modelo; `created_at` usa default `now()` do banco com tipo timezone-aware no PostgreSQL. Revisões anteriores preservadas.
+- Favoritos separados de `interactions`, playlists e histórico automático; não persistem consulta, motivos, score ou contexto e não alteram ranking. O backend deve filtrar o JSON para somente metadados do item.
+- Unicidade `uq_favorites_user_type_item` permite ao backend usar `ON CONFLICT DO NOTHING` preservando primeiro snapshot/origem/data. HTTP/ownership da consulta/exclusão são responsabilidade da entrega backend separada.
+
+### Estado atual
+- Schema implementado e 17 testes de migração aprovados; Ruff/formatação aprovados. Suíte relacionada de migração/auth/playlists/cache: 69 aprovados, um caso de três processos bloqueado por `WinError 5` ao abrir named pipe do `ProcessPoolExecutor` no sandbox Windows, antes de executar os workers. Esse caso precisa ser revalidado no terminal Maestro; não houve falha de schema nos casos executados.
+- SQL PostgreSQL de upgrade/downgrade validado, sem execução PostgreSQL/pgvector real: esse gate permanece pendente.
+- Store/rotas de favoritos e interface estão em desenvolvimento por outros agentes; este registro não declara essas integrações concluídas. Validação usa SQLite temporário com FKs habilitadas, sem alterar banco/servidores existentes.
+- Commit de banco deve selecionar somente os seis arquivos acima. `.git` somente leitura nesta sessão; commit local autorizado pelo terminal Maestro após revisão, sem push. Frontend aguarda esse commit antes de adicionar sua entrada ao log.
+
+### Próximos passos
+- Backend concluir/testar POST com origem validada (201 novo/200 existente, primeiro snapshot preservado), GET paginado/com filtro por proprietário e DELETE idempotente 204, inclusive ausente/de terceiro.
+- Frontend integrar favoritos individuais de música/livro e gestão por conta, sem histórico/feedback/ranking; validar com duas contas e origem expirada.
+- Aplicar `alembic upgrade head` no banco correto antes das novas rotas; testar migração/cascata/persistência em PostgreSQL/pgvector descartável quando disponível. Não fechar esse gate apenas com SQL gerado.
+
 ## 2026-10-01 — Cache de recomendações compartilhado entre instâncias
 
 ### Implementado

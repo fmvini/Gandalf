@@ -491,6 +491,28 @@ A migração adiciona somente a tabela/índices. Upgrade preserva contas, catál
 | `prompt_version` | `text` | |
 | `expires_at` | `timestamptz` | |
 
+### 4.15 `favorites`
+
+**Schema implementado na revisão `0008_favorites`, após `0007_recommendation_results`:** modelo `Favorite` exportado em `app.models`. As rotas e o store pertencem à integração backend separada.
+
+| Coluna | Tipo | Restrições / descrição |
+|---|---|---|
+| `id` | `uuid` | PK; `uuid4` gerado pelo modelo ao inserir |
+| `user_id` | `uuid` | NOT NULL; FK → `users.id`, ON DELETE CASCADE |
+| `type` | `varchar(5)` | NOT NULL; CHECK `MUSIC` ou `BOOK` (`ck_favorites_type`) |
+| `item_id` | `uuid` | NOT NULL; identidade pública do item do provedor, sem FK polimórfica |
+| `item` | `jsonb` (JSON no SQLite) | NOT NULL; snapshot somente dos metadados do item |
+| `source_recommendation_id` | `uuid` | NOT NULL; proveniência, sem FK ao cache de recomendações |
+| `created_at` | `timestamptz` | NOT NULL; default do banco `now()` |
+
+Unicidade `uq_favorites_user_type_item(user_id, type, item_id)`. Índices `ix_favorites_user_created(user_id, created_at, id)` e `ix_favorites_user_type_created(user_id, type, created_at, id)` atendem listagem por proprietário e por tipo, com ID para desempatar timestamps.
+
+Favoritos individuais são independentes de playlists, histórico e `interactions`: não produzem feedback nem mudam o ranking. Não há colunas para consulta, motivos, score ou contexto de leitura; o serviço deve gravar somente o item no JSON. `item_id` não exige inserir o item em `music_catalog`/`books`. O snapshot e a proveniência sobrevivem à expiração/remoção da recomendação e à ausência do catálogo. Exclusão da conta remove apenas seus favoritos por cascata.
+
+Contrato acordado para a integração backend: a origem da recomendação valida o item; inserção com `ON CONFLICT DO NOTHING` preserva o primeiro snapshot, origem e data (`201` novo, `200` existente). GET pagina/filtra sempre por proprietário; DELETE por proprietário é idempotente (`204`, inclusive ausente/de outra conta). Esses comportamentos devem ser testados no backend; o schema garante unicidade, campos obrigatórios, tipos e ownership referencial.
+
+Upgrade adiciona somente `favorites`/índices. Downgrade para `0007_recommendation_results` descarta favoritos sem alterar contas, livros, músicas, playlists ou cache. Paridade modelo/schema, constraints, cascata, preservação e SQL PostgreSQL gerado são cobertos em `api/tests/test_migrations.py`. Execução PostgreSQL/pgvector real permanece pendente.
+
 ---
 
 ## 5. Consultas Vetoriais (Exemplos)
@@ -563,6 +585,7 @@ Revisões implementadas e próximas entidades planejadas:
 | 005 | `music_catalog` (metadados JSON musicais) e `ai_usage` |
 | 006 | `playlists`, `playlist_tracks` (persistência básica por proprietário) |
 | 007 | `recommendation_results` (cache anônimo compartilhado; não histórico) |
+| 008 | `favorites` (snapshots individuais por proprietário; não feedback/histórico) |
 | Pendente | `user_vectors` |
 
 **Boas práticas:** migrações reversíveis (`downgrade`), uma responsabilidade por revisão, dados de exemplo apenas em *seed* separado, teste de migração em CI (`upgrade head` → `downgrade base`).

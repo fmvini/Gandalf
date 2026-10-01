@@ -7,6 +7,7 @@ from app.models.account import (
 )
 from app.models.book import Book
 from app.models.external_search_cache import ExternalSearchCache
+from app.models.favorite import Favorite
 from app.models.online import AIUsage, MusicCatalog
 from app.models.playlist import Playlist, PlaylistTrack
 from app.models.recommendation_result import RecommendationResult
@@ -15,6 +16,7 @@ __all__ = [
     "AIUsage",
     "Book",
     "ExternalSearchCache",
+    "Favorite",
     "Interaction",
     "MusicCatalog",
     "Playlist",
