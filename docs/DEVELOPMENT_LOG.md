@@ -1,5 +1,36 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Schema do cache compartilhado de recomendações
+
+### Implementado
+- Modelo `RecommendationResult` e migração reversível `0007_recommendation_results`, acordados com o agente de backend para compartilhar resultados entre processos e permitir salvar uma trilha após reiniciar a API durante sua validade.
+- Snapshot JSON/JSONB com ID UUID original e timestamps UTC em milissegundos (`BIGINT`). Índices por criação/ID e expiração permitem limitar e limpar o cache.
+- Testes de upgrade/downgrade, preservação de contas/catálogo/playlists, leitura por conexões independentes, timestamps de 64 bits, unicidade/NOT NULL e paridade entre schema migrado e modelos.
+
+### Arquivos principais alterados
+- `api/app/models/recommendation_result.py`
+- `api/app/models/__init__.py`
+- `api/alembic/versions/0007_recommendation_results.py`
+- `api/tests/test_migrations.py`
+- `docs/04-Data-Model.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Cache anônimo temporário, sem colunas de usuário, consulta, intenção interpretada ou contexto. O serviço deve filtrar o JSON para itens/playlist e identidade da recomendação; não equivale a histórico pessoal.
+- TTL de 3.600 segundos e limite global de 256 são responsabilidade do store de backend. A migração não adiciona FK em `playlists.source_recommendation_id`, preservando playlists salvas quando o cache expira.
+- Mantidas revisões anteriores intactas; downgrade para `0006_playlists` descarta somente a tabela/índices do cache, preservando os dados existentes.
+
+### Estado atual
+- Quatro testes de migração aprovados, Ruff/formatação aprovados; 42 testes de migração/playlists aprovados em cópia isolada do HEAD com apenas a mudança de banco. Suíte completa da árvore compartilhada após os ajustes de testes do backend: 295 aprovados.
+- Modelo disponível ao backend em desenvolvimento. A integração do store e rotas pertence à entrega separada desse agente; não é declarada concluída neste registro de schema.
+- PostgreSQL/pgvector real continua pendente: Docker Engine indisponível. SQL PostgreSQL gerado validado; execução SQLite em banco temporário, sem alterar banco/servidores existentes.
+- Pytest local usa runner ignorado em `.impeccable/db-tests-20261001/run_pytest.py` que preserva ACLs herdadas dos diretórios temporários no sandbox Windows; sem mudança nas permissões do projeto ou dependências.
+
+### Próximos passos
+- Concluir e validar o store compartilhado no backend, com expiração, limite de resultados, snapshots mínimos, falha de banco e testes entre instâncias; integrar a interface de salvar/listar/excluir playlists em entrega própria.
+- Aplicar `alembic upgrade head` no banco correto antes de executar o backend com cache compartilhado; o iniciador local aplica migrações na próxima inicialização.
+- Com PostgreSQL/pgvector disponível, executar upgrade/downgrade em banco descartável e validar persistência/concorrência real; não considerar SQL gerado como aprovação desse gate.
+
 ## 2026-10-01 — Trilhas reais completas e busca por títulos em português
 
 ### Implementado

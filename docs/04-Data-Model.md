@@ -469,7 +469,20 @@ Tabela única polimórfica para vetores de conteúdo.
 
 O cache só é lido enquanto válido. Entradas expiradas são removidas durante novas gravações. A tabela está preparada para outros tipos, mas somente buscas de livros a utilizam atualmente. SQLite usa JSON para os testes.
 
-**`intent_cache`**
+**`recommendation_results`** (implementado na revisão `0007_recommendation_results`)
+
+| Coluna | Tipo | Restrições / descrição |
+|---|---|---|
+| `id` | `uuid` | PK; ID público da recomendação já gerada |
+| `response` | `jsonb` (JSON no SQLite) | NOT NULL; snapshot de `items` e `playlist`, quando presente |
+| `created_at` | `bigint` | NOT NULL; instante de gravação em milissegundos Unix UTC |
+| `expires_at` | `bigint` | NOT NULL; instante de expiração em milissegundos Unix UTC |
+
+Índices: `(created_at, id)` para remover os resultados mais antigos com desempate determinístico e `(expires_at)` para purgar expirados. Sem FK para conta, livro ou catálogo: é cache anônimo temporário, não histórico pessoal. Não armazenar `query`, `parsed_query`, usuário ou contexto de leitura; esse filtro pertence ao serviço que grava o JSON. TTL de 3.600 segundos e limite global de 256 resultados são aplicados pelo store, não por CHECK/trigger. O modelo não gera outro UUID nem timestamps automaticamente; o serviço conserva a identidade do resultado e define sua validade.
+
+A migração adiciona somente a tabela/índices. Upgrade preserva contas, catálogos e playlists existentes; downgrade para `0006_playlists` remove apenas este cache descartável. Não altera a proveniência `playlists.source_recommendation_id` para uma FK: playlists salvas sobrevivem à expiração do resultado. SQL PostgreSQL gerado e round-trip SQLite estão cobertos em `api/tests/test_migrations.py`; execução PostgreSQL/pgvector real ainda pendente.
+
+**`intent_cache`** (planejado)
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
@@ -549,6 +562,7 @@ Revisões implementadas e próximas entidades planejadas:
 | Pendente | `recommendations`, `recommendation_items`, `explanations`, `intent_cache` |
 | 005 | `music_catalog` (metadados JSON musicais) e `ai_usage` |
 | 006 | `playlists`, `playlist_tracks` (persistência básica por proprietário) |
+| 007 | `recommendation_results` (cache anônimo compartilhado; não histórico) |
 | Pendente | `user_vectors` |
 
 **Boas práticas:** migrações reversíveis (`downgrade`), uma responsabilidade por revisão, dados de exemplo apenas em *seed* separado, teste de migração em CI (`upgrade head` → `downgrade base`).
