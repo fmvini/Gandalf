@@ -423,6 +423,8 @@ Domínios em subdomínios do mesmo site simplificam CORS e cookies (se *refresh 
 
 ## 11. CI/CD (GitHub Actions)
 
+O workflow inicial implementado está em [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), com escopo e validação registrados em [CI.md](CI.md). Ele verifica API/ranking local e build/E2E, sem deploy. O exemplo abaixo descreve etapas futuras, incluindo PostgreSQL, mypy e auditorias ainda não integradas.
+
 ### 11.1. Workflow de integração (ilustrativo)
 
 ```yaml

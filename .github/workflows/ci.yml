@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GANDALF_ONLINE: "0"
+
+jobs:
+  api:
+    name: API e ranking local
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: api/pyproject.toml
+      - name: Instalar API e ferramentas de teste
+        run: python -m pip install -e ".[dev]"
+      - name: Verificar lint e formatação
+        run: |
+          python -m ruff check app local.py alembic tests
+          python -m ruff format --check app local.py alembic tests
+      - name: Testar API com SQLite e provedores simulados
+        run: python -m pytest -q --tb=short --junitxml=../.impeccable/ci/api-pytest.xml
+      - name: Comparar ranking K=5 com baseline v7
+        run: >-
+          python -m app.evaluation.runner --k 5
+          --baseline ../docs/eval-reports/local-v7-piano-detective-k5.json
+          --fail-on-case-regression --output ../.impeccable/ci/local-k5.json
+      - name: Comparar ranking K=10 com baseline v7
+        run: >-
+          python -m app.evaluation.runner --k 10
+          --baseline ../docs/eval-reports/local-v7-piano-detective-k10.json
+          --fail-on-case-regression --output ../.impeccable/ci/local-k10.json
+      - name: Guardar resultados da API
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: api-results
+          path: |
+            .impeccable/ci/api-pytest.xml
+            .impeccable/ci/local-k5.json
+            .impeccable/ci/local-k10.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+  frontend:
+    name: Build e fluxos públicos
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CI: "true"
+      # The E2E runner starts its own API and temporary SQLite database.
+      GANDALF_PYTHON: python
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: api/pyproject.toml
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar API para o E2E
+        run: python -m pip install -e ../api
+      - name: Instalar dependências da interface
+        run: npm ci
+      - name: Instalar Chromium e bibliotecas do sistema
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Verificar TypeScript e build
+        run: npm run build
+      - name: Testar os fluxos de música, livros e leitura
+        run: npm test
+      - name: Guardar capturas dos testes
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-screenshots
+          path: .impeccable/review/*.png
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7

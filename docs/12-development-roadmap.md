@@ -1,5 +1,7 @@
 # Development Roadmap
 
+> **CI inicial — 2026-10-01:** `.github/workflows/ci.yml` configura Ruff, pytest/SQLite, gate estrito do ranking v7 e build/E2E dos fluxos públicos. [Escopo e validação](CI.md). Primeira execução no GitHub, mypy, PostgreSQL/pgvector e auditorias ainda pendentes; a Fase 1 composta e G6 permanecem abertos.
+
 > **Reconciliação de 2026-09-29:** consulte [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md) para o estado efetivo. O caminho local foi entregue por fatias verticais e possui [baseline de 45 consultas](eval-reports/2026-09-29-local-baseline.md). O modo online existe experimentalmente, sem fechar G1/G2; os gates completos não estão aprovados. Próxima etapa: diferenciar modos de leitura sem regredir os baselines, antes de expandir integrações/personalização. Checkboxes compostos permanecem abertos enquanto parte da entrega estiver pendente.
 
 > **Documento:** 12 de 15 — Documentação Técnica
@@ -109,7 +111,7 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 - [x] Autenticação: registro, login, refresh, `GET /auth/me`, proteção de endpoints, hash seguro — testada em SQLite; PostgreSQL pendente
 - [x] Tratamento consistente de erros (`core/exceptions.py`) e formato de erro padronizado
 - [x] `GET /health` e `GET /health/ready`
-- [ ] Lint (`ruff`), tipos (`mypy`), `pytest` e CI mínima
+- [ ] Lint (`ruff`), tipos (`mypy`), `pytest` e CI mínima — Ruff/pytest/workflow inicial preparados; mypy e primeira execução hospedada pendentes
 - [x] Logging estruturado com `request_id`
 
 **Critério de conclusão:** usuário registra, faz login, acessa `/auth/me`; testes de autenticação e migração passam na CI.

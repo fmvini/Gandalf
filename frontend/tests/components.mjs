@@ -35,6 +35,7 @@ async function reviewLoading(kind) {
   for (const [width, theme] of [[1440, 'dark'], [320, 'light']]) {
     await page.setViewportSize({ width, height: 900 })
     await page.evaluate(theme => document.documentElement.setAttribute('data-theme', theme), theme)
+    await page.waitForFunction(() => document.documentElement.scrollWidth <= innerWidth + 1)
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${kind} loading fits ${width}px`)
     await page.locator('.results-section').screenshot({ path: resolve(reviewDir, `components-loading-${kind}-${width}-${theme}.png`) })
   }

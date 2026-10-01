@@ -18,7 +18,7 @@ A matriz abaixo descreve as etapas validadas até v7. Os documentos numerados in
 
 | Área | Implementado | Pendências |
 |---|---|---|
-| API | FastAPI, erros padronizados, CORS, request ID, health/readiness, configuração tipada | CI e mypy não integrados |
+| API | FastAPI, erros padronizados, CORS, request ID, health/readiness, configuração tipada; workflow de CI preparado para Ruff/pytest/ranking local | Primeira execução hospedada da CI; mypy não integrado |
 | Banco | SQLAlchemy, migrações 0001–0005, contas, catálogo/cache, cota diária de IA | SQLite testado; PostgreSQL/pgvector e concorrência entre processos pendentes |
 | Auth | Registro, login, JWT, refresh rotativo, logout, `/auth/me` | Tela de conta; rate limiting compartilhado |
 | Livros | Busca/detalhe local e Open Library, cache persistente, busca híbrida online | Metadados incompletos; sem embeddings |
@@ -49,6 +49,6 @@ Não há áudio integrado nem exportação Spotify. Energia/vocais não são for
 - **G3 parcial local:** [baseline registrado](eval-reports/2026-09-29-local-baseline.md), sem concluir motor semântico/persistência/cobertura do desenho completo.
 - **G4 aberto:** três fluxos funcionam, mas distinção entre modos insuficiente.
 - **G5 aberto:** feedback/perfil/ranking personalizado ausentes.
-- **G6 aberto:** sem CI, auditoria final ou deploy público.
+- **G6 aberto:** [CI inicial configurada](CI.md) e checks locais aprovados; falta execução hospedada verde, auditoria final e deploy público.
 
-Piano/detetive foram validados na [etapa v7](eval-reports/2026-10-01-piano-detective.md); as [fontes e limitações de cobertura](catalog-metadata.md) distinguem obras de gravações. Usar v7 como baseline para novos experimentos, preservando julgamentos e relatórios históricos. Obter revisão humana/conjunto reservado; ampliar metadados somente com evidência por obra. A integração frontend pausada tem sequência própria em `HANDOFF_MAESTRI.md`. Fechar G1 e abstrações antes de ampliar integrações externas; preservar modo local sem custo. Após os gates aplicáveis, avançar para persistência, auth na interface e personalização conforme roadmap.
+Piano/detetive foram validados na [etapa v7](eval-reports/2026-10-01-piano-detective.md); as [fontes e limitações de cobertura](catalog-metadata.md) distinguem obras de gravações. Usar v7 como baseline para novos experimentos, preservando julgamentos e relatórios históricos. Obter revisão humana/conjunto reservado; ampliar metadados somente com evidência por obra. A integração Accordion/Toggle Group/Skeleton foi concluída em `beb7569`; `HANDOFF_MAESTRI.md` preserva seu histórico. Novas alterações de autenticação de outro terminal ainda precisam de validação própria. Fechar G1 e abstrações antes de ampliar integrações externas; preservar modo local sem custo. Após os gates aplicáveis, avançar para persistência, auth na interface e personalização conforme roadmap.

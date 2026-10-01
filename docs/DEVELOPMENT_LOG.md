@@ -1,5 +1,35 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — CI inicial para API, ranking e fluxos públicos
+
+### Implementado
+- Configurado GitHub Actions para PRs destinados a `main`, pushes em `main` e execução manual: Ruff/formatação, pytest/SQLite, comparação estrita do ranking v7 em K=5/10 e build/smoke/componentes/E2E dos três fluxos públicos.
+- Relatórios JUnit/JSON e capturas PNG são coletados após sucesso ou falha, quando gerados, com retenção de sete dias. CI usa API local e SQLite temporário, sem chaves de provedores.
+- Corrigida uma espera no teste responsivo de carregamento após mudar viewport/tema, autorizada pelo usuário. Componentes, estilos e animações aprovados preservados.
+- Documentados escopo, resultados locais, comandos e limitações da CI; matriz e roadmap distinguem workflow preparado de execução hospedada aprovada.
+
+### Arquivos principais alterados
+- `.github/workflows/ci.yml`, `frontend/tests/components.mjs`
+- `docs/CI.md`, `api/README.md`
+- `docs/10-testing-strategy.md`, `docs/11-deployment-guide.md`, `docs/12-development-roadmap.md`
+- `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Dois jobs em Ubuntu 24.04, Python 3.12 e Node 24. Actions fixadas por SHA completo conferido nos releases oficiais; token com `contents: read`, sem persistência de credenciais no checkout.
+- Mantidos os baselines v7 versionados e `--fail-on-case-regression`; CI não atualiza julgamentos/baselines automaticamente. Instalação requer rede, mas testes não consultam provedores reais.
+- Espera do teste usa timeout do Playwright antes da asserção de overflow, para permitir atualização do layout; overflow persistente continua sendo falha.
+- Integração de UI `beb7569` preservada. Novas alterações de autenticação feitas simultaneamente por outro terminal ficam fora deste commit; precisam de validação própria.
+
+### Estado atual
+- Actionlint v1.7.12, Ruff check/formatação e 220 testes backend aprovados; JUnit gerado. Gates K=5/10 contra v7: zero regressões agregadas ou por consulta, sem mudança de catálogo. Persiste o aviso conhecido Starlette/httpx.
+- `npm run build` e `npm test` (smoke, componentes e E2E com API real) aprovados no checkout com as variáveis da CI, após a integração de UI e a correção autorizada do teste.
+- Primeira execução no runner hospedado e instalação limpa de dependências ainda não verificadas. Nenhum push ou deploy realizado; G6 permanece aberto. Python ainda instala faixas de versões sem lock; mypy, PostgreSQL/pgvector e avaliações online reais não fazem parte deste workflow inicial.
+
+### Próximos passos
+- Após um push explicitamente autorizado, conferir os dois jobs no GitHub Actions e baixar `api-results`/`frontend-screenshots`; confirmar instalação limpa e Chromium no Ubuntu antes de registrar CI hospedada aprovada.
+- Continuar backend/infra com lock de dependências Python e adoção incremental de mypy; adicionar job PostgreSQL/pgvector somente junto de testes de migração/concorrência nesse banco.
+- Conferir o Git antes de retomar autenticação da interface no outro terminal. Para ranking, usar v7 como baseline e obter revisão humana/conjunto reservado antes de novos ajustes.
+
 ## 2026-10-01 — Accordion, Toggle Group e Skeleton integrados
 
 ### Implementado

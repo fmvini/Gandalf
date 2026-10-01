@@ -1,5 +1,7 @@
 # API do Gandalf
 
+CI inicial configurada em [`.github/workflows/ci.yml`](../.github/workflows/ci.yml): Ruff/formatação, suíte pytest com SQLite e comparação estrita K=5/10 contra o baseline v7. Relatórios JUnit/JSON são preservados como artefatos. [Escopo, resultados locais e limites](../docs/CI.md); a execução no GitHub ainda precisa ser confirmada após um push autorizado.
+
 > **Atualização de 2026-10-01:** as instruções abaixo se referem principalmente ao caminho local. A [matriz de implementação](../docs/IMPLEMENTATION_STATUS.md) descreve também o modo online experimental e suas limitações. O ranking local atual é `local-rules-v7`; a [especificação da descoberta](../docs/05-API-Specification.md#61-post-recommendationsmusic) distingue contrato implementado de exemplos futuros.
 
 Piano e detetive agora são reconhecidos pelo parser e pelo fallback online sem IA. Há sete músicas com `piano` e um livro com `detetive`, com [fontes por obra e limites](../docs/catalog-metadata.md). Piano descreve uma obra/edição com piano, sem garantir piano solo ou a gravação aberta por um link de busca. Ausência de etiqueta não prova ausência do instrumento/tema. Inclusão continua por afinidade de temas; exclusões removem itens com as etiquetas conhecidas.

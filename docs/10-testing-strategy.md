@@ -1,5 +1,7 @@
 # Testing Strategy
 
+> **Implementação em 2026-10-01:** a [CI inicial](CI.md) está configurada em `.github/workflows/ci.yml` com Ruff, pytest/SQLite, gate de ranking local v7 em K=5/10 e build/E2E dos fluxos públicos. Validação local aprovada; execução hospedada ainda pendente. As ferramentas, suítes PostgreSQL e avaliações reais descritas abaixo incluem trabalho futuro; não considerar esses itens entregues pela CI inicial.
+
 > **Documento:** 10 de 15 — Documentação Técnica
 > **Projeto:** Plataforma Inteligente de Descoberta de Músicas e Livros
 > **Status:** Rascunho v1.0

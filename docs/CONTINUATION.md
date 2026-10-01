@@ -1,5 +1,9 @@
 # Ponto de retomada — 2026-10-01
 
+## Atualização após preparar a CI
+
+Workflow inicial em `.github/workflows/ci.yml`: API/Ruff/pytest, comparação estrita K=5/10 contra v7 e build/E2E dos três fluxos. Actionlint, 220 testes da API, gates locais, build e suíte frontend aprovados. Corrigida somente a espera do teste responsivo, com autorização do usuário; esta etapa não altera componentes, estilos ou animações. Execução hospedada ainda pendente, sem push automático. Ler [CI.md](CI.md) e a entrada mais recente do log para continuar. A integração de interface foi concluída separadamente em `beb7569`; novas alterações de autenticação do outro terminal foram preservadas fora desta etapa.
+
 ## Atualização após a integração de UI
 
 Accordion/Toggle Group/Skeleton foram concluídos após o commit backend `f120676`, com dependências, explicações compartilhadas, testes, créditos e revisão desktop/mobile nos dois temas. As referências abaixo a frontend pausado são históricas. A partir daqui, ler a entrada mais recente de `docs/DEVELOPMENT_LOG.md` e [HANDOFF_MAESTRI.md](HANDOFF_MAESTRI.md); não repetir o script de integração.
