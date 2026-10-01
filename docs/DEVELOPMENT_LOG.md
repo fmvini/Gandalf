@@ -1,5 +1,36 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Integração de playlists na conta
+
+### Implementado
+- Interface de salvar a trilha inteira com nome, lista paginada na conta, detalhe com faixas/links externos e exclusão com confirmação inline.
+- Login/cadastro a partir de uma trilha conserva seleção e controles ao retornar. Cliente tipado reutiliza Bearer/refresh em memória e cancela requisições ao sair, trocar de conta ou desmontar a página; respostas tardias de outra sessão são rejeitadas.
+- Estados de carregamento, vazio, retry, sessão expirada, playlist ausente e origem expirada; duração real e estimada continuam distintas. Endpoints e ranking preservados.
+
+### Arquivos principais alterados
+- `frontend/src/lib/playlists.ts`, `frontend/src/lib/auth.ts`
+- `frontend/src/components/SavePlaylist.tsx`, `frontend/src/components/AccountPlaylists.tsx`
+- `frontend/src/pages/Playlist.tsx`, `frontend/src/pages/Account.tsx`, `frontend/src/pages/Authentication.tsx`, `frontend/src/pages/ReadWithMusic.tsx`
+- `frontend/src/App.tsx`, `frontend/src/main.tsx`, `frontend/src/playlists.css`
+- `frontend/tests/playlists.mjs`, `frontend/tests/live.mjs`, `frontend/tests/auth.mjs`, `frontend/package.json`, `frontend/README.md`
+- `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Criação usa `source_recommendation_id`, sem reconstruir a playlist pelos IDs ou fazer consultas extras de catálogo. O backend copia os metadados/ordem da seleção real.
+- Extensão do visual aprovado, com linhas de resultado e confirmação inline; sem redesenho, dependência nova, áudio/exportação ou uso de playlists como favoritos/feedback.
+- Dados privados pertencem à sessão atual; estado de retorno do login contém somente a trilha pública/controles, nunca tokens. Cancelamento e verificação da revisão de sessão evitam repopular a conta com respostas antigas.
+
+### Estado atual
+- Build e todos os módulos da suíte frontend aprovados no terminal Maestro: smoke, componentes, autenticação, continuação, playlists e E2E real. TypeScript/sintaxe/diff e detector visual sem achados também passaram no terminal frontend. Esperas de navegação, carregamento, logout e retorno de foco foram corrigidas nos testes; asserções de validade nativa, títulos completos, isolamento, revogação e foco preservadas.
+- E2E real com SQLite temporário validou salvar/listar/detalhar, as mesmas 11 faixas após logout/troca de conta, GET/DELETE 404 para outra conta, confirmação/cancelamento/exclusão e refresh revogado com 401. Suíte simulada cobre paginação, retries, origem expirada, retorno de login/cadastro com controles, refresh e cancelamento/respostas tardias. Servidores/dados existentes preservados.
+- 24 capturas de salvar/lista/detalhe/confirmação em 1440/390/320 px nos dois temas revisadas; reviewers independentes retornaram `ship` no escopo visual/código, sem defeitos materiais. Documenter confirmou extensão do sistema aprovado; `DESIGN.md` e sidecar preservados. Drift preexistente do sidecar permanece, sem reparo incidental.
+- Subprocessos e escrita em `.git` bloqueados no terminal frontend: validação e commit coordenados pelo Maestri com Maestro. Schema paralelo `0007` foi commitado separadamente em `54e13c2` antes deste registro; integração backend/cache permanece na entrega desse agente. Não há edição/exportação de playlists, favoritos individuais ou histórico nesta entrega.
+
+### Próximos passos
+- Após o commit frontend isolado, liberar `DEVELOPMENT_LOG.md`, `CONTINUATION.md` e `IMPLEMENTATION_STATUS.md` ao Maestro para registrar o cache compartilhado já desenvolvido/testado por esse agente; não incluir seu WIP no commit frontend nem fazer push.
+- Definir contrato e persistência próprios de favoritos individuais de livros/músicas e histórico por conta antes de adicionar botões/listas desses recursos. Não reutilizar playlists como feedback do ranking.
+- Experimentar salvar/consultar uma trilha online pela interface na instância correta, conservando duração real/estimada e tratamento de fonte insuficiente. Edição/exportação, PostgreSQL real e gates online seguem pendentes.
+
 ## 2026-10-01 — Schema do cache compartilhado de recomendações
 
 ### Implementado

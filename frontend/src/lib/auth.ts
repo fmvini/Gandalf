@@ -79,10 +79,10 @@ async function authenticated<T>(path: string, init?: RequestInit): Promise<T> {
     headers.set('Authorization', 'Bearer ' + checkSession(expected).access_token)
     return api<T>(path, { ...init, headers })
   }
-  try { return await request() } catch (error) {
+  try { const result = await request(); checkSession(expected); checkOpen(expected); return result } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401 || init?.signal?.aborted) throw error
     await refresh(expected, usedAccessToken)
-    try { return await request() } catch (retryError) {
+    try { const result = await request(); checkSession(expected); checkOpen(expected); return result } catch (retryError) {
       if (revision === expected && retryError instanceof ApiError && retryError.status === 401) clear(true)
       throw retryError
     }
@@ -119,6 +119,7 @@ async function endSession(expected: number) {
 }
 
 export const authSession = {
+  request: authenticated,
   subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener) } },
   getSnapshot() { return snapshot },
   async signIn(email: string, password: string, signal?: AbortSignal) {

@@ -55,6 +55,13 @@ try {
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
   const reviewDir = resolve('..', '.impeccable', 'review')
   await mkdir(reviewDir, { recursive: true })
+  async function signOut() {
+    const response = page.waitForResponse(response => response.url().endsWith('/auth/logout') && response.status() === 204)
+    await page.getByRole('button', { name: 'Sair da conta', exact: true }).click()
+    const completed = await response
+    await page.getByRole('heading', { name: 'Entre no Gandalf.', exact: true }).waitFor()
+    return completed.request().postDataJSON().refresh_token
+  }
   async function reviewVariants(flow) {
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: width === 1440 ? 900 : 844 })
@@ -147,19 +154,72 @@ try {
   await page.getByLabel('Senha', { exact: true }).fill(password)
   const loginResponse = page.waitForResponse(response => response.url().endsWith('/auth/login') && response.status() === 200)
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-  const credentials = await (await loginResponse).json()
+  await loginResponse
   await page.getByRole('heading', { name: 'Sua conta.' }).waitFor()
   await page.getByRole('button', { name: 'Atualizar dados', exact: true }).waitFor()
   assert.equal(await page.locator('.account-details dd').nth(1).textContent(), email)
   await reviewVariants('auth-account')
+  // Persist a complete public reading source, then reload its snapshot and
+  // verify that another account cannot read or delete it.
+  await page.getByRole('link', { name: 'Criar uma trilha', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Qual livro você está lendo?' }).fill('Duna')
+  await page.getByRole('button', { name: /Duna Frank Herbert/ }).click()
+  await page.getByRole('button', { name: /Criar minha trilha/ }).click()
+  await page.getByLabel('Nome da playlist').waitFor()
+  const trackTitles = await page.locator('.playlist-track-main > strong').allTextContents()
+  await page.getByLabel('Nome da playlist').fill('Duna para ler com chuva')
+  await reviewVariants('playlists-save')
+  await page.getByRole('button', { name: 'Salvar na minha conta', exact: true }).click()
+  await page.getByRole('link', { name: 'Ver playlist', exact: true }).click()
+  await page.getByRole('heading', { name: 'Duna para ler com chuva', exact: true }).waitFor()
+  const playlistId = page.url().split('/').at(-1)
+  assert.deepEqual(await page.locator('.playlist-list strong').allTextContents(), trackTitles)
+  await reviewVariants('playlists-detail')
+  await page.getByRole('link', { name: 'Voltar às playlists', exact: true }).click()
+  await page.getByRole('link', { name: /Duna para ler com chuva/ }).waitFor()
+  await reviewVariants('playlists-list')
+  const firstLoggedOutToken = await signOut()
+  const revokedFirst = await fetch(apiUrl + '/api/v1/auth/refresh', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: firstLoggedOutToken }),
+  })
+  assert.equal(revokedFirst.status, 401)
+  await fetch(apiUrl + '/api/v1/auth/register', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'outro@example.com', username: 'outro', password }),
+  })
+  await page.getByLabel('E-mail', { exact: true }).fill('outro@example.com')
+  await page.getByLabel('Senha', { exact: true }).fill(password)
+  const secondLogin = page.waitForResponse(response => response.url().endsWith('/auth/login') && response.ok())
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
+  const secondTokens = await (await secondLogin).json()
+  await page.getByRole('heading', { name: 'Sua próxima leitura pode ter uma trilha.' }).waitFor()
+  for (const method of ['GET', 'DELETE']) {
+    const result = await fetch(apiUrl + '/api/v1/playlists/' + playlistId, { method, headers: { Authorization: 'Bearer ' + secondTokens.access_token } })
+    assert.equal(result.status, 404, 'Another account cannot access the playlist')
+  }
+  await signOut()
+  await page.getByLabel('E-mail', { exact: true }).fill(email)
+  await page.getByLabel('Senha', { exact: true }).fill(password)
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
+  await page.getByRole('link', { name: /Duna para ler com chuva/ }).click()
+  await page.getByRole('heading', { name: 'Duna para ler com chuva', exact: true }).waitFor()
+  assert.deepEqual(await page.locator('.playlist-list strong').allTextContents(), trackTitles, 'Saved tracks survive logout and account switching')
+  await page.getByRole('button', { name: 'Excluir playlist', exact: true }).click()
+  await page.getByRole('button', { name: 'Manter playlist', exact: true }).click()
+  await page.waitForFunction(button => document.activeElement === button, await page.getByRole('button', { name: 'Excluir playlist', exact: true }).elementHandle())
+  assert.equal(await page.getByRole('button', { name: 'Excluir playlist', exact: true }).evaluate(element => document.activeElement === element), true)
+  await page.getByRole('button', { name: 'Excluir playlist', exact: true }).click()
+  await reviewVariants('playlists-delete')
+  await page.getByRole('button', { name: 'Confirmar exclusão', exact: true }).click()
+  await page.getByRole('status').filter({ hasText: 'Playlist excluída' }).waitFor()
+  await page.getByRole('heading', { name: 'Sua próxima leitura pode ter uma trilha.' }).waitFor()
   await page.getByRole('link', { name: 'Explorar sugestões', exact: true }).click()
   await page.getByRole('link', { name: 'Minha conta', exact: true }).click()
   await page.getByRole('button', { name: 'Atualizar dados', exact: true }).waitFor()
-  await page.getByRole('button', { name: 'Sair da conta', exact: true }).click()
-  await page.getByRole('heading', { name: 'Entre no Gandalf.' }).waitFor()
+  const lastLoggedOutToken = await signOut()
   const revoked = await fetch(apiUrl + '/api/v1/auth/refresh', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: credentials.refresh_token }),
+    body: JSON.stringify({ refresh_token: lastLoggedOutToken }),
   })
   assert.equal(revoked.status, 401, 'Logout revokes the refresh token in the database')
   assert.deepEqual(errors, [])

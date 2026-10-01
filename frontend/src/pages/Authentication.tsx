@@ -9,7 +9,8 @@ export default function Authentication({ mode }: { mode: 'login' | 'register' })
   const navigate = useNavigate()
   const location = useLocation()
   const session = useSession()
-  const initial = location.state as { email?: string; notice?: string } | null
+  const initial = location.state as { email?: string; notice?: string; returnTo?: { pathname: string; state?: unknown } } | null
+  const returnTo = initial?.returnTo?.pathname === '/read-with-music' ? initial.returnTo : null
   const [email, setEmail] = useState(initial?.email || '')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -37,10 +38,10 @@ export default function Authentication({ mode }: { mode: 'login' | 'register' })
     try {
       if (registration) {
         await authSession.register(email, username, password, next.signal)
-        if (!next.signal.aborted) navigate('/login', { replace: true, state: { email: email.trim(), notice: 'Conta criada. Entre com seu e-mail e senha.' } })
+        if (!next.signal.aborted) navigate('/login', { replace: true, state: { email: email.trim(), notice: 'Conta criada. Entre com seu e-mail e senha.', returnTo } })
       } else {
         await authSession.signIn(email, password, next.signal)
-        if (!next.signal.aborted) navigate('/account', { replace: true })
+        if (!next.signal.aborted) navigate(returnTo?.pathname || '/account', { replace: true, state: returnTo?.state })
       }
     } catch (cause) {
       if (!next.signal.aborted) setError(cause instanceof Error ? cause.message : 'Não foi possível concluir. Tente novamente.')
@@ -49,7 +50,7 @@ export default function Authentication({ mode }: { mode: 'login' | 'register' })
     }
   }
 
-  if (session.user) return <Navigate to="/account" replace />
+  if (session.user) return <Navigate to={returnTo?.pathname || '/account'} state={returnTo?.state} replace />
   const notice = initial?.notice || (session.expired ? 'Sua sessão terminou. Entre novamente para acessar sua conta.' : '')
   return <section className="account-page container" aria-labelledby="auth-title">
     <div className="account-intro"><h1 id="auth-title">{registration ? 'Crie sua conta.' : 'Entre no Gandalf.'}</h1><p>{registration ? 'Escolha um nome de usuário e cadastre seu acesso.' : 'Use seu e-mail e senha para acessar sua conta.'}</p><Link className="account-explore" to="/music">Continuar explorando sem conta <ArrowRight size={17} aria-hidden="true" /></Link></div>
@@ -63,7 +64,7 @@ export default function Authentication({ mode }: { mode: 'login' | 'register' })
         {registration ? <div className="form-group"><label htmlFor="auth-confirmation">Confirme a senha</label><input id="auth-confirmation" type={visible ? 'text' : 'password'} autoComplete="new-password" value={confirmation} onChange={event => setConfirmation(event.target.value)} minLength={10} maxLength={128} required disabled={pending} /></div> : null}
         <button className="button button-primary" type="submit" disabled={pending}>{pending ? (registration ? 'Criando conta…' : 'Entrando…') : (registration ? 'Criar conta' : 'Entrar')} <ArrowRight size={18} aria-hidden="true" /></button>
       </form>
-      <p className="account-alternate">{registration ? 'Já tem uma conta?' : 'Primeira vez por aqui?'} <Link to={registration ? '/login' : '/register'}>{registration ? 'Entrar' : 'Criar conta'}</Link></p>
+      <p className="account-alternate">{registration ? 'Já tem uma conta?' : 'Primeira vez por aqui?'} <Link to={registration ? '/login' : '/register'} state={{ returnTo }}>{registration ? 'Entrar' : 'Criar conta'}</Link></p>
       <p className="account-session-note">Sua sessão dura enquanto esta página estiver aberta. Ao recarregar ou fechar, entre novamente.</p>
     </div>
   </section>

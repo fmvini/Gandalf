@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node tests/smoke.mjs && node tests/components.mjs && node tests/auth.mjs && node tests/continuation.mjs && node tests/live.mjs"
+    "test": "node tests/smoke.mjs && node tests/components.mjs && node tests/auth.mjs && node tests/continuation.mjs && node tests/playlists.mjs && node tests/live.mjs"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",

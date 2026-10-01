@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, LogOut, RefreshCw } from 'lucide-react'
 import { authSession } from '../lib/auth'
 import { useSession } from '../lib/useSession'
+import { AccountPlaylists } from '../components/AccountPlaylists'
 
 export default function Account() {
   const { user, expired } = useSession()
   const navigate = useNavigate()
+  const location = useLocation()
   const [loading, setLoading] = useState(true)
   const [leaving, setLeaving] = useState(false)
   const [error, setError] = useState('')
@@ -48,5 +50,7 @@ export default function Account() {
       <div className="account-controls"><button type="button" className="text-button" disabled={loading || leaving} onClick={() => setAttempt(current => current + 1)}><RefreshCw size={16} aria-hidden="true" /> {loading ? 'Atualizando conta…' : 'Atualizar dados'}</button><button type="button" className="button button-secondary" disabled={leaving} onClick={() => void leave()}><LogOut size={17} aria-hidden="true" /> {leaving ? 'Saindo…' : 'Sair da conta'}</button></div>
       <p className="account-session-note">Ao recarregar ou fechar esta página, você precisará entrar novamente. Seus dados de cadastro permanecem na conta.</p>
     </div>
+    {(location.state as { notice?: string } | null)?.notice ? <p className="account-library-notice" role="status">{(location.state as { notice: string }).notice}</p> : null}
+    <AccountPlaylists key={user.id} leaving={leaving} />
   </section>
 }

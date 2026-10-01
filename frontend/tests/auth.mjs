@@ -44,6 +44,7 @@ async function profileCalls(count) {
 }
 try {
   reset()
+  await page.route('**/api/v1/playlists?*', route => route.fulfill({ json: { items: [], total: 0, limit: 10, offset: 0 } }))
   await page.route('**/api/v1/auth/*', async route => {
     const active = state
     const endpoint = new URL(route.request().url()).pathname.split('/').at(-1)

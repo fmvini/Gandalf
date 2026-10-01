@@ -1,5 +1,13 @@
 # Ponto de retomada — 2026-10-01
 
+## Playlists na interface — entrega validada
+
+Salvamento da trilha completa, login/cadastro com retorno à trilha e seus controles, lista paginada em `/account`, detalhe em `/account/playlists/:id` e exclusão com confirmação implementados. Cliente tipado reutiliza sessão/refresh em memória, cancela requisições privadas ao sair/trocar de conta e trata falhas e origem expirada. Endpoints existentes preservados; schema paralelo `0007` está no commit `54e13c2`, e integração backend/cache pertence à entrega separada do Maestro.
+
+Build e todos os módulos da suíte frontend aprovados: smoke, componentes, auth, continuação, playlists e E2E com API real/SQLite temporário. Duas contas validaram isolamento GET/DELETE 404, persistência das mesmas 11 faixas após logout/troca, exclusão e refresh revogado com 401. Esperas de rotas, dados, logout e foco corrigidas nos testes, sem enfraquecer asserções. 24 capturas de salvar/lista/detalhe/confirmação em 1440/390/320 px nos dois temas revisadas; reviewer retornou `ship` no escopo visual/código. O sistema visual aprovado foi preservado; sidecar desatualizado preexistente não foi reparado incidentalmente. Validação/commit coordenados pelo Maestri com Maestro porque subprocessos/escrita Git estão bloqueados no terminal frontend.
+
+Próximo passo: após o commit frontend, Maestro registra e commita separadamente seu cache compartilhado e libera os documentos. Depois, definir contrato/persistência de favoritos individuais e histórico por conta antes da integração de botões/listas na interface. Não reutilizar playlists como feedback, não inventar endpoints, não fazer push. Edição/exportação e PostgreSQL real permanecem pendentes. Validar também uma trilha online pela interface, sem alterar cotas/chaves e preservando os contratos de duração/fonte insuficiente. Os registros abaixo preservam o histórico anterior; suas instruções de integrar playlists já foram atendidas nesta entrega.
+
 ## Correção de trilhas reais e títulos em português
 
 Leitura online agora exige a meta atendida apenas com durações conhecidas do MusicBrainz: faixas de 90 segundos a 10 minutos, até 60 faixas/quatro por artista; oito páginas de 50 candidatos por termo, até três termos. A IA ordena uma amostra sem limitar a quantidade. Falha/cota da IA continua por metadados. Sem músicas locais/estimativas para completar online; fonte insuficiente retorna `503 SOUNDTRACK_INCOMPLETE` e a interface apresenta erro. Offline mantém comportamento limitado anterior. Implementação isolada em `api/app/services/online_soundtrack.py`.

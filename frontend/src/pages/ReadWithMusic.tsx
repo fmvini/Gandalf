@@ -5,6 +5,7 @@ import { api, musicDestination, post, type BookItem, type MusicItem, type Recomm
 import { duration } from '../lib/format'
 import { Explanation } from '../components/Explanation'
 import { ResultSkeleton } from '../components/ui/skeleton'
+import { SavePlaylist, type ReadingSnapshot } from '../components/SavePlaylist'
 
 type Mode = 'FOCUS' | 'IMMERSIVE' | 'CINEMATIC' | 'CALM' | 'CUSTOM'
 const modes: { id: Mode; label: string; description: string }[] = [
@@ -17,17 +18,18 @@ const modes: { id: Mode; label: string; description: string }[] = [
 
 export default function ReadWithMusic() {
   const location = useLocation()
+  const reading = (location.state as { reading?: ReadingSnapshot } | null)?.reading
   const initialQuery = (location.state as { query?: string } | null)?.query || ''
-  const [bookQuery, setBookQuery] = useState(initialQuery)
+  const [bookQuery, setBookQuery] = useState(reading?.book.title || initialQuery)
   const [books, setBooks] = useState<BookItem[]>([])
-  const [selectedBook, setSelectedBook] = useState<BookItem | null>(null)
+  const [selectedBook, setSelectedBook] = useState<BookItem | null>(reading?.book || null)
   const [bookStatus, setBookStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
-  const [mode, setMode] = useState<Mode>('FOCUS')
-  const [context, setContext] = useState('')
-  const [length, setLength] = useState(60)
-  const [vocals, setVocals] = useState('INSTRUMENTAL')
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [result, setResult] = useState<Recommendation<MusicItem> | null>(null)
+  const [mode, setMode] = useState<Mode>(reading?.settings?.mode || 'FOCUS')
+  const [context, setContext] = useState(reading?.settings?.context || '')
+  const [length, setLength] = useState(reading?.settings?.length || 60)
+  const [vocals, setVocals] = useState(reading?.settings?.vocals || 'INSTRUMENTAL')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(reading ? 'success' : 'idle')
+  const [result, setResult] = useState<Recommendation<MusicItem> | null>(reading?.result || null)
   const [error, setError] = useState('')
   const searchController = useRef<AbortController | null>(null)
   const playlistController = useRef<AbortController | null>(null)
@@ -100,6 +102,7 @@ export default function ReadWithMusic() {
     </section>
     <section className="results-section container" aria-live="polite" aria-busy={status === 'loading'}>
       {status === 'success' && result?.meta?.hint ? <p className="field-help">{result.meta.hint}</p> : null}
+      {status === 'success' && result && selectedBook ? <SavePlaylist reading={{ book: selectedBook, result, settings: { mode, context, length, vocals } }} /> : null}
       {status === 'success' && result?.playlist?.target_duration_ms ? <p className="duration-summary">{result.playlist.duration_estimated ? 'Duração estimada' : 'Duração das faixas'}: {Math.round(result.playlist.total_duration_ms / 60000)} min · Pedido: {result.playlist.target_duration_ms / 60000} min.{result.playlist.target_met === false ? ' Ainda faltam ' + Math.ceil((result.playlist.shortfall_ms ?? 0) / 60000) + ' min; não encontramos faixas compatíveis suficientes.' : ' Duração solicitada atendida.'}</p> : null}
       {status === 'loading' ? <><div className="status-panel"><div className="loading-track" aria-hidden="true"><span /></div><h2>Encontrando o clima do livro…</h2><p>Depois, organizamos faixas reais para sua leitura.</p><button type="button" className="text-button" onClick={() => { playlistController.current?.abort(); setStatus('idle') }}>Cancelar</button></div><ResultSkeleton kind="playlist" /></> : null}
       {status === 'error' ? <div className="status-panel error-panel"><CircleAlert size={30} /><h2>A trilha não ficou pronta.</h2><p>{error}</p><button className="button button-secondary" type="button" onClick={() => setStatus('idle')}><RotateCcw size={17} /> Revisar pedido</button></div> : null}
