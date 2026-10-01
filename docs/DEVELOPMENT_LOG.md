@@ -1,5 +1,36 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Playlists persistentes por conta na API
+
+### Implementado
+- Criados `POST /api/v1/playlists`, `GET /api/v1/playlists`, `GET /api/v1/playlists/{id}` e `DELETE /api/v1/playlists/{id}` com Bearer, conta ativa e isolamento por proprietário. Listagem paginada retorna resumos; consulta/exclusão de recursos de outra conta usa o mesmo 404 de recurso ausente.
+- Criação manual por 1–25 IDs musicais únicos do catálogo e salvamento de trilha de leitura pública ainda disponível, inteira ou um subconjunto ordenado. Valida origem, expiração, faixas e campos antes de escrever; cliente não fornece proprietário nem metadados.
+- Migração reversível `0006_playlists`, com cópia dos metadados/ordem, duração calculada e flag de estimativa. Playlist e faixas permanecem após reinício/expiração/atualização do catálogo; transação única reverte gravações parciais. Exclusão preserva o catálogo compartilhado.
+- Habilitadas FKs nas conexões SQLite da aplicação para aplicar CASCADE/RESTRICT no modo local. Contrato, modelo, roadmap, matriz e continuidade atualizados; decisão registrada no ADR-0014.
+
+### Arquivos principais alterados
+- `api/alembic/versions/0006_playlists.py`, `api/app/models/playlist.py`, `api/app/models/__init__.py`
+- `api/app/schemas/playlist.py`, `api/app/routes/playlists.py`, `api/app/services/playlist_service.py`
+- `api/app/database/session.py`, `api/app/services/recommendation_service.py`, `api/app/main.py`
+- `api/tests/test_playlists.py`, `api/tests/test_migrations.py`, `api/tests/test_online.py`, `api/README.md`
+- `docs/04-Data-Model.md`, `docs/05-API-Specification.md`, `docs/12-development-roadmap.md`
+- `docs/adr/0014-owner-scoped-playlists.md`, `docs/adr/README.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/CONTINUATION.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Aproveitado `music_catalog` existente, com FK das faixas e cópia JSON independente. Músicas locais entram no catálogo apenas ao serem salvas; nenhuma operação de playlist consulta provedores externos. Total usa bigint para suportar soma acima de 32 bits; duração desconhecida continua ausente/nula no item, com estimativa somente no total.
+- Origem anônima é identificada por UUID imprevisível, como nas explicações públicas; não tem proprietário nem vira histórico pessoal. `source_recommendation_id` é proveniência sem FK e não persiste query/contexto. A playlist criada pertence à conta autenticada. Apenas trilhas são aceitas como origem nesta etapa; descoberta musical pode usar o fluxo manual por IDs.
+- Cache é copiado no event loop antes da transação no pool de threads. Salvar não renova TTL; cache ausente/expirado retorna 404 mesmo com músicas no corpo. Sem novas dependências, alterações de ranking ou de interface.
+
+### Estado atual
+- 258 testes backend aprovados (38 novos), Ruff check/formatação aprovados. Cobertura de duas contas, autenticação inválida/expirada e conta inativa, paginação, ordem/subconjuntos, validações/TTL, persistência após reinício, metadados/duração, rollback por falha real de gravação, cascata de conta/restrição de catálogo e upgrade/downgrade. Integração online usa provedores simulados e confirma salvamento/leitura/exclusão sem chamadas adicionais. SQL PostgreSQL gerado; execução real ainda pendente.
+- Comparação estrita K=5/10 contra v7: zero mudanças no catálogo, resultados ou métricas; nenhuma regressão agregada/por consulta. `npm run build` e `npm test` aprovados (smoke, componentes, auth e E2E com API real/SQLite temporário). Permanece somente o aviso conhecido Starlette/httpx na API.
+- Servidores/dados locais existentes preservados; API temporária do E2E iniciou com a migração nova. O sandbox bloqueou cache de pytest e subprocesso esbuild; validações concluídas com permissão para temporários/subprocessos. Nenhum acesso direto a `api/.env`, push ou deploy. Interface de playlists, favoritos/histórico, edição/exportação e PostgreSQL real não estão concluídos. Uma instância local já em execução precisa ser reiniciada para carregar as novas rotas/migração.
+
+### Próximos passos
+- Expor o cliente autenticado de `frontend/src/lib/auth.ts` para as novas rotas e adicionar tipos/API de playlists; integrar salvar trilha em `frontend/src/pages/ReadWithMusic.tsx` e lista/detalhe/exclusão na conta. Cancelar requisições ao sair/trocar de conta, tratar expiração de origem e erros com retry; preservar sessão somente em memória, visual e animações aprovados.
+- Testar UI com duas contas/API real/SQLite temporário, incluindo isolamento, paginação, logout durante solicitações, renovação compartilhada e 401/404/503; revisar desktop/mobile e ambos os temas. Depois definir contratos/migrations de favoritos e histórico próprios, sem tratá-los como feedback já implementado.
+- Em PostgreSQL/pgvector descartável, validar migração 0006 up/down, integridade e concorrência; resolver cache/recomendações entre processos antes de escalar. Manter gates de revisão humana/conjunto reservado, provedores e CI hospedada abertos; não fazer push sem pedido explícito.
+
 ## 2026-10-01 — Cadastro, login e conta na interface
 
 ### Implementado

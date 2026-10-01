@@ -412,17 +412,20 @@ Tabela única polimórfica para vetores de conteúdo.
 
 ### 4.12 `playlists` e `playlist_tracks`
 
-**`playlists`** (P2)
+**Implementado em 2026-10-01:** migração `0006_playlists`, modelos em `api/app/models/playlist.py`. [ADR-0014](adr/0014-owner-scoped-playlists.md). Edição, exportação e vínculo com recomendações persistentes são futuros.
+
+**`playlists`**
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
 | `id` | `uuid` PK | |
 | `user_id` | `uuid` FK CASCADE | |
-| `name` | `text` NOT NULL | |
-| `description` | `text` | |
-| `source` | `text` | `READ_WITH_MUSIC`, `MANUAL`, `SPOTIFY_EXPORT` |
-| `source_recommendation_id` | `uuid` FK NULL | |
-| `total_duration_ms` | `integer` | Calculado |
+| `name` | `varchar(120)` NOT NULL | CHECK de tamanho 1–120; trim no contrato HTTP |
+| `description` | `varchar(1000)` NULL | |
+| `source` | `varchar(16)` NOT NULL | CHECK: `READ_WITH_MUSIC`, `MANUAL` |
+| `source_recommendation_id` | `uuid` NULL, sem FK | Proveniência de resultado anônimo efêmero; não armazena consulta/contexto |
+| `total_duration_ms` | `bigint` NOT NULL | Soma calculada, CHECK ≥ 0; evita overflow da soma de 25 faixas |
+| `duration_estimated` | `boolean` NOT NULL | True se alguma duração foi estimada |
 | `created_at` / `updated_at` | `timestamptz` | |
 
 **`playlist_tracks`**
@@ -430,12 +433,12 @@ Tabela única polimórfica para vetores de conteúdo.
 | Coluna | Tipo | Descrição |
 |---|---|---|
 | `playlist_id` | `uuid` FK CASCADE | |
-| `music_id` | `uuid` FK → `music.id` | |
-| `position` | `integer` | |
-| `score` | `real` | |
+| `music_id` | `varchar(36)` FK → `music_catalog.id`, RESTRICT | UUID público normalizado; músicas locais são catalogadas ao salvar |
+| `position` | `integer` | CHECK ≥ 1; ordem começa em 1 |
+| `item` | `jsonb` (JSON no SQLite), NOT NULL | Cópia dos metadados no salvamento; não muda com atualizações do catálogo |
 | PK | `(playlist_id, position)` | |
 
-Índice extra: `(playlist_id, music_id)` UNIQUE.
+Índice extra: `(playlist_id, music_id)` UNIQUE. Listagem por `(user_id, created_at, id)`. Playlist e faixas são gravadas em uma transação. Exclusão da conta/playlist usa CASCADE; exclusão da playlist preserva catálogo. Conexões SQLite da aplicação habilitam `PRAGMA foreign_keys=ON` para aplicar essa integridade no modo local.
 
 ### 4.13 `search_history`
 
@@ -544,7 +547,9 @@ Revisões implementadas e próximas entidades planejadas:
 | 004 | `external_search_cache` (buscas externas) |
 | Pendente | `music`, `embeddings` e índices de busca |
 | Pendente | `recommendations`, `recommendation_items`, `explanations`, `intent_cache` |
-| P2 | `playlists`, `playlist_tracks`, `user_vectors` |
+| 005 | `music_catalog` (metadados JSON musicais) e `ai_usage` |
+| 006 | `playlists`, `playlist_tracks` (persistência básica por proprietário) |
+| Pendente | `user_vectors` |
 
 **Boas práticas:** migrações reversíveis (`downgrade`), uma responsabilidade por revisão, dados de exemplo apenas em *seed* separado, teste de migração em CI (`upgrade head` → `downgrade base`).
 

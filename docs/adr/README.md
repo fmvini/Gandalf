@@ -12,6 +12,7 @@ Este diretório reúne as decisões de arquitetura do documento 15 previsto no [
 | [0006](0006-jwt-authentication-strategy.md) | JWT e rotação de refresh | Implementada na API; PostgreSQL pendente |
 | [0012](0012-music-provider-selection.md) | Seleção do provedor musical | MusicBrainz experimental; G1 aberto |
 | [0013](0013-free-local-mode.md) | Modo local gratuito | Implementado e avaliado offline |
+| [0014](0014-owner-scoped-playlists.md) | Playlists por proprietário com cópia das faixas | API/SQLite validados; interface/PostgreSQL pendentes |
 
 A numeração 0012 preserva a referência já usada no [README](../../README.md) e no [roadmap](../12-development-roadmap.md). Os números 0007 a 0011 ficam livres para decisões futuras; não representam registros existentes.
 

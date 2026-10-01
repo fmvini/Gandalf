@@ -1,5 +1,7 @@
 # Development Roadmap
 
+> **Playlists básicas — 2026-10-01:** POST/GET/GET por ID/DELETE implementados na API com ownership, snapshots, migração reversível e testes SQLite. [Contrato efetivo](05-API-Specification.md#7-playlists-playlists), [ADR-0014](adr/0014-owner-scoped-playlists.md). Próxima fatia: integrar salvar trilha, listagem/detalhe/exclusão à conta mantendo renovação/cancelamento; favoritos/histórico e validação PostgreSQL seguem pendentes.
+
 > **CI inicial — 2026-10-01:** `.github/workflows/ci.yml` configura Ruff, pytest/SQLite, gate estrito do ranking v7 e build/E2E dos fluxos públicos. [Escopo e validação](CI.md). Primeira execução no GitHub, mypy, PostgreSQL/pgvector e auditorias ainda pendentes; a Fase 1 composta e G6 permanecem abertos.
 
 > **Reconciliação de 2026-09-29:** consulte [IMPLEMENTATION_STATUS](IMPLEMENTATION_STATUS.md) para o estado efetivo. O caminho local foi entregue por fatias verticais e possui [baseline de 45 consultas](eval-reports/2026-09-29-local-baseline.md). O modo online existe experimentalmente, sem fechar G1/G2; os gates completos não estão aprovados. Próxima etapa: diferenciar modos de leitura sem regredir os baselines, antes de expandir integrações/personalização. Checkboxes compostos permanecem abertos enquanto parte da entrega estiver pendente.
@@ -236,7 +238,7 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 - [ ] Preferência por vocal/instrumental e duração-alvo
 - [ ] Geração de lista/playlist coerente (duração, energia, atmosfera, repetição de artistas, letras)
 - [ ] Testes por modo + golden set específico + restrições (ex.: `max_vocal_tracks`)
-- [ ] `POST /playlists`, `GET /playlists`, `GET /playlists/{id}`, `DELETE /playlists/{id}` (persistência básica)
+- [x] `POST /playlists`, `GET /playlists`, `GET /playlists/{id}`, `DELETE /playlists/{id}` (persistência básica) — API/SQLite, migração 0006; UI e PostgreSQL real pendentes
 
 **Critério de conclusão (G4):** critérios 7 e 8 do MVP satisfeitos; cada modo produz resultados **mensuravelmente diferentes** e coerentes.
 

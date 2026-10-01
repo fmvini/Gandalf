@@ -49,6 +49,10 @@ Swagger: http://127.0.0.1:8000/docs. Frontend: `VITE_API_BASE_URL=http://127.0.0
 | POST | `/api/v1/auth/refresh` | Rota??o; reuso revoga a fam?lia |
 | POST | `/api/v1/auth/logout` | Revoga refresh da conta autenticada |
 | GET | `/api/v1/auth/me` | Usu?rio do Bearer token |
+| POST | `/api/v1/playlists` | Salva músicas do catálogo ou uma trilha de leitura na conta |
+| GET | `/api/v1/playlists?limit=20&offset=0` | Resumos paginados somente da conta autenticada |
+| GET | `/api/v1/playlists/{id}` | Playlist privada com faixas em ordem |
+| DELETE | `/api/v1/playlists/{id}` | Exclui playlist e faixas; preserva catálogo compartilhado |
 
 ## Recomenda??es
 
@@ -64,7 +68,15 @@ O ranking faz correspondência de temas editoriais, exclusões simples, filtros 
 
 `meta.mode=local` e `meta.hint` identificam os limites. S?o 18 livros e 25 m?sicas; links musicais abrem buscas, sem ?udio hospedado. A trilha estima cinco minutos por faixa (`playlist.duration_estimated=true`), sem atribuir dura??o real ?s grava??es. Pode haver menos itens que a dura??o ou limite pedidos.
 
-Resultados an?nimos ficam em mem?ria por at? uma hora, no m?ximo 256 buscas por processo. Explica??es expiram no rein?cio. Hist?rico pessoal, feedback e playlists persistentes n?o est?o implementados.
+Resultados anônimos ficam em memória por até uma hora, no máximo 256 buscas por processo. Explicações expiram no reinício. Histórico pessoal e feedback não estão implementados.
+
+## Playlists persistentes
+
+API disponível após a migração `0006_playlists`; o iniciador local aplica a migração automaticamente no próximo início. A interface de playlists ainda está pendente. Todas as quatro rotas exigem Bearer válido/conta ativa e filtram pelo proprietário; playlist de outra conta retorna o mesmo 404 de um ID ausente.
+
+Criação manual: `{"name":"Minha trilha","music_ids":["UUID do catálogo musical"]}`. Para salvar uma trilha, enviar `{"name":"Minha leitura","source_recommendation_id":"UUID retornado por read-with-music"}`. Um subconjunto opcional `music_ids` deve pertencer à origem e conserva a ordem enviada. Nome 1–120 caracteres, descrição opcional até 1.000 e 1–25 faixas únicas; metadados não são aceitos do cliente.
+
+Faixas e ordem permanecem disponíveis após reinício/expiração da recomendação ou atualização do catálogo. Duração desconhecida usa estimativa no total, sinalizada por `duration_estimated`; os metadados não ganham uma duração real inventada. Origem deve ser uma trilha de leitura ainda no cache desse processo; descoberta musical pode ser salva por IDs pelo caminho manual. Não existe edição/exportação/reprodução nesta etapa. [Contrato completo](../docs/05-API-Specification.md#7-playlists-playlists) e [decisão de persistência/privacidade](../docs/adr/0014-owner-scoped-playlists.md).
 
 ## Provider externo opcional e PostgreSQL
 

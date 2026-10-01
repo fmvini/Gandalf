@@ -26,6 +26,10 @@ def test_migrations_upgrade_and_downgrade_on_sqlite(
         "search_history",
         "books",
         "external_search_cache",
+        "music_catalog",
+        "ai_usage",
+        "playlists",
+        "playlist_tracks",
         "alembic_version",
     } <= set(inspect(engine).get_table_names())
     engine.dispose()
@@ -44,6 +48,8 @@ def test_migrations_upgrade_and_downgrade_on_sqlite(
     assert "users" not in inspect(engine).get_table_names()
     assert "books" not in inspect(engine).get_table_names()
     assert "external_search_cache" not in inspect(engine).get_table_names()
+    assert "playlists" not in inspect(engine).get_table_names()
+    assert "playlist_tracks" not in inspect(engine).get_table_names()
     engine.dispose()
 
 
@@ -61,3 +67,10 @@ def test_postgresql_migration_generates_extensions_and_tables(
     assert "CREATE EXTENSION IF NOT EXISTS vector" in script
     assert "CREATE TABLE users" in script
     assert "CREATE TABLE external_search_cache" in script
+    assert "CREATE TABLE playlists" in script
+    assert "CREATE TABLE playlist_tracks" in script
+    assert "FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE" in script
+    assert (
+        "FOREIGN KEY(music_id) REFERENCES music_catalog (id) ON DELETE RESTRICT"
+        in script
+    )

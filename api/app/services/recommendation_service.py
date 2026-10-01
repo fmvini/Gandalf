@@ -1,5 +1,6 @@
 import re
 from collections import Counter, OrderedDict
+from copy import deepcopy
 from math import ceil
 from time import monotonic
 from uuid import uuid4
@@ -357,13 +358,22 @@ class RecommendationService:
         for key in [key for key, (expiry, _) in self.results.items() if expiry <= now]:
             del self.results[key]
 
-    def explanation(self, recommendation_id: str, item_id: str) -> dict:
+    def get_result(self, recommendation_id: str) -> dict:
         self._prune()
         record = self.results.get(recommendation_id)
         if record:
-            for row in record[1]["items"]:
-                if row["item"]["id"] == item_id:
-                    return {"text": row["explanation"]}
+            return deepcopy(record[1])
+        raise AppError(
+            404,
+            "NOT_FOUND",
+            "Sugestão não encontrada ou expirada. Faça uma nova busca.",
+        )
+
+    def explanation(self, recommendation_id: str, item_id: str) -> dict:
+        result = self.get_result(recommendation_id)
+        for row in result["items"]:
+            if row["item"]["id"] == item_id:
+                return {"text": row["explanation"]}
         raise AppError(
             404,
             "NOT_FOUND",

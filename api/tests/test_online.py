@@ -178,6 +178,68 @@ def test_online_books_use_real_candidates_and_cache_across_restart(online):
     )
 
 
+def test_online_reading_playlist_persists_without_additional_provider_calls(online):
+    settings, remote = online
+    settings = settings.model_copy(update={"jwt_secret": "test-only-" + "s" * 64})
+    remote.kind = "music"
+    credentials = {"email": "reader@example.com", "password": "a-long-test-password"}
+    with TestClient(create_app(settings=settings)) as client:
+        assert (
+            client.post(
+                "/api/v1/auth/register", json={**credentials, "username": "reader"}
+            ).status_code
+            == 201
+        )
+        headers = {
+            "Authorization": "Bearer "
+            + client.post("/api/v1/auth/login", json=credentials).json()["access_token"]
+        }
+        book_id = client.get("/api/v1/books/search?q=Hobbit").json()["items"][0]["id"]
+        generated = client.post(
+            "/api/v1/recommendations/read-with-music",
+            json={"book_id": book_id, "mode": "FOCUS", "target_duration_min": 15},
+        )
+        assert generated.status_code == 200
+        result = generated.json()
+        assert result["items"][0]["item"]["provider"] == "musicbrainz"
+        calls_before_save = len(remote.calls)
+        created = client.post(
+            "/api/v1/playlists",
+            headers=headers,
+            json={
+                "name": "Leitura online",
+                "source_recommendation_id": result["recommendation_id"],
+            },
+        )
+        assert created.status_code == 201
+        saved = created.json()
+        assert [track["item"] for track in saved["tracks"]] == [
+            row["item"] for row in result["items"]
+        ]
+        assert saved["total_duration_ms"] == result["playlist"]["total_duration_ms"]
+        assert saved["duration_estimated"] == result["playlist"]["duration_estimated"]
+        assert len(remote.calls) == calls_before_save
+    with TestClient(create_app(settings=settings)) as restarted:
+        headers = {
+            "Authorization": "Bearer "
+            + restarted.post("/api/v1/auth/login", json=credentials).json()[
+                "access_token"
+            ]
+        }
+        assert (
+            restarted.get("/api/v1/playlists/" + saved["id"], headers=headers).json()
+            == saved
+        )
+        assert restarted.get("/api/v1/playlists", headers=headers).json()["total"] == 1
+        assert (
+            restarted.delete(
+                "/api/v1/playlists/" + saved["id"], headers=headers
+            ).status_code
+            == 204
+        )
+        assert len(remote.calls) == calls_before_save
+
+
 @pytest.mark.parametrize(
     "state", ["quota", "invalid", "unavailable", "no_key", "local_limit"]
 )

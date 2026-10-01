@@ -1,8 +1,18 @@
 # Ponto de retomada — 2026-10-01
 
+## Atualização após persistir playlists na API
+
+POST/GET/GET por ID/DELETE em `/api/v1/playlists` implementados com Bearer e filtro por proprietário. Criação manual aceita 1–25 IDs únicos do catálogo; origem aceita somente trilha de leitura pública ainda no cache do processo, inteira ou um subconjunto ordenado. Metadados/ordem ficam copiados em banco; duração real e estimada continuam distintas. Não há telas de playlists, favoritos, histórico ou edição nesta etapa.
+
+Ler [contrato HTTP](05-API-Specification.md#7-playlists-playlists), [ADR-0014](adr/0014-owner-scoped-playlists.md) e a entrada mais recente do log. Migração `0006_playlists` é aplicada pelo iniciador local no próximo início; fora dele usar `alembic upgrade head` no banco correto. Conexões SQLite da aplicação agora habilitam FKs; testes cobrem isolamento, rollback, cascata e restrição de exclusão do catálogo. Origem efêmera não equivale a histórico pessoal nem tem proprietário; a playlist criada pertence exclusivamente à conta autenticada. Validação: 258 testes backend, Ruff/formatação, gate K=5/10 contra v7 sem mudanças/regressões, build e suíte frontend aprovados. Integração online testada com provedores simulados, sem chamadas adicionais ao salvar/consultar/excluir.
+
+Próxima entrega de produto: integrar botão de salvar em `frontend/src/pages/ReadWithMusic.tsx`, gestão de playlists na conta (lista paginada/detalhe/exclusão) e cliente tipado. Usar sessão/refresh existentes, cancelar requisições ao sair ou trocar de conta, oferecer retry e tratar 401/404/503 e origem expirada. Testar com duas contas/API real/SQLite temporário e revisar estados responsivos nos dois temas, preservando o visual/animações aprovados. Favoritos de livros/músicas exigem um contrato próprio; não reutilizar playlists como feedback do ranking.
+
+Servidores/dados locais preexistentes foram preservados; o E2E iniciou sua própria API migrada. Reiniciar a instância de desenvolvimento identificada antes de experimentar as novas rotas. PostgreSQL real, cache entre instâncias, revisão humana do ranking e CI hospedada permanecem pendentes. Fazer commits locais coerentes; não fazer push.
+
 ## Atualização após integrar autenticação na interface
 
-O usuário confirmou autenticação como próxima entrega. Cadastro `/register`, login `/login`, dados da conta e logout `/account` agora usam os endpoints existentes. Sessão somente em memória conforme ADR-0006; navegar entre rotas preserva acesso, reload/fechamento exige login. Refresh rotativo compartilhado, logout aguarda rotação e revoga o token ativo; erros de rede permitem retry. Os três fluxos públicos permanecem acessíveis sem conta.
+Registro histórico da entrega anterior: o usuário confirmou autenticação como próxima entrega. Cadastro `/register`, login `/login`, dados da conta e logout `/account` agora usam os endpoints existentes. Sessão somente em memória conforme ADR-0006; navegar entre rotas preserva acesso, reload/fechamento exige login. Refresh rotativo compartilhado, logout aguarda rotação e revoga o token ativo; erros de rede permitem retry. Os três fluxos públicos permanecem acessíveis sem conta.
 
 Build, suíte frontend (smoke/componentes/auth/E2E com cadastro e revogação reais), 220 testes backend e Ruff/formatação aprovados. Capturas `auth-*` em `.impeccable/review/` cobrem 1440/390/320 px nos dois temas; dados fictícios e SQLite temporário. Servidores locais existentes preservados. Não há histórico, salvos, playlists persistentes, recuperação de senha ou edição de conta nesta entrega. Ler a entrada mais recente do log; próximo passo de produto: desenhar contratos e persistência de playlists/salvos antes de ligá-los à conta. CI foi preservada no commit separado `ccffe39`; execução hospedada ainda pendente e nenhum push autorizado.
 

@@ -597,17 +597,19 @@ Se a intenção for ambígua: `200` com `"clarification": { "question": "…", "
 
 ---
 
-## 7. Playlists (`/playlists`) — P2
+## 7. Playlists (`/playlists`)
+
+**Implementado em 2026-10-01:** persistência básica na API, com prefixo `/api/v1`, autenticação Bearer e isolamento por conta. Integração na interface e edição de playlists ainda pendentes. [ADR-0014](adr/0014-owner-scoped-playlists.md).
 
 | Método | Rota | Acesso | Descrição |
 |---|---|:---:|---|
-| POST | `/playlists` | 🔒 | Cria playlist (manual ou a partir de recomendação) |
-| GET | `/playlists` | 🔒 | Lista do usuário |
-| GET | `/playlists/{id}` | 🔒 | Detalhe com faixas |
-| PATCH | `/playlists/{id}` | 🔒 | Renomear / reordenar |
-| DELETE | `/playlists/{id}` | 🔒 | Exclui |
-| POST | `/playlists/{id}/tracks` | 🔒 | Adiciona faixa |
-| DELETE | `/playlists/{id}/tracks/{music_id}` | 🔒 | Remove faixa |
+| POST | `/playlists` | 🔒 | Implementado: cria manualmente ou salva trilha de leitura |
+| GET | `/playlists` | 🔒 | Implementado: lista paginada da conta |
+| GET | `/playlists/{id}` | 🔒 | Implementado: detalhe com faixas em ordem |
+| PATCH | `/playlists/{id}` | 🔒 | Futuro: renomear / reordenar |
+| DELETE | `/playlists/{id}` | 🔒 | Implementado: exclui playlist e suas faixas |
+| POST | `/playlists/{id}/tracks` | 🔒 | Futuro: adiciona faixa |
+| DELETE | `/playlists/{id}/tracks/{music_id}` | 🔒 | Futuro: remove faixa |
 
 ### 7.1 `POST /playlists`
 
@@ -615,12 +617,38 @@ Se a intenção for ambígua: `200` com `"clarification": { "question": "…", "
 {
   "name": "Terra Média — Noite",
   "description": "Para ler O Hobbit",
-  "source_recommendation_id": "a7c9…",
-  "music_ids": ["0b6c…", "1c7d…"]
+  "source_recommendation_id": "UUID retornado por /recommendations/read-with-music"
 }
 ```
 
-**Response `201`** → `Playlist { id, name, description, tracks[], total_duration_ms, created_at }`.
+`name` é obrigatório (1–120 caracteres após trim); `description` é opcional/nula (até 1.000). Campos extras são rejeitados; a conta vem exclusivamente do Bearer, nunca do corpo.
+
+- **Manual:** omitir `source_recommendation_id` e enviar `music_ids` (1–25 UUIDs únicos). Só aceita itens do catálogo local ou já persistidos em `music_catalog`; não consulta provedores externos.
+- **Trilha:** enviar o UUID de um resultado público de `/recommendations/read-with-music` ainda no cache do processo (até uma hora/256 buscas). Omitir `music_ids` salva toda a trilha; informar uma lista salva um subconjunto na ordem enviada. Todos os IDs devem pertencer à trilha. Resultados de descoberta de livros/músicas não são aceitos como origem nesta etapa; músicas de descoberta podem ser salvas pelo fluxo manual.
+- Não aceita lista vazia nem repetições. Resultado desconhecido/expirado retorna `404 NOT_FOUND`; origem incompatível, trilha vazia ou seleção fora da origem retorna `422 VALIDATION_ERROR`. Música manual desconhecida retorna `404 NOT_FOUND`. Nenhuma dessas falhas grava parcialmente a playlist.
+
+**Response `201`** com `Location: /api/v1/playlists/{id}`:
+
+```text
+{
+  id, name, description,
+  source: "MANUAL" | "READ_WITH_MUSIC",
+  source_recommendation_id: UUID | null,
+  tracks: [{ position: 1, item: <metadados musicais salvos> }, ...],
+  tracks_count, total_duration_ms, duration_estimated,
+  created_at, updated_at
+}
+```
+
+Metadados e ordem são copiados no salvamento e permanecem disponíveis após expirar a recomendação, atualizar o catálogo ou reiniciar a API. A duração soma `duration_ms` quando conhecida; caso contrário usa `estimated_duration_ms` ou cinco minutos e marca `duration_estimated=true`. A estimativa não preenche uma duração real ausente nos metadados.
+
+### 7.2 Listagem, detalhe e exclusão
+
+`GET /playlists?limit=20&offset=0` retorna `{items: [<resumo sem tracks>], total, limit, offset}`. Limite 1–50; offset 0–100.000. Ordem: `created_at DESC, id DESC`, com desempate estável. Total e itens sempre filtrados pela conta; o resumo inclui `tracks_count`, duração e origem.
+
+`GET /playlists/{id}` retorna o mesmo detalhe da criação. `DELETE /playlists/{id}` retorna `204` sem corpo e preserva os itens do catálogo compartilhado. IDs ausentes ou pertencentes a outra conta retornam o mesmo `404 NOT_FOUND`, tanto na consulta quanto na exclusão; repetir a exclusão também retorna 404.
+
+Todas as operações exigem uma conta ativa e JWT válido (`401` quando inválido/expirado). Banco não configurado ou tabelas de playlists indisponíveis retornam `503 SERVICE_UNAVAILABLE`. PostgreSQL tem SQL de migração validado, mas execução real e concorrência entre processos seguem pendentes.
 
 ---
 
