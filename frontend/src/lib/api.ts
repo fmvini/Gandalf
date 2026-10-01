@@ -17,8 +17,8 @@ export type Recommendation<T> = {
   recommendation_id: string | null
   parsed_query?: Record<string, unknown>
   items: RankedItem<T>[]
-  meta?: { hint?: string; degraded?: boolean }
-  playlist?: { total_duration_ms: number; tracks_count: number; duration_estimated?: boolean }
+  meta?: { hint?: string; degraded?: boolean; has_more?: boolean; next_offset?: number | null }
+  playlist?: { total_duration_ms: number; tracks_count: number; duration_estimated?: boolean; target_duration_ms?: number; target_met?: boolean; shortfall_ms?: number }
 }
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '')

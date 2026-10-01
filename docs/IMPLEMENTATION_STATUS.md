@@ -1,5 +1,7 @@
 # Estado da implementação — 2026-10-01
 
+> **Novos livros e trilhas por duração:** interface “Ver outros livros”, exclusões acumuladas e paginação/cache por página; leitura online envia meta ao Groq e recupera até seis lotes/60 faixas, com duração conhecida/estimada, meta e déficit visíveis. Groq 429 respeita cooldown curto uma vez, sem ampliar cota local. Salvamento por origem aceita 60 faixas; manual 25. Testes automatizados e amostras reais online aprovados (livros sem repetição e trilha de 26 faixas/cerca de 95 minutos, incluindo estimativas, para meta de 90). Detalhes e limites no log.
+
 > **Instância online para teste do usuário:** frontend em `http://127.0.0.1:5173`, API/Swagger em `http://127.0.0.1:8000/docs`; readiness 200, Open Library/MusicBrainz e Groq `openai/gpt-oss-20b` ativos. Buscas reais e duas descobertas finais com fontes externas/`ai_used=true`/`degraded=false` verificadas; primeira tentativa acionou fallback transitório. Este registro pontual não fecha gates online. Verificar processos antes de reiniciar; usar `start-local.ps1 -Online` para manter internet. Detalhes no log.
 
 > **Playlists básicas na API:** migração 0006 e POST/GET/GET por ID/DELETE com isolamento entre contas, faixas em ordem e metadados preservados após reinício. [Contrato](05-API-Specification.md#7-playlists-playlists) e [ADR-0014](adr/0014-owner-scoped-playlists.md). Integração frontend, favoritos/histórico, edição e PostgreSQL real ainda pendentes.

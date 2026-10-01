@@ -6,8 +6,19 @@ from app.core.exceptions import AppError
 from app.providers.local_catalog import BOOKS, MUSIC, normalize
 from app.schemas.recommendation import DiscoveryRequest, MusicFilters
 from app.services.music_filters import matches_music_filters, resolve_music_filters
+from app.services.reading_duration import reading_summary, track_duration
 from app.services.recommendation_service import RecommendationService, interpret
 from app.services.references import resolve_references
+
+MAX_SOUNDTRACK_ROUNDS = 6
+MAX_SOUNDTRACK_TRACKS = 60
+
+
+def item_key(item):
+    return normalize(
+        item["title"] + " " + item.get("artist", " ".join(item.get("authors", [])))
+    )
+
 
 ENGLISH = {
     "calmo": "ambient",
@@ -50,10 +61,32 @@ class OnlineRecommendationService(RecommendationService):
         self.ai, self.books, self.music = ai, books, music
 
     async def recommend(self, kind, body):
-        return await self._online(kind, body)
+        return await self._online(
+            kind,
+            body,
+            excluded_ids={
+                str(value) for value in getattr(body, "excluded_book_ids", [])
+            },
+            offset=getattr(body, "offset", 0),
+        )
 
-    async def _online(self, kind, body):
+    async def _online(
+        self,
+        kind,
+        body,
+        *,
+        excluded_ids=None,
+        excluded_keys=None,
+        offset=0,
+        artist_counts=None,
+        target_duration_ms=None,
+        intent_cache=None,
+    ):
         warnings = []
+        excluded_ids = excluded_ids or set()
+        excluded_keys = excluded_keys or set()
+        artist_counts = artist_counts or Counter()
+        catalog_has_more = False
         local = (
             MUSIC
             if kind == "music"
@@ -70,9 +103,18 @@ class OnlineRecommendationService(RecommendationService):
         positive -= negative
         interpreted_by_ai = False
         try:
-            intent = await self.ai.interpret(body.query, kind)
+            if intent_cache is not None and "error" in intent_cache:
+                raise intent_cache["error"]
+            if intent_cache is not None and "intent" in intent_cache:
+                intent = intent_cache["intent"].model_copy(deep=True)
+            else:
+                intent = await self.ai.interpret(body.query, kind)
+                if intent_cache is not None:
+                    intent_cache["intent"] = intent.model_copy(deep=True)
             interpreted_by_ai = True
         except AppError as exc:
+            if intent_cache is not None:
+                intent_cache["error"] = exc
             warnings.append(exc.message)
             intent = Intent(
                 search_terms=list(
@@ -101,18 +143,24 @@ class OnlineRecommendationService(RecommendationService):
         for term in terms:
             try:
                 if kind == "books":
-                    data = await self.books.discover(term, 15)
+                    data = await self.books.discover(term, 15, offset=offset)
+                    catalog_has_more |= data.total > offset + 15
                     candidates.extend(
                         item.model_dump(mode="json") for item in data.items
                     )
                 else:
                     data = await self.music.search(
-                        term, 15, by_tag=bool(intent.search_terms)
+                        term,
+                        15,
+                        by_tag=bool(intent.search_terms),
+                        **({"offset": offset} if offset else {}),
                     )
+                    catalog_has_more |= data.get("has_more", len(data["items"]) >= 15)
                     candidates.extend(data["items"])
             except AppError as exc:
                 warnings.append(exc.message)
         references = resolve_references(body.query, [*local, *candidates])
+        blocked_ids = references.blocked_ids | excluded_ids
         positive, negative = interpret(references.context)
         reference_tags, _ = interpret(" ".join(references.tags))
         positive = (positive | reference_tags) - negative
@@ -129,35 +177,59 @@ class OnlineRecommendationService(RecommendationService):
             negative,
             filters,
             body.limit,
-            references.blocked_ids,
+            blocked_ids,
             references.positive,
         )["items"]
-        candidates = candidates[:18]
+        candidates = [
+            item
+            for item in candidates
+            if str(item["id"]) not in blocked_ids
+            and item_key(item) not in excluded_keys
+            and artist_counts[item.get("artist", "")] < 2
+        ][:18]
         candidates.extend(row["item"] for row in local_ranked[:7])
         if not candidates:
             candidates = list(local)
         unique, seen = [], set()
         for item in candidates:
-            key = normalize(
-                item["title"]
-                + " "
-                + item.get("artist", " ".join(item.get("authors", [])))
-            )
+            key = item_key(item)
+            if (
+                str(item["id"]) in blocked_ids
+                or key in excluded_keys
+                or artist_counts[item.get("artist", "")] >= 2
+            ):
+                continue
             if key not in seen:
                 seen.add(key)
                 unique.append(dict(item))
         candidates = unique[:25]
         choices = None
-        if interpreted_by_ai:
+        if interpreted_by_ai and candidates:
             try:
+                if intent_cache is not None and "selection_quota" in intent_cache:
+                    raise intent_cache["selection_quota"]
                 choices = await self.ai.select(
-                    body.query, kind, candidates, filters.model_dump(), body.limit
+                    body.query,
+                    kind,
+                    candidates,
+                    filters.model_dump(),
+                    body.limit,
+                    **(
+                        {"target_duration_ms": target_duration_ms}
+                        if target_duration_ms is not None
+                        else {}
+                    ),
                 )
             except AppError as exc:
+                if intent_cache is not None and exc.code in {
+                    "AI_QUOTA",
+                    "AI_LOCAL_LIMIT",
+                }:
+                    intent_cache["selection_quota"] = exc
                 warnings.append(exc.message)
         rows = []
         if choices is not None:
-            used, counts = set(), Counter()
+            used, counts = set(), Counter(artist_counts)
             for choice in sorted(choices.choices, key=lambda value: -value.score):
                 if (
                     choice.index >= len(candidates)
@@ -167,7 +239,7 @@ class OnlineRecommendationService(RecommendationService):
                     continue
                 used.add(choice.index)
                 item = dict(candidates[choice.index])
-                if str(item["id"]) in references.blocked_ids:
+                if str(item["id"]) in blocked_ids:
                     continue
                 known_tags = set(metadata_tags(item))
                 if known_tags & (set(intent.excluded_themes) | negative):
@@ -222,10 +294,19 @@ class OnlineRecommendationService(RecommendationService):
                 set(intent.excluded_themes) | negative,
                 filters,
                 body.limit,
-                references.blocked_ids,
+                blocked_ids,
                 references.positive,
             )
             rows = result["items"]
+            if artist_counts:
+                counts = Counter(artist_counts)
+                accepted = []
+                for row in rows:
+                    artist = row["item"].get("artist", "")
+                    if counts[artist] < 2:
+                        counts[artist] += 1
+                        accepted.append({**row, "position": len(accepted) + 1})
+                rows = accepted
             for row in rows:
                 row["explanation"] = row["explanation"].replace(
                     "Classificação editorial do catálogo local.",
@@ -263,6 +344,26 @@ class OnlineRecommendationService(RecommendationService):
                 "degraded": bool(warnings),
                 "sources": sources,
                 "hint": hint,
+                **(
+                    {
+                        "has_more": bool(warnings)
+                        or catalog_has_more
+                        or len(candidates) > len(rows),
+                        "next_offset": offset + 15
+                        if catalog_has_more and offset < 300
+                        else None,
+                    }
+                    if kind == "books"
+                    else {}
+                ),
+                **(
+                    {
+                        "catalog_has_more": catalog_has_more,
+                        "warnings": list(dict.fromkeys(warnings)),
+                    }
+                    if target_duration_ms is not None
+                    else {}
+                ),
             },
         }
         return self.remember(result)
@@ -281,30 +382,77 @@ class OnlineRecommendationService(RecommendationService):
             else "optional",
             energy="low" if body.mode in {"FOCUS", "CALM"} else None,
         )
-        query = f"{contexts[body.mode]} para ler {book.title}. Temas: {', '.join(book.subjects[:6])}. {body.context}"
-        result = await self._online(
-            "music", DiscoveryRequest(query=query[:1000], filters=filters, limit=25)
-        )
+        # User music preferences precede book metadata so they cannot be cut off.
+        query = f"{contexts[body.mode]}. Preferências musicais: {body.context}. Para ler {book.title[:200]}. Temas: {', '.join(book.subjects[:6])[:240]}"
         target = body.target_duration_min * 60000
-        selected, total, estimated = [], 0, False
-        for row in result["items"]:
-            duration = (
-                row["item"].get("duration_ms")
-                or row["item"].get("estimated_duration_ms")
-                or 300000
+        selected, total = [], 0
+        seen_ids, seen_keys = set(), set()
+        artist_counts = Counter()
+        warnings = []
+        result = None
+        ai_used = degraded = False
+        intent_cache = {}
+        for round_index in range(MAX_SOUNDTRACK_ROUNDS):
+            batch = await self._online(
+                "music",
+                DiscoveryRequest(query=query[:1000], filters=filters, limit=25),
+                excluded_ids=seen_ids,
+                excluded_keys=seen_keys,
+                artist_counts=artist_counts,
+                offset=round_index * 15,
+                target_duration_ms=target - total,
+                intent_cache=intent_cache,
             )
-            if total >= target:
+            if result is None:
+                result = batch
+            ai_used |= batch["meta"]["ai_used"]
+            degraded |= batch["meta"]["degraded"]
+            warnings.extend(batch["meta"]["warnings"])
+            added = 0
+            for row in batch["items"]:
+                item = row["item"]
+                key = item_key(item)
+                if (
+                    item["id"] in seen_ids
+                    or key in seen_keys
+                    or artist_counts[item["artist"]] >= 2
+                ):
+                    continue
+                seen_ids.add(item["id"])
+                seen_keys.add(key)
+                artist_counts[item["artist"]] += 1
+                selected.append({**row, "position": len(selected) + 1})
+                total += track_duration(item)[0]
+                added += 1
+                if total >= target or len(selected) >= MAX_SOUNDTRACK_TRACKS:
+                    break
+            if total >= target or len(selected) >= MAX_SOUNDTRACK_TRACKS:
                 break
-            estimated |= not bool(row["item"].get("duration_ms"))
-            selected.append({**row, "position": len(selected) + 1})
-            total += duration
+            if not added and not batch["meta"]["catalog_has_more"]:
+                break
         result["items"] = selected
-        result["playlist"] = {
-            "total_duration_ms": total,
-            "tracks_count": len(selected),
-            "duration_estimated": estimated,
+        result["playlist"] = reading_summary(selected, target)
+        result["meta"] = {
+            "mode": "online",
+            "ai_used": ai_used,
+            "degraded": degraded,
+            "sources": sorted(
+                {row["item"].get("provider", "local") for row in selected}
+            ),
+            "retrieval_rounds": round_index + 1,
+            "hint": "Trilha selecionada por IA."
+            if ai_used
+            else "Trilha classificada por regras.",
         }
-        if estimated:
+        if "musicbrainz" in result["meta"]["sources"]:
+            result["meta"]["hint"] += (
+                " Metadados: MusicBrainz; energia e vocais estimados pela IA quando informados."
+            )
+        if "local" in result["meta"]["sources"]:
+            result["meta"]["hint"] += " Inclui seleção do catálogo local."
+        if warnings:
+            result["meta"]["hint"] += " " + " ".join(dict.fromkeys(warnings))
+        if result["playlist"]["duration_estimated"]:
             result["meta"]["hint"] += (
                 " Faixas sem duração conhecida são estimadas em 5 minutos."
             )
@@ -312,4 +460,4 @@ class OnlineRecommendationService(RecommendationService):
             result["meta"]["hint"] += (
                 " A seleção disponível não preenche a duração solicitada."
             )
-        return result
+        return self.remember(result)

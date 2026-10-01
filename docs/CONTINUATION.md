@@ -1,5 +1,15 @@
 # Ponto de retomada — 2026-10-01
 
+## Renovação de livros e duração de trilhas concluídas
+
+“Ver outros livros” mantém o pedido enviado e exclui IDs já exibidos; conserva lista durante espera/erro/cancelamento/esgotamento. API de livros aceita `excluded_book_ids`/`offset`, informa `meta.has_more`/`next_offset`, e pagina Open Library com cache por página. Histórico somente na página atual, sem feedback persistente.
+
+Leitura online transmite duração restante ao Groq e busca novos lotes (até seis, máximo 60 faixas), mantendo descrição musical, filtros, deduplicação e duas faixas por artista. `playlist` informa `target_duration_ms`, `target_met` e `shortfall_ms`, além de duração/estimativa. Groq 429 respeita Retry-After curto uma vez por chamada e contabiliza cada tentativa; interpretação compartilhada entre lotes evita chamadas redundantes. Salvamento por origem aceita até 60 faixas; manual continua 25.
+
+Verificações e teste online estão na entrada mais recente do log: livros renovados sem repetição; trilha real de jazz para Duna com 26 faixas/95 minutos (inclui estimativas), meta de 90 atendida com IA/MusicBrainz. API online e frontend preservados nas portas 8000/5173. Reiniciar só a instância identificada e usar `start-local.ps1 -Online`; não alterar chaves/cotas.
+
+Próxima entrega de produto continua sendo integração de playlists na conta, abaixo. Testar a renovação e trilhas de 90/120 minutos com consultas do usuário antes de ampliar limites de recuperação; resultados podem ser curtos por disponibilidade/metadados/cotas.
+
 ## Instância online ativada a pedido do usuário
 
 Sistema em execução para testes reais: interface `http://127.0.0.1:5173`, Swagger `http://127.0.0.1:8000/docs`. API offline anterior foi substituída por `local.py` com `GANDALF_ONLINE=1`; frontend existente preservado. `/system/status` confirma catálogo online e Groq `openai/gpt-oss-20b` configurado, limite existente de 50 chamadas/dia; readiness 200 com schema migrado. Logs ignorados em `.impeccable/runtime/online-api.*.log`.

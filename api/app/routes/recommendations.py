@@ -4,7 +4,11 @@ from fastapi import APIRouter, Request
 from starlette.concurrency import run_in_threadpool
 
 from app.core.exceptions import AppError
-from app.schemas.recommendation import DiscoveryRequest, ReadingRequest
+from app.schemas.recommendation import (
+    BookDiscoveryRequest,
+    DiscoveryRequest,
+    ReadingRequest,
+)
 
 router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
 
@@ -15,7 +19,7 @@ async def music(request: Request, body: DiscoveryRequest):
 
 
 @router.post("/books")
-async def books(request: Request, body: DiscoveryRequest):
+async def books(request: Request, body: BookDiscoveryRequest):
     if body.filters.model_dump(exclude_none=True, exclude_defaults=True):
         raise AppError(
             422,

@@ -1,5 +1,40 @@
 # Registro de desenvolvimento
 
+## 2026-10-01 — Novos livros e trilhas que buscam a duração pedida
+
+### Implementado
+- “Ver outros livros” substitui sugestões para o mesmo pedido enviado, acumulando IDs já exibidos. Lista atual permanece em espera, erro, cancelamento ou esgotamento; nova busca reinicia as exclusões. Botão e mensagens funcionam nos dois temas e em telas pequenas.
+- API de livros aceita `excluded_book_ids` (até 200 UUIDs) e `offset` (0–300); exclusões valem para IA e fallback. Open Library pagina candidatos; cache persistente distingue páginas. `meta.has_more`/`next_offset` orientam continuação.
+- Leitura online envia durações e meta restante ao Groq, recuperando novos lotes até atender a meta ou os limites de recuperação. Descrição musical aparece antes dos metadados do livro, sem perder o contexto por truncamento. Deduplicação por ID/título/artista e limite global de duas faixas por artista.
+- Resumo de duração compartilhado entre local/online informa meta, total, estimativa e diferença. Interface usa a meta do resultado enviado, mesmo após editar o formulário. Salvamento de trilhas ampliado para até 60 faixas; criação manual permanece limitada a 25.
+- Groq respeita `Retry-After` curto em 429, com uma espera de até 30 segundos e uma tentativa adicional; ambas contam no limite local. Interpretação reutilizada nos lotes; cota persistente não causa novas tentativas em cada página. Mensagem final consolida fontes/avisos, sem avisos enganosos de lotes intermediários vazios.
+
+### Arquivos principais alterados
+- `api/app/ai/groq.py`, `api/app/providers/musicbrainz.py`, `api/app/providers/open_library.py`
+- `api/app/routes/recommendations.py`, `api/app/schemas/recommendation.py`, `api/app/schemas/playlist.py`
+- `api/app/services/online_recommendations.py`, `api/app/services/recommendation_service.py`, `api/app/services/reading_duration.py`
+- `api/app/services/book_service.py`, `api/app/services/hybrid_books.py`, `api/app/services/playlist_service.py`
+- `api/tests/test_continuation.py`, `api/tests/test_online.py`, `api/tests/test_playlists.py`
+- `frontend/src/pages/Discovery.tsx`, `frontend/src/pages/ReadWithMusic.tsx`, `frontend/src/lib/api.ts`, `frontend/src/styles.css`
+- `frontend/tests/continuation.mjs`, `frontend/package.json`, `api/README.md`
+- `docs/05-API-Specification.md`, `docs/adr/0014-owner-scoped-playlists.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Renovação mantém a consulta enviada, sem aplicar texto ainda editado. Exclusões vivem na página atual, sem criar histórico/feedback persistentes. Catálogo local finito sinaliza esgotamento.
+- Trilhas usam até seis lotes de 25 candidatos e no máximo 60 faixas. A última faixa fica inteira e pode ultrapassar a meta. Falta de itens compatíveis, metadados, IA ou cota pode produzir trilha menor: informa o déficit, sem completar com itens incompatíveis.
+- Paginação segue contratos Open Library/MusicBrainz; retry limitado segue cabeçalho Groq. Não houve migração, nova dependência, aumento de cota diária, mudança de modelo ou exposição de chaves.
+- Extensão visual preserva PRODUCT/DESIGN/sidecar. Detector sem achados; revisão Impeccable `ship` no escopo da extensão, com 20 capturas válidas em `.impeccable/review/continuation-*.png`. Documenter confirmou coerência e registrou divergências anteriores do sidecar, sem repará-las.
+
+### Estado atual
+- 281 testes backend aprovados. Cobrem 90 minutos após cinco escolhas iniciais, duração real/estimada, contexto longo, paginação/cache, deduplicação, limites globais/de recuperação, Groq 429, cota local, persistência de 60 faixas, renovação local/online, retry/cancelamento/esgotamento e duração do pedido enviado. Build, suíte frontend completa, Ruff e gates estritos v7 K=5/10 aprovados sem mudanças/perdas no ranking local.
+- Instância do projeto reiniciada em modo online na porta 8000, mantendo banco/segredo e frontend 5173. Busca real de livros retornou seis opções e depois três novas sem IDs repetidos; IA ativa, sem degradação. Teste real de leitura de Duna, jazz suave instrumental com saxofone/piano, 90 minutos: 26 faixas únicas, 19 MusicBrainz com duração conhecida e sete locais estimadas; total 5.701.078 ms (cerca de 95 min), meta atendida, máximo duas por artista, `ai_used=true`, `degraded=false`.
+- Primeira tentativa real musical acionou fallback por 429 do Groq. Depois do tratamento limitado, nova tentativa atingiu a meta. Essas amostras não garantem disponibilidade futura, afinidade em todas as consultas ou preenchimento de qualquer pedido. Sem reprodução/exportação de áudio; playlists ainda não integradas à interface.
+
+### Próximos passos
+- Usuário testar “Ver outros livros” e leitura de 90/120 minutos em `http://127.0.0.1:5173`, inclusive descrições/exclusões específicas; conferir duração conhecida/estimada e avisos de déficit/cota.
+- Retomar integração de playlists na conta conforme `docs/CONTINUATION.md`; usar origem pública completa ou subconjunto de até 60 faixas, com retry de expiração/autorização e revisão responsiva.
+- Avaliar corpus/qualidade online e casos em que seis lotes não preenchem a meta antes de alterar limites; preservar filtros, deduplicação e limite diário existente. PostgreSQL/CI hospedada e cache compartilhado continuam pendentes.
+
 ## 2026-10-01 — Instância local online para testes reais
 
 ### Implementado

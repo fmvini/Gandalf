@@ -11,7 +11,7 @@ class PlaylistCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     description: str | None = Field(default=None, max_length=1000)
     source_recommendation_id: UUID | None = None
-    music_ids: list[UUID] | None = Field(default=None, min_length=1, max_length=25)
+    music_ids: list[UUID] | None = Field(default=None, min_length=1, max_length=60)
 
     @model_validator(mode="after")
     def valid_tracks(self):
@@ -19,6 +19,12 @@ class PlaylistCreate(BaseModel):
             raise ValueError("Informe as músicas ou uma trilha de leitura.")
         if self.music_ids and len(set(self.music_ids)) != len(self.music_ids):
             raise ValueError("A playlist não pode repetir músicas.")
+        if (
+            self.source_recommendation_id is None
+            and self.music_ids
+            and len(self.music_ids) > 25
+        ):
+            raise ValueError("Escolha até 25 músicas para uma playlist manual.")
         return self
 
 

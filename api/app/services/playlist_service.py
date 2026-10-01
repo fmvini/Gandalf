@@ -109,8 +109,10 @@ class PlaylistService:
             )
             if not ids:
                 raise AppError(422, "VALIDATION_ERROR", "A trilha não contém músicas.")
-            if len(ids) > 25:
-                raise AppError(422, "VALIDATION_ERROR", "Escolha até 25 músicas.")
+            if len(ids) > 60:
+                raise AppError(
+                    422, "VALIDATION_ERROR", "Escolha até 60 músicas da trilha."
+                )
             if any(item_id not in by_id for item_id in ids):
                 raise AppError(
                     422,

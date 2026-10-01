@@ -74,7 +74,11 @@ Resultados anônimos ficam em memória por até uma hora, no máximo 256 buscas 
 
 API disponível após a migração `0006_playlists`; o iniciador local aplica a migração automaticamente no próximo início. A interface de playlists ainda está pendente. Todas as quatro rotas exigem Bearer válido/conta ativa e filtram pelo proprietário; playlist de outra conta retorna o mesmo 404 de um ID ausente.
 
-Criação manual: `{"name":"Minha trilha","music_ids":["UUID do catálogo musical"]}`. Para salvar uma trilha, enviar `{"name":"Minha leitura","source_recommendation_id":"UUID retornado por read-with-music"}`. Um subconjunto opcional `music_ids` deve pertencer à origem e conserva a ordem enviada. Nome 1–120 caracteres, descrição opcional até 1.000 e 1–25 faixas únicas; metadados não são aceitos do cliente.
+Criação manual: `{"name":"Minha trilha","music_ids":["UUID do catálogo musical"]}`. Para salvar uma trilha, enviar `{"name":"Minha leitura","source_recommendation_id":"UUID retornado por read-with-music"}`. Um subconjunto opcional `music_ids` deve pertencer à origem e conserva a ordem enviada. Nome 1–120 caracteres, descrição opcional até 1.000; criação manual aceita 1–25 faixas únicas, trilha de leitura aceita até 60. Metadados não são aceitos do cliente.
+
+Livros: envie `excluded_book_ids` (até 200 UUIDs já vistos) e `offset` (0–300) para renovar o mesmo `query`; `meta.has_more`/`next_offset` orientam continuação. A interface oferece “Ver outros livros”, sem repetir IDs já mostrados na busca atual.
+
+Trilhas online recebem a meta de duração e podem recuperar até seis lotes, sem repetir gravações ou exceder duas faixas por artista. `playlist.target_duration_ms`, `target_met` e `shortfall_ms` mostram se o total atende ao pedido; duração desconhecida permanece estimada. A fonte pode não oferecer faixas suficientes. Groq respeita `Retry-After` curto em 429 com uma tentativa adicional, contabilizada no limite local; cotas persistentes seguem para fallback.
 
 Faixas e ordem permanecem disponíveis após reinício/expiração da recomendação ou atualização do catálogo. Duração desconhecida usa estimativa no total, sinalizada por `duration_estimated`; os metadados não ganham uma duração real inventada. Origem deve ser uma trilha de leitura ainda no cache desse processo; descoberta musical pode ser salva por IDs pelo caminho manual. Não existe edição/exportação/reprodução nesta etapa. [Contrato completo](../docs/05-API-Specification.md#7-playlists-playlists) e [decisão de persistência/privacidade](../docs/adr/0014-owner-scoped-playlists.md).
 

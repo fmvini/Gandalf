@@ -449,6 +449,19 @@ Busca o UUID no catálogo local; não faz uma consulta externa por identificador
 
 ### 6.2 `POST /recommendations/books`
 
+**Renovação implementada em 2026-10-01** (prefixo `/api/v1`): mantém `query` e `limit` da descoberta; aceita `excluded_book_ids` (até 200 UUIDs já exibidos, padrão `[]`) e `offset` (0–300, padrão 0). Os IDs são excluídos antes da seleção por IA e também do fallback local/por regras. `meta.has_more` indica possibilidade de continuar e `meta.next_offset` informa a próxima página externa, ou `null`. A interface “Ver outros livros” substitui a lista para o mesmo pedido enviado, acumula exclusões enquanto a página está aberta e conserva a lista em espera/erro/cancelamento/esgotamento. Uma busca nova reinicia essas exclusões. Não é histórico persistente nem feedback.
+
+```json
+{
+  "query": "Ficção científica sobre exploração espacial",
+  "limit": 10,
+  "excluded_book_ids": ["UUID de um livro já mostrado"],
+  "offset": 15
+}
+```
+
+Paginação por `offset/limit` segue o [contrato Open Library](https://openlibrary.org/dev/docs/api/search); cache inclui a página. Os exemplos seguintes descrevem o contrato alvo do roadmap.
+
 **Request**
 ```json
 {
@@ -468,6 +481,16 @@ Busca o UUID no catálogo local; não faz uma consulta externa por identificador
 > Livros já lidos, `DISLIKE`, `NOT_INTERESTED` e `ALREADY_KNOW` do usuário são **excluídos** (RN-003/004).
 
 ### 6.3 `POST /recommendations/read-with-music`
+
+**Contrato implementado em 2026-10-01**: `book_id` UUID conhecido, `mode` (`FOCUS`, `IMMERSIVE`, `CINEMATIC`, `CALM`, `CUSTOM`), `context` até 500 caracteres (obrigatório em `CUSTOM`), `vocals` (`INSTRUMENTAL`, `MINIMAL`, `ANY`) e `target_duration_min` de 15 a 120, padrão 60. `limit`, `progression` e `book_ref` abaixo continuam sendo planejamento.
+
+No modo online, a descrição musical precede os metadados do livro; a interpretação é reutilizada nos lotes. A seleção Groq recebe duração das faixas e duração restante, recuperando até seis páginas de candidatos e no máximo 60 faixas. Mantém exclusões, filtros e limite de duas faixas por artista em toda a trilha; gravações com o mesmo título/artista são deduplicadas mesmo com IDs distintos. Paginação usa o [contrato MusicBrainz](https://musicbrainz.org/doc/MusicBrainz_API/Search). Não preenche com faixas incompatíveis só para atingir a meta.
+
+`playlist` retorna `tracks_count`, `total_duration_ms`, `duration_estimated`, `target_duration_ms`, `target_met` e `shortfall_ms`. Duração conhecida é real; desconhecida é estimada em cinco minutos. A soma pode ultrapassar a meta pela última faixa inteira. Catálogo insuficiente, cota, indisponibilidade ou limites de recuperação podem impedir o preenchimento: nesse caso informa o total encontrado e a diferença, sem prometer a duração solicitada. A interface mostra esses valores referentes ao pedido enviado, mesmo após editar a duração do formulário.
+
+Groq `429` com `Retry-After` numérico finito de até 30 segundos recebe uma espera e uma única nova tentativa; cada tentativa consome o limite local já configurado. Cabeçalho ausente/inválido ou espera maior retorna fallback imediatamente. Cota persistente não é repetida em cada lote da mesma trilha. Cache continua por 24 horas; nenhum limite/chave/modelo foi aumentado ou alterado. Referência: [limites Groq](https://console.groq.com/docs/rate-limits).
+
+**Contrato alvo do roadmap abaixo (ainda não implementado integralmente)**
 
 **Request**
 ```json
@@ -624,7 +647,7 @@ Se a intenção for ambígua: `200` com `"clarification": { "question": "…", "
 `name` é obrigatório (1–120 caracteres após trim); `description` é opcional/nula (até 1.000). Campos extras são rejeitados; a conta vem exclusivamente do Bearer, nunca do corpo.
 
 - **Manual:** omitir `source_recommendation_id` e enviar `music_ids` (1–25 UUIDs únicos). Só aceita itens do catálogo local ou já persistidos em `music_catalog`; não consulta provedores externos.
-- **Trilha:** enviar o UUID de um resultado público de `/recommendations/read-with-music` ainda no cache do processo (até uma hora/256 buscas). Omitir `music_ids` salva toda a trilha; informar uma lista salva um subconjunto na ordem enviada. Todos os IDs devem pertencer à trilha. Resultados de descoberta de livros/músicas não são aceitos como origem nesta etapa; músicas de descoberta podem ser salvas pelo fluxo manual.
+- **Trilha:** enviar o UUID de um resultado público de `/recommendations/read-with-music` ainda no cache do processo (até uma hora/256 buscas). Omitir `music_ids` salva toda a trilha, com até 60 faixas; informar uma lista salva um subconjunto de até 60 IDs na ordem enviada. Todos os IDs devem pertencer à trilha. Resultados de descoberta de livros/músicas não são aceitos como origem nesta etapa; músicas de descoberta podem ser salvas pelo fluxo manual, limitado a 25 faixas.
 - Não aceita lista vazia nem repetições. Resultado desconhecido/expirado retorna `404 NOT_FOUND`; origem incompatível, trilha vazia ou seleção fora da origem retorna `422 VALIDATION_ERROR`. Música manual desconhecida retorna `404 NOT_FOUND`. Nenhuma dessas falhas grava parcialmente a playlist.
 
 **Response `201`** com `Location: /api/v1/playlists/{id}`:

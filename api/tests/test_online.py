@@ -1,7 +1,7 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
 import pytest
@@ -176,6 +176,123 @@ def test_online_books_use_real_candidates_and_cache_across_restart(online):
     assert (
         len([call for call in remote.calls if call.url.host == "openlibrary.org"]) == 1
     )
+
+
+def test_book_reroll_paginates_provider_and_persists_page_cache(online, monkeypatch):
+    settings, remote = online
+
+    def handle(request):
+        response = remote(request)
+        if request.url.host == "openlibrary.org":
+            offset = int(request.url.params.get("offset", "0"))
+            data = response.json()
+            data["numFound"] = 45
+            data["docs"][0].update(
+                key=f"/works/OL{9999 + offset}W", title=f"Fantasy page {offset}"
+            )
+            return httpx.Response(200, json=data)
+        return response
+
+    monkeypatch.setattr(
+        "app.main.external_client",
+        lambda: httpx.AsyncClient(transport=httpx.MockTransport(handle)),
+    )
+    for _ in range(2):
+        with TestClient(create_app(settings=settings)) as client:
+            first = client.post(
+                "/api/v1/recommendations/books", json={"query": "fantasia"}
+            ).json()
+            ids = [row["item"]["id"] for row in first["items"]]
+            second = client.post(
+                "/api/v1/recommendations/books",
+                json={
+                    "query": "fantasia",
+                    "excluded_book_ids": ids,
+                    "offset": first["meta"]["next_offset"],
+                },
+            ).json()
+            assert second["items"]
+            assert not set(ids) & {row["item"]["id"] for row in second["items"]}
+            assert second["items"][0]["item"]["title"] == "Fantasy page 15"
+    calls = [r for r in remote.calls if r.url.host == "openlibrary.org"]
+    assert [int(r.url.params.get("offset", "0")) for r in calls] == [0, 15]
+
+
+def test_real_adapter_reading_sends_duration_goal_and_retrieves_ninety_minutes(
+    online, monkeypatch
+):
+    settings, remote = online
+    remote.kind = "music"
+    goals, durations = [], []
+
+    def handle(request):
+        response = remote(request)
+        if request.url.host == "musicbrainz.org":
+            offset = int(request.url.params.get("offset", "0"))
+            return httpx.Response(
+                200,
+                json={
+                    "count": 90,
+                    "recordings": [
+                        {
+                            "id": str(UUID(int=offset + i + 100)),
+                            "title": f"Quiet music {offset + i}",
+                            "artist-credit": [{"name": f"Artist {offset + i}"}],
+                            "length": 300000,
+                            "tags": [{"name": "ambient"}],
+                        }
+                        for i in range(15)
+                    ],
+                },
+            )
+        if request.url.host == "api.groq.com":
+            body = json.loads(request.content)
+            if body["response_format"]["json_schema"]["name"] == "Selection":
+                user = json.loads(body["messages"][1]["content"])
+                goals.append(user["remaining_duration_ms"])
+                durations.extend(c["duration_ms"] for c in user["candidates"][:5])
+                data = {
+                    "choices": [
+                        {
+                            "index": i,
+                            "score": 0.95,
+                            "vocals": "instrumental",
+                            "energy": "low",
+                        }
+                        for i in range(5)
+                    ]
+                }
+                return httpx.Response(
+                    200, json={"choices": [{"message": {"content": json.dumps(data)}}]}
+                )
+        return response
+
+    monkeypatch.setattr(
+        "app.main.external_client",
+        lambda: httpx.AsyncClient(transport=httpx.MockTransport(handle)),
+    )
+    with TestClient(create_app(settings=settings)) as client:
+        book_id = client.get("/api/v1/books/search?q=Hobbit").json()["items"][0]["id"]
+        response = client.post(
+            "/api/v1/recommendations/read-with-music",
+            json={
+                "book_id": book_id,
+                "mode": "CUSTOM",
+                "context": "Piano suave e instrumental",
+                "target_duration_min": 90,
+            },
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert len(result["items"]) == 18
+        assert result["playlist"]["target_met"] is True
+        assert result["playlist"]["total_duration_ms"] == 5400000
+        assert result["playlist"]["duration_estimated"] is False
+        assert result["meta"]["ai_used"] is True
+        assert goals == [5400000, 3900000, 2400000, 900000]
+        assert set(durations) == {300000}
+        calls = [r for r in remote.calls if r.url.host == "musicbrainz.org"]
+        assert [int(r.url.params.get("offset", "0")) for r in calls] == [0, 15, 30, 45]
 
 
 def test_online_reading_playlist_persists_without_additional_provider_calls(online):
@@ -397,11 +514,19 @@ def test_reading_external_book_uses_known_recording_duration(online):
             json={"book_id": book["id"], "mode": "FOCUS", "target_duration_min": 30},
         ).json()
         assert data["items"]
-        assert data["playlist"] == {
-            "tracks_count": 1,
-            "total_duration_ms": 240000,
-            "duration_estimated": False,
-        }
+        assert data["items"][0]["item"]["duration_ms"] == 240000
+        assert data["playlist"]["tracks_count"] == len(data["items"]) > 1
+        assert (
+            data["playlist"]["total_duration_ms"]
+            == 240000 + (len(data["items"]) - 1) * 300000
+        )
+        assert data["playlist"]["duration_estimated"] is True
+        assert data["playlist"]["target_duration_ms"] == 1800000
+        assert (
+            data["playlist"]["shortfall_ms"]
+            == 1800000 - data["playlist"]["total_duration_ms"]
+        )
+        assert data["playlist"]["target_met"] is False
         assert "não preenche" in data["meta"]["hint"]
 
 

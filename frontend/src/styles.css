@@ -117,6 +117,11 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .understanding strong { font-size: .86rem; margin-right: 7px; }
 .understanding > div { display: flex; flex-wrap: wrap; gap: 7px; }
 .understanding span { border: 1px solid var(--line); border-radius: 999px; color: var(--muted); padding: 5px 10px; font-size: .78rem; }
+.reroll-controls { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+.reroll-controls .button { flex-shrink: 0; }
+.reroll-controls .reroll-message { flex: 1 1 240px; margin: 0; }
+.reroll-message, .duration-summary { color: var(--muted); font-size: .88rem; max-width: 70ch; margin: 14px 0 22px; }
+.reroll-message p { margin-bottom: 8px; }
 .result-list, .playlist-list { list-style: none; padding: 0; margin: 24px 0 0; }
 .result-row { display: flex; gap: 22px; align-items: start; padding: 23px 4px; border-bottom: 1px solid var(--line); }
 .result-image { width: 106px; height: 106px; flex: none; overflow: hidden; background: var(--soft); display: grid; place-items: center; color: var(--accent-strong); border-radius: 10px; }

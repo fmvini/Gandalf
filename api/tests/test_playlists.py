@@ -82,6 +82,52 @@ def assert_no_playlists(settings):
     engine.dispose()
 
 
+def test_reading_snapshot_can_save_sixty_tracks_and_rejects_larger_sources(playlists):
+    client, _, _, _, headers = playlists
+    source = reading(client)
+    rows = [
+        {
+            "position": i + 1,
+            "item": {**MUSIC[0], "id": str(uuid4()), "duration_ms": 120000},
+        }
+        for i in range(60)
+    ]
+    source["items"] = rows
+    source["playlist"] = {
+        "tracks_count": 60,
+        "total_duration_ms": 7200000,
+        "duration_estimated": False,
+    }
+    client.app.state.recommendation_service.remember(source)
+    response = client.post(
+        ROOT,
+        headers=headers,
+        json={
+            "name": "Duas horas",
+            "source_recommendation_id": source["recommendation_id"],
+        },
+    )
+    assert response.status_code == 201
+    saved = response.json()
+    assert saved["tracks_count"] == 60
+    assert saved["total_duration_ms"] == 7200000
+    assert [t["item"]["id"] for t in saved["tracks"]] == [r["item"]["id"] for r in rows]
+    assert client.get(ROOT + "/" + saved["id"], headers=headers).json() == saved
+    source["items"].append({"position": 61, "item": {**MUSIC[0], "id": str(uuid4())}})
+    client.app.state.recommendation_service.remember(source)
+    assert (
+        client.post(
+            ROOT,
+            headers=headers,
+            json={
+                "name": "Grande demais",
+                "source_recommendation_id": source["recommendation_id"],
+            },
+        ).status_code
+        == 422
+    )
+
+
 def test_manual_create_detail_list_and_delete(playlists):
     client, settings, _, _, headers = playlists
     ids = [item["id"] for item in reversed(MUSIC[:3])]

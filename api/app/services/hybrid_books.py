@@ -27,8 +27,8 @@ class HybridBookService:
             items=items[:limit], total=max(len(items), remote.total)
         )
 
-    async def discover(self, query, limit):
-        return await self.external.search(query, limit, discovery=True)
+    async def discover(self, query, limit, *, offset=0):
+        return await self.external.search(query, limit, discovery=True, offset=offset)
 
     def get_by_id(self, book_id):
         local = self.local.get_by_id(book_id)

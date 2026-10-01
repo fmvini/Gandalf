@@ -10,6 +10,7 @@ from app.providers.local_catalog import BOOKS, MUSIC, normalize
 from app.schemas.book import BookItem
 from app.schemas.recommendation import DiscoveryRequest, MusicFilters, ReadingRequest
 from app.services.music_filters import matches_music_filters, resolve_music_filters
+from app.services.reading_duration import reading_summary
 from app.services.references import resolve_references
 
 RANKING_VERSION = "local-rules-v7"
@@ -133,17 +134,22 @@ class RecommendationService:
         filters = body.filters.model_copy()
         if kind == "music":
             filters = resolve_music_filters(references.context, body.filters)
+        excluded_ids = {str(value) for value in getattr(body, "excluded_book_ids", [])}
         result = self._rank(
             source,
             positive,
             negative,
             filters,
-            body.limit,
-            references.blocked_ids,
+            body.limit + (kind == "books"),
+            references.blocked_ids | excluded_ids,
             references.positive,
             preferred_genres=preferred_genres,
         )
         result["parsed_query"]["excluded_references"] = references.negative
+        if kind == "books":
+            result["meta"]["has_more"] = len(result["items"]) > body.limit
+            result["meta"]["next_offset"] = None
+            result["items"] = result["items"][: body.limit]
         return result
 
     def reading(self, book: BookItem, body: ReadingRequest) -> dict:
@@ -170,11 +176,9 @@ class RecommendationService:
             reading_mode=body.mode,
         )
         total = sum(row["item"]["estimated_duration_ms"] for row in result["items"])
-        result["playlist"] = {
-            "total_duration_ms": total,
-            "tracks_count": len(result["items"]),
-            "duration_estimated": True,
-        }
+        result["playlist"] = reading_summary(
+            result["items"], body.target_duration_min * 60_000
+        )
         result["meta"]["hint"] += (
             " Duração estimada em 5 minutos por faixa; varia conforme a gravação."
         )

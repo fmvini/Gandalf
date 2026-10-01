@@ -34,7 +34,7 @@ class BookService:
         self._lock = asyncio.Lock()
 
     async def search(
-        self, query: str, limit: int, *, discovery: bool = False
+        self, query: str, limit: int, *, discovery: bool = False, offset: int = 0
     ) -> BookSearchResponse:
         title = " ".join(query.split())
         if len(title) < 2:
@@ -43,7 +43,8 @@ class BookService:
                 "VALIDATION_ERROR",
                 "Informe ao menos 2 caracteres para buscar livros.",
             )
-        cache_key = (("discover:" if discovery else "") + title.casefold(), limit)
+        prefix = (f"discover:{offset}:" if offset else "discover:") if discovery else ""
+        cache_key = (prefix + title.casefold(), limit)
         async with self._lock:
             cached = self._cache.get(cache_key)
             if cached and cached[0] > monotonic():
@@ -55,7 +56,7 @@ class BookService:
             if result is not None:
                 return result
             result = await (
-                self.provider.discover(title, limit)
+                self.provider.discover(title, limit, offset=offset)
                 if discovery
                 else self.provider.search(title, limit)
             )

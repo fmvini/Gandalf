@@ -65,11 +65,19 @@ export default function Discovery({ kind }: { kind: Kind }) {
   const [energy, setEnergy] = useState('')
   const [submittedFilters, setSubmittedFilters] = useState({ vocals: '', energy: '' })
   const controller = useRef<AbortController | null>(null)
+  const seenBooks = useRef(new Set<string>())
+  const nextOffset = useRef(0)
+  const [rerollStatus, setRerollStatus] = useState<'idle' | 'loading' | 'error' | 'exhausted'>('idle')
+  const [rerollError, setRerollError] = useState('')
 
   async function runSearch(text: string) {
     controller.current?.abort()
     const nextController = new AbortController()
     controller.current = nextController
+    seenBooks.current.clear()
+    nextOffset.current = 0
+    setRerollStatus('idle')
+    setRerollError('')
     setData(null)
     setSubmittedQuery(text.trim())
     setSubmittedFilters({ vocals, energy })
@@ -81,9 +89,49 @@ export default function Discovery({ kind }: { kind: Kind }) {
         ...(vocals ? { vocals } : {}), ...(energy ? { energy } : {}),
       } : {}
       const result = await post<Data>(content.endpoint, { query: text.trim(), filters, limit: 10 }, nextController.signal)
-      if (!nextController.signal.aborted) { setData(result); setStatus('success') }
+      if (!nextController.signal.aborted) {
+        result.items.forEach(row => seenBooks.current.add(row.item.id))
+        nextOffset.current = result.meta?.next_offset ?? 0
+        setData(result)
+        setStatus('success')
+      }
     } catch (cause) {
       if (!nextController.signal.aborted) { setError(parseError(cause)); setStatus('error') }
+    }
+  }
+
+  async function rerollBooks() {
+    if (kind !== 'books' || !data || rerollStatus === 'loading') return
+    controller.current?.abort()
+    const nextController = new AbortController()
+    controller.current = nextController
+    setRerollError('')
+    setRerollStatus('loading')
+    try {
+      const result = await post<Recommendation<BookItem>>(content.endpoint, {
+        query: submittedQuery, limit: 10,
+        excluded_book_ids: [...seenBooks.current], offset: nextOffset.current,
+      }, nextController.signal)
+      if (nextController.signal.aborted) return
+      // Keep the current list when the catalog is exhausted or unavailable.
+      const freshItems = result.items.filter(row => !seenBooks.current.has(row.item.id))
+      if (!freshItems.length) {
+        nextOffset.current = result.meta?.next_offset ?? nextOffset.current
+        setRerollStatus(result.meta?.has_more || result.meta?.degraded ? 'error' : 'exhausted')
+        setRerollError(result.meta?.has_more || result.meta?.degraded
+          ? 'Não encontramos novos livros nesta tentativa. Tente novamente para continuar a busca.'
+          : 'Você já viu as sugestões disponíveis para este pedido. Amplie ou ajuste a descrição para buscar mais livros.')
+        return
+      }
+      freshItems.forEach(row => seenBooks.current.add(row.item.id))
+      nextOffset.current = result.meta?.next_offset ?? nextOffset.current
+      setData({ ...result, items: freshItems })
+      setRerollStatus('idle')
+    } catch (cause) {
+      if (!nextController.signal.aborted) {
+        setRerollError(parseError(cause))
+        setRerollStatus('error')
+      }
     }
   }
 
@@ -122,7 +170,11 @@ export default function Discovery({ kind }: { kind: Kind }) {
       </form>
       {status === 'idle' ? <div className="search-empty"><Search size={21} /><p>Não sabe por onde começar?</p><div>{content.examples.map(example => <button key={example} type="button" onClick={() => setQuery(example)}>{example} <ArrowUpRight size={15} /></button>)}</div></div> : null}
     </section>
-    <section className="results-section container" aria-live="polite" aria-busy={status === 'loading'}>
+    <section className="results-section container" aria-live="polite" aria-busy={status === 'loading' || rerollStatus === 'loading'}>
+      {kind === 'books' && status === 'success' && data && data.items.length > 0 ? <div className="reroll-controls">
+        <button type="button" className="button button-secondary" onClick={() => void rerollBooks()} disabled={rerollStatus === 'loading' || rerollStatus === 'exhausted' || data.meta?.has_more === false || seenBooks.current.size > 190}><RotateCcw size={17} aria-hidden="true" />{rerollStatus === 'loading' ? 'Buscando outros livros…' : 'Ver outros livros'}</button>
+        <div className="reroll-message">{rerollStatus === 'loading' ? <><p>Buscando novas sugestões para o mesmo pedido. Seus livros atuais continuam aqui enquanto você espera.</p><button className="text-button" type="button" onClick={() => { controller.current?.abort(); setRerollStatus('idle') }}>Cancelar busca de outros livros</button></> : <p>{rerollError || (data.meta?.has_more === false || seenBooks.current.size > 190 ? 'Você já viu as sugestões disponíveis. Ajuste seu pedido para explorar outros livros.' : 'Quer outras opções? Veja novos livros para o mesmo pedido, sem repetir os já mostrados.')}</p>}</div>
+      </div> : null}
       {status === 'success' && data?.items.length && data.meta?.hint ? <p className="field-help">{data.meta.hint}</p> : null}
       {status === 'loading' ? <><div className="status-panel"><div className="loading-track" aria-hidden="true"><span /></div><h2>{['Entendendo seu pedido…', 'Buscando opções reais…', 'Organizando sugestões…'][stage]}</h2><p>Essa busca pode levar alguns segundos.</p><button className="text-button" type="button" onClick={() => { controller.current?.abort(); setStatus('idle') }}>Cancelar busca</button></div><ResultSkeleton kind={kind} /></> : null}
       {status === 'error' ? <div className="status-panel error-panel"><CircleAlert size={30} /><h2>Não foi possível buscar agora.</h2><p>{error}</p><button className="button button-secondary" type="button" onClick={() => void runSearch(query)}><RotateCcw size={17} /> Tentar novamente</button></div> : null}

@@ -24,7 +24,7 @@ Persistir todo o histórico/recomendações antes das playlists ampliaria a etap
 
 ## Consequências e validação
 
-Mais armazenamento por faixa, limitado a 25 faixas por playlist; listas paginadas retornam resumos sem carregar as cópias. Não há edição, exportação, reprodução, favoritos nem personalização nesta etapa. O salvamento por origem precisa acontecer no processo que conserva o resultado; múltiplas instâncias exigirão cache compartilhado ou recomendações persistentes com autorização própria.
+Mais armazenamento por faixa, limitado a 25 faixas manuais e 60 por trilha de leitura (ampliação de 2026-10-01 para comportar trilhas longas); listas paginadas retornam resumos sem carregar as cópias. Não há edição, exportação, reprodução, favoritos nem personalização nesta etapa. O salvamento por origem precisa acontecer no processo que conserva o resultado; múltiplas instâncias exigirão cache compartilhado ou recomendações persistentes com autorização própria.
 
 Testes cobrem acesso entre contas, JWT inválido/expirado e conta inativa, persistência após reinício, ordem/subconjuntos, TTL/origem inválida, duração real/estimada, preservação de metadados, rollback completo, cascatas/restrição de catálogo e upgrade/downgrade. Migração real PostgreSQL e refresh concorrente continuam como gates de infraestrutura.
 

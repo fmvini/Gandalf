@@ -97,8 +97,12 @@ class OpenLibraryProvider:
     async def search(self, title: str, limit: int) -> BookSearchResponse:
         return await self._search({"title": title}, limit)
 
-    async def discover(self, subject: str, limit: int) -> BookSearchResponse:
-        return await self._search({"subject": subject[:180]}, limit)
+    async def discover(
+        self, subject: str, limit: int, *, offset: int = 0
+    ) -> BookSearchResponse:
+        return await self._search(
+            {"subject": subject[:180], **({"offset": offset} if offset else {})}, limit
+        )
 
     async def _search(self, query: dict, limit: int) -> BookSearchResponse:
         user_agent = "Gandalf/0.2.0 (https://github.com/fmvini/Gandalf)"

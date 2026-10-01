@@ -68,8 +68,10 @@ class MusicBrainzProvider:
         self.lock = asyncio.Lock()
         self.last_call = 0.0
 
-    async def search(self, query, limit=20, *, by_tag=False):
+    async def search(self, query, limit=20, *, by_tag=False, offset=0):
         key = ("tag:" if by_tag else "text:") + query.strip().casefold()
+        if offset:
+            key = f"offset:{offset}:" + key
         async with self.lock:
             cached = await run_in_threadpool(self.store.get, "musicbrainz", key, limit)
             if cached is not None:
@@ -82,7 +84,12 @@ class MusicBrainzProvider:
             try:
                 response = await self.client.get(
                     "https://musicbrainz.org/ws/2/recording",
-                    params={"query": search, "limit": limit, "fmt": "json"},
+                    params={
+                        "query": search,
+                        "limit": limit,
+                        "fmt": "json",
+                        **({"offset": offset} if offset else {}),
+                    },
                     headers={
                         "User-Agent": "Gandalf/0.2.0 (https://github.com/fmvini/Gandalf)"
                     },
@@ -105,7 +112,18 @@ class MusicBrainzProvider:
                 if (item := normalize_recording(raw))
             ]
             items = list({item["id"]: item for item in items}.values())
-            result = {"items": items, "total": len(items), "provider": "musicbrainz"}
+            count = payload.get("count")
+            has_more = (
+                count > offset + limit
+                if type(count) is int
+                else len(payload["recordings"]) >= limit
+            )
+            result = {
+                "items": items,
+                "total": len(items),
+                "provider": "musicbrainz",
+                "has_more": has_more,
+            }
             await run_in_threadpool(self.store.save_music, items)
             await run_in_threadpool(
                 self.store.put, "musicbrainz", key, limit, result, self.ttl
