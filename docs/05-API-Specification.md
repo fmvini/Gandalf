@@ -685,7 +685,10 @@ Todas as operações exigem uma conta ativa e JWT válido (`401` quando inválid
 | POST | `/users/me/preferences` | 🔒 | Cria preferência(s) explícita(s) |
 | PATCH | `/users/me/preferences/{id}` | 🔒 | Atualiza valor/peso |
 | DELETE | `/users/me/preferences/{id}` | 🔒 | Remove |
-| GET | `/users/me/favorites` | 🔒 | Itens com `SAVE` (`?type=MUSIC\|BOOK`) |
+| POST | `/users/me/favorites` | 🔒 | Salva um item de resultado válido na conta |
+| GET | `/users/me/favorites` | 🔒 | Snapshots privados paginados (`?type=MUSIC\|BOOK`) |
+| POST | `/users/me/favorites/status` | 🔒 | Consulta em lote os itens salvos da conta |
+| DELETE | `/users/me/favorites/{id}` | 🔒 | Remove favorito da conta; operação idempotente |
 | DELETE | `/users/me/history` | 🔒 | Limpa histórico (P2) |
 | DELETE | `/users/me` | 🔒 | Exclui conta e dados (P2) |
 
@@ -726,6 +729,40 @@ Todas as operações exigem uma conta ativa e JWT válido (`401` quando inválid
 ```
 
 ---
+
+### 8.3 Favoritos individuais — contrato implementado
+
+Base `/api/v1/users/me/favorites`. Todas as operações exigem Bearer válido de uma conta ativa. Preferências/histórico e `SAVE` no endpoint de feedback continuam roadmap; salvar nesta coleção não gera feedback, não altera ranking e não cria playlist nem histórico de consultas.
+
+**Criação:** `POST` aceita somente IDs UUID, com campos adicionais proibidos:
+
+```json
+{"recommendation_id":"00000000-0000-0000-0000-000000000001","item_id":"00000000-0000-0000-0000-000000000002"}
+```
+
+O servidor busca a origem no cache compartilhado (uma hora, até 256 resultados), verifica que o item pertence aos resultados efetivamente devolvidos e deriva o tipo pelos metadados do provedor: `artist` para `MUSIC`, `authors` para `BOOK`. Copia somente o objeto `item`, sem score, explicação, consulta, intenção ou contexto. A origem é pública/temporária; o favorito criado pertence exclusivamente à conta autenticada.
+
+Retorna `201` quando criado e `200` quando já salvo pela mesma conta/tipo/item. Corpo em ambos os casos:
+
+```json
+{
+  "id":"00000000-0000-0000-0000-000000000003",
+  "type":"MUSIC",
+  "item_id":"00000000-0000-0000-0000-000000000002",
+  "item":{"id":"00000000-0000-0000-0000-000000000002","title":"Título da fonte","artist":"Artista da fonte"},
+  "created_at":"2026-10-01T12:00:00Z"
+}
+```
+
+O exemplo abrevia o snapshot; todos os metadados originais do item são preservados, inclusive links/capas e duração real/estimada quando presentes. Deduplicação transacional por `(user_id, type, item_id)` conserva ID, snapshot, proveniência e data da primeira gravação; metadados novos não substituem os salvos. Mesmo uma repetição precisa de origem válida: expirada/removida/desconhecida ou item fora dela retorna `404 NOT_FOUND`. O favorito já salvo permanece acessível depois de expiração/evicção, alteração do catálogo ou reinício; remover e salvar novamente cria um novo snapshot.
+
+**Listagem:** `GET ?type=MUSIC&limit=20&offset=0` retorna `{items: [<objeto acima>], total, limit, offset}`. Filtro `type` opcional (`MUSIC`/`BOOK`); limite 1–50 (padrão 20), offset 0–100.000 (padrão 0). Total e itens filtrados pela conta/tipo. Ordem `created_at DESC, id DESC`; paginação por offset pode mudar diante de novas gravações/exclusões.
+
+**Estado em lote:** `POST /status` aceita somente `{type: "MUSIC"|"BOOK", item_ids: UUID[]}` com 1–60 IDs únicos. Retorna `200` com `{favorites: {"<item_id>": "<favorite_id>"}}`; omite IDs não salvos ou de outra conta/tipo. Não lê o cache de recomendações, não salva itens e permite atualizar botões sem carregar toda a coleção ou fazer uma chamada por item.
+
+**Exclusão:** `DELETE /{favorite_id}` retorna sempre `204` sem corpo para uma requisição válida/autenticada, inclusive ID ausente, já excluído ou pertencente a outra conta. A escrita é filtrada por proprietário; não revela existência nem remove dados de terceiros. Catálogo, cache, playlists e favoritos de outras contas são preservados.
+
+**Erros:** envelope comum `error.code/message/request_id`; `401 UNAUTHORIZED` para sessão ausente/inválida/expirada, `422 VALIDATION_ERROR` para UUID/campos/tipo/limites inválidos e `503 SERVICE_UNAVAILABLE` para banco não configurado/indisponível/schema desatualizado. Cache de origem indisponível impede a criação com 503, sem escrita parcial; listagem/status/exclusão são independentes do cache. Aplicar `0008_favorites` antes de iniciar (`local.py` migra automaticamente). [ADR-0016](adr/0016-owner-scoped-favorites.md). PostgreSQL real permanece pendente; não inferir validação desse banco a partir do suporte SQL.
 
 ## 9. Saúde e Metadados
 

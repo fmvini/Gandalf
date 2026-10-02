@@ -14,6 +14,7 @@ Este diretório reúne as decisões de arquitetura do documento 15 previsto no [
 | [0013](0013-free-local-mode.md) | Modo local gratuito | Implementado e avaliado offline |
 | [0014](0014-owner-scoped-playlists.md) | Playlists por proprietário com cópia das faixas | API/interface/SQLite validados; PostgreSQL pendente |
 | [0015](0015-shared-recommendation-cache.md) | Cache compartilhado de resultados anônimos | SQLite entre instâncias/processos validado; PostgreSQL pendente |
+| [0016](0016-owner-scoped-favorites.md) | Favoritos individuais com snapshot por conta | API/SQLite entre processos validados; PostgreSQL pendente |
 
 A numeração 0012 preserva a referência já usada no [README](../../README.md) e no [roadmap](../12-development-roadmap.md). Os números 0007 a 0011 ficam livres para decisões futuras; não representam registros existentes.
 

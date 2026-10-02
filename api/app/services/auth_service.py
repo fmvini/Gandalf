@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from sqlalchemy import select, update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
@@ -111,7 +111,15 @@ class AuthService:
 
     def current_user(self, access_token: str) -> User:
         user_id = decode_access_token(access_token, self.settings.jwt_secret)
-        user = self.session.get(User, user_id)
+        try:
+            user = self.session.get(User, user_id)
+        except SQLAlchemyError as exc:
+            self.session.rollback()
+            raise AppError(
+                503,
+                "SERVICE_UNAVAILABLE",
+                "A autenticação está indisponível. Tente novamente.",
+            ) from exc
         if user is None or not user.is_active:
             raise AppError(401, "UNAUTHORIZED", "Sessão inválida ou expirada.")
         return user

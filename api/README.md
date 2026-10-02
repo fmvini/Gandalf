@@ -53,6 +53,12 @@ Swagger: http://127.0.0.1:8000/docs. Frontend: `VITE_API_BASE_URL=http://127.0.0
 | GET | `/api/v1/playlists?limit=20&offset=0` | Resumos paginados somente da conta autenticada |
 | GET | `/api/v1/playlists/{id}` | Playlist privada com faixas em ordem |
 | DELETE | `/api/v1/playlists/{id}` | Exclui playlist e faixas; preserva catálogo compartilhado |
+| POST | `/api/v1/users/me/favorites` | Salva snapshot de um item de recomendação válida; 201 novo/200 existente |
+| GET | `/api/v1/users/me/favorites?type=MUSIC&limit=20&offset=0` | Favoritos privados paginados; filtro MUSIC/BOOK opcional |
+| POST | `/api/v1/users/me/favorites/status` | Mapa item→favorito da conta/tipo, em lote de até 60 IDs |
+| DELETE | `/api/v1/users/me/favorites/{id}` | Remove somente da conta; 204 inclusive se ausente |
+
+Favoritos exigem a migração `0008_favorites` e autenticação. Criação aceita apenas `{recommendation_id, item_id}`; o servidor copia o item da origem, sem metadados arbitrários, consulta ou feedback. Deduplicação por conta/tipo/item conserva o primeiro snapshot. A origem precisa estar válida até para repetir o POST; salvo permanece acessível após expiração/reinício. Listagem/status/exclusão não dependem do cache de origem. [Contrato completo](../docs/05-API-Specification.md#83-favoritos-individuais--contrato-implementado) e [ADR-0016](../docs/adr/0016-owner-scoped-favorites.md).
 
 ## Recomenda??es
 

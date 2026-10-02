@@ -25,6 +25,7 @@ from app.providers.musicbrainz import MusicBrainzProvider
 from app.providers.open_library import OpenLibraryProvider
 from app.routes.auth import router as auth_router
 from app.routes.books import router as books_router
+from app.routes.favorites import router as favorites_router
 from app.routes.music import router as music_router
 from app.routes.playlists import router as playlists_router
 from app.routes.recommendations import router as recommendations_router
@@ -250,6 +251,7 @@ def create_app(
     application.include_router(recommendations_router)
     application.include_router(music_router)
     application.include_router(playlists_router)
+    application.include_router(favorites_router)
 
     @application.get("/api/v1/system/status", tags=["health"])
     async def system_status():

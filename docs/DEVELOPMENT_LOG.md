@@ -1,5 +1,100 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Validação completa e retomada dos commits
+
+### Implementado
+- Usuário habilitou aprovações e autorizou retomar os três terminais, registrar commits locais e investigar capas de livros que não carregam. Escopos mantidos; Maestro reserva documentos compartilhados e Git.
+- Suíte backend executada sem adaptações de fixtures fora do sandbox: **366 testes aprovados**, inclusive os três casos multiprocessos anteriormente bloqueados; 1 aviso Starlette/httpx, 74,80 s.
+- Build frontend aprovado (2.049 módulos); aviso não fatal de bundle de 502,65 kB. Suíte frontend confirmou smoke, componentes, autenticação, continuação de livros, playlists e favoritos; re-roll musical encontrou uma falha de asserção de foco visível em `tests/reroll.mjs:81`, encaminhada ao Frontend. E2E live ainda não foi alcançado nessa rodada.
+
+### Arquivos principais alterados
+- `docs/DEVELOPMENT_LOG.md`
+- Alterações funcionais de favoritos/re-roll e relatórios permanecem nas listas da entrada anterior; novos arquivos da correção de capas serão registrados depois da reprodução/validação.
+
+### Decisões técnicas
+- Executar testes/build com aprovação de execução fora do sandbox quando EPERM/TEMP/named pipe impedirem verificação, sem alterar código/asserções para aprovar artificialmente.
+- Commit backend de favoritos usa snapshot seletivo pré-re-roll; alterações sobrepostas de README/Spec/índice ADR serão separadas do commit de renovação. Nenhum push.
+
+### Estado atual
+- Backend de favoritos/re-roll agora aprovado integralmente; commits locais em serialização pelo Maestro. Frontend aguarda correção/reteste de foco e execução live/QA atual.
+- Capas em investigação read-only nos três terminais: URLs/provedor, estado da imagem no cliente e catálogo/cache/snapshots. Nenhuma migração/limpeza de dados ou troca de chave LLM autorizada incidentalmente.
+- API online existente em 8000 preservada; frontend identificado em 5173. PostgreSQL/pgvector real continua gate independente pendente.
+
+### Próximos passos
+- Registrar commits backend separados com diff/stage seletivos, incluindo registros de progresso; enviar hashes aos agentes.
+- Frontend corrigir causa da asserção de foco sem enfraquecê-la; Maestro executar re-roll e live, repetir somente os casos afetados após correções.
+- Reproduzir e corrigir capas, testar trocas/falhas/fallbacks e links reais; revisar capturas atuais e consolidar os relatórios exclusivos de capas antes dos commits frontend/fix/documentação.
+
+## 2026-10-02 — Re-roll musical e retomada online coordenada
+
+### Implementado
+- Consultados log, ponto de retomada, matriz de implementação e Git; preservados os WIPs de favoritos da sessão anterior. Terminais existentes Frontend, Backend e Banco de Dados coordenados por Maestri, sem recrutar duplicatas.
+- Confirmado re-roll de livros já implementado na sessão anterior. Adicionado contrato musical `excluded_music_ids`/offset e metadados de continuação nos dois modos; corrigido `has_more` para não contar avisos/candidatos rejeitados como disponibilidade. Frontend implementa renovação nos dois tipos, sem repetir IDs, preservando pedido/filtros enviados, lista e estado de retorno do login.
+- Frontend orientado a usar as skills `impeccable` e `design-taste-frontend`, API já configurada do 21st.dev e componentes React Bits, preservando a direção visual aprovada e acessibilidade.
+- Revisão backend de favoritos sem novos bloqueadores, Ruff/check de formato aprovados (82 arquivos). TypeScript da árvore frontend e sintaxe dos testes favoritos/live aprovados pelo Maestro.
+- Integrados Alert da fonte pública oficial shadcn (componente listado no 21st.dev) e AnimatedContent do React Bits adaptado para Motion existente, sem GSAP/dependências novas. Créditos e licença específica do React Bits preservados; validação visual atual permanece pendente.
+- Auditoria de Banco concluída, com normalizadores UUID5 reais verificados sem rede e contrato documental de upsert corrigido para refletir `DO UPDATE`/`RETURNING`. Nenhuma migração nova.
+
+### Arquivos principais alterados
+- `docs/DEVELOPMENT_LOG.md`
+- `docs/CONTINUATION.md`
+- `docs/IMPLEMENTATION_STATUS.md`
+- `api/app/schemas/recommendation.py`, `api/app/routes/recommendations.py`, `api/app/services/recommendation_service.py`, `api/app/services/online_recommendations.py`, `api/tests/test_reroll.py`
+- `frontend/src/pages/Discovery.tsx`, `frontend/src/lib/discovery.ts`, `frontend/src/components/RerollControls.tsx`, `frontend/src/components/ui/alert.tsx`, `frontend/src/components/ui/animated-content.tsx`, `frontend/src/components/ui/components.css`
+- `frontend/THIRD_PARTY_NOTICES.md`, `frontend/public/licenses/react-bits.txt`
+- `frontend/tests/discovery-state.mjs`, `frontend/tests/reroll.mjs`, `frontend/tests/favorites.mjs`, `frontend/package.json`
+- `api/README.md`, `docs/05-API-Specification.md`, `docs/adr/0017-ephemeral-discovery-reroll.md`, `docs/adr/README.md`
+- `docs/04-Data-Model.md`, `docs/backend-session-2026-10-02.md`, `docs/database-session-2026-10-02.md`, `docs/frontend-session-2026-10-02.md`
+
+### Decisões técnicas
+- Maestro reserva estes três documentos compartilhados e serializa commits; agentes mantêm registros exclusivos de sessão. API, frontend e modelos/migrações têm responsáveis separados.
+- IDs já vistos no re-roll permanecem efêmeros no cliente, sem migração, histórico persistente ou efeito no ranking pessoal. Contrato musical deve espelhar livros e corrigir disponibilidade de continuação considerando filtros e limite de paginação.
+- Nenhuma troca de chave/API/modelo LLM ou ampliação de cotas autorizada por inferência. Diagnóstico de indisponibilidade deve distinguir credenciais/provedor de bloqueios do sandbox; avisar o usuário se nova chave for necessária.
+
+### Estado atual
+- Suíte completa backend no Maestro: **361 aprovados/3 falhas de ambiente**, 1 aviso Starlette/httpx, 69,87 s; três casos falham em named pipe de `ProcessPoolExecutor` antes dos workers (dois favoritos, um cache). Não é aprovação integral. Subset de recomendações/re-roll do Backend: 185 aprovados; gates v7 K=5/10 sem mudanças/regressões. Dois casos extras adicionados depois da coleta integral e ajuste equivalente de literal/formato foram validados separadamente: `test_reroll.py` **20 aprovados**, Ruff/check de formato final **83 arquivos** aprovados.
+- Permissões Windows impediram o TEMP padrão e diretórios `0700` do pytest. Runner ignorado `.impeccable/runtime/maestro_pytest_temp.py` substitui somente fixture `tmp_path` por diretórios comuns herdados no workspace com `-p no:tmpdir -p no:cacheprovider -p maestro_pytest_temp`; código e asserções preservados. Primeira tentativa do runner teve erro de teardown `_retention_policy` e foi corrigida; somente a rodada final sem esse erro é evidência. Favoritos isolados: 29 aprovados/2 bloqueados named pipe.
+- Favoritos continuam sem commit. `npm test` inicial não iniciou casos: esbuild/Vite bloqueado por `spawn EPERM`. TypeScript atualizado passou novamente no Maestro; `node tests/discovery-state.mjs` passou para MUSIC/BOOK, filtros, offsets 0/300, deduplicação e limite 199+1/200, sem subprocessos. Sintaxe dos testes reroll/favoritos/live passou. Build/E2E visual atual não aprovado. Capturas de favoritos de 01/10 têm títulos/cores inconsistentes e exigem recaptura após fontes/animações estabilizarem; testes agora aguardam fontes/animações finitas. Suíte frontend preserva os sete módulos anteriores e acrescenta testes de estado/re-roll.
+- `git add` seletivo dos dez arquivos backend de favoritos falhou ao criar `.git/index.lock` por permissão negada. `.git` somente leitura nesta sessão; nenhum commit novo nem push. Não contornar esse limite.
+- API online iniciada pelo Backend (PID 37452, porta 8000), preservada. Maestro confirmou status/readiness 200, banco/schema saudáveis, Groq configurado no modelo existente `openai/gpt-oss-20b`; frontend ainda sem instância nova confirmada. MusicBrainz indisponível; “O Hobbit” veio de fallback local, não prova Open Library. Diagnóstico direto Open Library/MusicBrainz e única interpretação Groq falharam no transporte com conexão recusada, sem resposta HTTP. Cota Groq 0→1/50; nenhuma chave/API/modelo/cota alterados, sem evidência de credencial inválida.
+- MCP autenticado 21st.dev indisponível no Frontend e Maestro durante `initialize` (`WinError 10061`); nenhuma recuperação autenticada ou cota atual confirmada. Alert usa fonte pública oficial, sem segredo no frontend/Git.
+- Banco confirmou Docker daemon ausente, PostgreSQL 18 em 5432 exigindo senha e pgvector não encontrado nos diretórios verificados; gate PostgreSQL/pgvector real permanece aberto. Relatório de auditoria: 122 aprovados/3 bloqueados de ambiente; nenhum serviço/banco PostgreSQL existente alterado.
+
+### Próximos passos
+- Ler os três relatórios de sessão para separar unidades/arquivos. Snapshot seletivo de favoritos backend pré-re-roll está em `.impeccable/runtime/favorites-backend-20261002.patch` (ignorado); README/Spec/índice ADR contêm hunks das duas entregas e exigem revisão seletiva ao commitar.
+- Em ambiente habilitado, reexecutar os três casos multiprocessos da suíte backend; fixtures online simuladas não fecham disponibilidade/afinidade das fontes reais. Retomar diagnóstico de transporte antes de cogitar troca de chave LLM.
+- Em ambiente que permita subprocessos, executar build/`npm test` e QA responsiva dos dois temas, incluindo nova lista musical sem repetições e preservação de favoritos/login.
+- Com escrita Git habilitada, revisar diff e fazer commits locais seletivos por unidade: favoritos backend, favoritos frontend, re-roll, componentes e documentação. Nenhum push automático; não marcar etapas bloqueadas como concluídas.
+
+## 2026-10-01 — Backend de favoritos validado e encerramento do dia
+
+### Implementado
+- Coleção autenticada `/api/v1/users/me/favorites`: POST por origem/item UUID com snapshot do servidor (`201` novo/`200` existente), GET paginado/com filtro MUSIC/BOOK, POST `/status` em lote até 60 IDs únicos e DELETE idempotente `204` por proprietário.
+- Favoritos independentes do catálogo/cache após salvar, sem feedback/ranking, playlist ou histórico automático. Repetição conserva primeiro ID/snapshot/proveniência/data; exige origem ainda válida.
+- Correções apontadas em revisão independente: falha SQL ao validar conta agora retorna 503 genérico com rollback; upsert devolve o snapshot atomicamente, eliminando a consulta que podia perder a linha para DELETE concorrente no PostgreSQL.
+
+### Arquivos principais alterados
+- `api/app/routes/favorites.py`, `api/app/schemas/favorite.py`, `api/app/services/favorite_service.py`
+- `api/app/services/auth_service.py`, `api/app/main.py`, `api/tests/test_favorites.py`, `api/README.md`
+- `docs/05-API-Specification.md`, `docs/adr/0016-owner-scoped-favorites.md`, `docs/adr/README.md`
+- `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Schema `0008_favorites` entregue separadamente em `bfa418b`. JSON contém somente o item da origem, sem score/explicação/consulta/contexto. Não há FK ao cache/catálogo nem payload arbitrário do cliente.
+- Decisão final após revisão: `ON CONFLICT DO UPDATE` sem alterar valores (`id = favorites.id`) com `RETURNING` e UUID candidato para distinguir criação/repetição. Preserva o primeiro snapshot e mantém a operação protegida até commit, sem SELECT posterior. Substitui no serviço a proposta inicial de DO NOTHING registrada na entrega do schema.
+- DELETE ausente/de outra conta retorna o mesmo 204, sem vazamento ou efeito sobre terceiros. Status/listagem/exclusão funcionam mesmo se a tabela de origens estiver indisponível. Erros 401/404/422/503 conforme contrato; I/O de banco fora do event loop.
+
+### Estado atual
+- **Backend validado:** 346 testes aprovados (31 de favoritos, 17 de migração), Ruff/formatação (82 arquivos), gates v7 K=5/10 sem mudanças/regressões. Testes cobrem duas contas, música/livro/trilha, origem expirada, reinício, dedup, lote, paginação, rollback, falha de auth/banco/cache e três processos SQLite criando/excluindo. O caso multiprocessos bloqueado no sandbox do agente de banco também passou no terminal Maestro. Revisão das correções: nenhum novo bloqueador.
+- **Frontend permanece WIP:** build aprovado (2.045 módulos; aviso não fatal de bundle 500,83 kB), `node tests/favorites.mjs` completo aprovado, 36 capturas `favorites-*` ignoradas em `.impeccable/review/`. Esperas de rota/filtro corrigidas pelo agente frontend apenas nos testes, preservando asserções. `npm test`, live/API real e os seis outros módulos da árvore atual **não foram executados/validados nesta etapa**: usuário encerrou o dia durante a autorização. Não declarar UI concluída nem commitar seus arquivos ainda.
+- Usuário pediu encerramento por hoje; os agentes foram avisados e liberaram documentos compartilhados. Arquivos frontend modificados/não rastreados foram preservados para amanhã e ficam fora do commit backend. Sem novas tarefas, push ou mudanças de chaves/cotas/modo/servidores/dados existentes.
+- PostgreSQL/pgvector real e CI hospedada seguem pendentes. O caso READ COMMITTED foi corrigido por semântica SQL/revisão e testado em SQLite, sem afirmar validação PostgreSQL real.
+
+### Próximos passos
+- Retomar pela árvore frontend WIP: conferir Git e combinar escopo com Frontend via Maestri; executar `npm test` em `frontend` (sete módulos, API/SQLite temporários). Se falhar, enviar stack/linha ao frontend e repetir só casos afetados após correção; não enfraquecer asserções. Build e favoritos isolados já passaram nesta árvore.
+- Validar E2E de favoritos MUSIC/BOOK, coleção/filtros/remoção, retorno do login sem autosave e isolamento entre contas (DELETE estrangeiro 204); revisar as 36 capturas e capturas reais geradas por live, preservando visual aprovado. Só então registrar entrega/commit frontend seletivo e local.
+- Aplicar migração 0008 no banco correto antes de iniciar (`local.py` faz automaticamente); validar PostgreSQL real, inclusive criar/repetir/excluir em concorrência. Histórico exige contrato de privacidade próprio e não foi iniciado. Não fazer push sem pedido explícito.
+
 ## 2026-10-01 — Schema de favoritos individuais por conta
 
 ### Implementado
