@@ -1,5 +1,30 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Consumo atômico de refresh e erros SQL validados
+
+### Implementado
+- Serviço auth usa consumo condicional atômico para impedir dois sucessores do mesmo refresh em SQLite; perdedor recarrega após rollback e aplica o contrato de replay da família.
+- Hash Argon2 inválido retorna credenciais inválidas; falhas SQL de leitura/escrita recebem rollback e 503 genérico. Registro/login/rehash/replay/logout têm regressões de persistência e sanitização.
+- Backend executou os três testes multiprocessos antes bloqueados: todos passaram fora do sandbox, sem alterar código ou asserções.
+
+### Arquivos principais alterados
+- `api/app/core/security.py`, `api/app/services/auth_service.py`
+- `api/tests/test_auth.py`, `api/tests/test_security.py`
+- `docs/backend-auth-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Preservar JWT curto, refresh rotativo, logout por token informado e isolamento de famílias conforme ADR-0006; nenhuma alteração de schema/contrato.
+- Resultados de rodadas separadas: 470 casos aprovados na suíte anterior e três multiprocessos aprovados agora completam os 473 casos daquele conjunto; não houve nova execução monolítica.
+
+### Estado atual
+- Subset auth/security: 48 PASS; suíte anterior:470 PASS; multiprocessos:3 PASS/10,05s. Ruff/formatação aprovados; aviso Starlette/httpx preexistente.
+- Commit HTTP/limitador criado localmente em `e6278dd`; escrita Git funciona com execução autorizada fora do sandbox. Nenhum push.
+- Banco executa auth PostgreSQL em instância descartável; risco ancestral/descendente ainda sem resultado nesta entrada. Frontend executa seus gates pendentes. API existente não foi reiniciada e ainda não carregou estes patches.
+
+### Próximos passos
+- Commitar esta unidade revisada e congelada; receber gate PostgreSQL antes de qualquer correção de concorrência por família.
+- Concluir testes frontend/browser/live/build, atualizar documentos compartilhados e fazer commits locais correspondentes.
+
 ## 2026-10-02 — Retomada das validações e commit da proteção HTTP
 
 ### Implementado

@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import jwt
 from argon2 import PasswordHasher
-from argon2.exceptions import VerificationError
+from argon2.exceptions import InvalidHashError, VerificationError
 
 from app.core.exceptions import AppError
 
@@ -20,8 +20,9 @@ def hash_password(password: str) -> str:
 
 def verify_password(password_hash: str | None, password: str) -> bool:
     try:
-        return password_hasher.verify(password_hash or dummy_hash, password)
-    except VerificationError:
+        valid = password_hasher.verify(password_hash or dummy_hash, password)
+        return bool(password_hash) and valid
+    except (InvalidHashError, VerificationError):
         return False
 
 

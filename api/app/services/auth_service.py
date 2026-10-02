@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
@@ -38,36 +39,45 @@ class AuthService:
         self.settings = settings
 
     def register(self, email: str, username: str, password: str) -> User:
-        user = User(
-            email=email.casefold(),
-            username=username.casefold(),
-            password_hash=hash_password(password),
-        )
-        self.session.add(user)
-        try:
-            self.session.commit()
-        except IntegrityError as exc:
-            self.session.rollback()
-            raise AppError(
-                409, "CONFLICT", "Não foi possível criar a conta com esses dados."
-            ) from exc
-        self.session.refresh(user)
-        return user
+        with self._database_errors():
+            user = User(
+                email=email.casefold(),
+                username=username.casefold(),
+                password_hash=hash_password(password),
+            )
+            self.session.add(user)
+            try:
+                self.session.commit()
+            except IntegrityError as exc:
+                self.session.rollback()
+                raise AppError(
+                    409, "CONFLICT", "Não foi possível criar a conta com esses dados."
+                ) from exc
+            self.session.refresh(user)
+            return user
 
     def login(self, email: str, password: str) -> TokenResponse:
-        user = self.session.scalar(select(User).where(User.email == email.casefold()))
-        valid = verify_password(user.password_hash if user else None, password)
-        if user is None or not valid or not user.is_active:
-            raise AppError(401, "INVALID_CREDENTIALS", "E-mail ou senha inválidos.")
-        if password_hasher.check_needs_rehash(user.password_hash):
-            user.password_hash = hash_password(password)
-        return self._issue_tokens(user, family_id=uuid4())
+        with self._database_errors():
+            user = self.session.scalar(
+                select(User).where(User.email == email.casefold())
+            )
+            valid = verify_password(user.password_hash if user else None, password)
+            if user is None or not valid or not user.is_active:
+                raise AppError(401, "INVALID_CREDENTIALS", "E-mail ou senha inválidos.")
+            if password_hasher.check_needs_rehash(user.password_hash):
+                user.password_hash = hash_password(password)
+            return self._issue_tokens(user, family_id=uuid4())
 
     def refresh(self, token: str) -> TokenResponse:
+        with self._database_errors():
+            return self._rotate_refresh(token)
+
+    def _rotate_refresh(self, token: str) -> TokenResponse:
         record = self.session.scalar(
             select(RefreshToken)
             .where(RefreshToken.token_hash == refresh_hash(token))
             .with_for_update()
+            .execution_options(populate_existing=True)
         )
         if record is None:
             raise AppError(401, "UNAUTHORIZED", "Sessão inválida ou expirada.")
@@ -89,30 +99,57 @@ class AuthService:
             family_id=record.family_id,
             expires_at=utc_now() + timedelta(days=self.settings.refresh_token_days),
         )
-        record.revoked_at = utc_now()
-        record.replaced_by_id = replacement.id
+        # SQLite ignores FOR UPDATE. Claim the unconsumed row atomically on
+        # either database before adding a successor; never trust a stale read.
+        consumed = self.session.execute(
+            update(RefreshToken)
+            .where(
+                RefreshToken.id == record.id,
+                RefreshToken.revoked_at.is_(None),
+                RefreshToken.expires_at > utc_now(),
+            )
+            .values(revoked_at=utc_now(), replaced_by_id=replacement.id)
+            .execution_options(synchronize_session=False)
+        )
+        if consumed.rowcount != 1:
+            record_id = record.id
+            self.session.rollback()
+            current = self.session.get(RefreshToken, record_id)
+            if current is not None and current.replaced_by_id is not None:
+                self._revoke_family(current.family_id)
+            raise AppError(401, "UNAUTHORIZED", "Sessão inválida ou expirada.")
         self.session.add(replacement)
+        response = self._token_response(user.id, raw_token)
         self.session.commit()
-        return self._token_response(user.id, raw_token)
+        return response
 
     def logout(self, token: str, user_id: UUID) -> None:
-        record = self.session.scalar(
-            select(RefreshToken)
-            .where(RefreshToken.token_hash == refresh_hash(token))
-            .with_for_update()
-        )
-        if (
-            record is not None
-            and record.user_id == user_id
-            and record.revoked_at is None
-        ):
-            record.revoked_at = utc_now()
-            self.session.commit()
+        with self._database_errors():
+            record = self.session.scalar(
+                select(RefreshToken)
+                .where(RefreshToken.token_hash == refresh_hash(token))
+                .with_for_update()
+            )
+            if (
+                record is not None
+                and record.user_id == user_id
+                and record.revoked_at is None
+            ):
+                record.revoked_at = utc_now()
+                self.session.commit()
 
     def current_user(self, access_token: str) -> User:
         user_id = decode_access_token(access_token, self.settings.jwt_secret)
-        try:
+        with self._database_errors():
             user = self.session.get(User, user_id)
+            if user is None or not user.is_active:
+                raise AppError(401, "UNAUTHORIZED", "Sessão inválida ou expirada.")
+            return user
+
+    @contextmanager
+    def _database_errors(self):
+        try:
+            yield
         except SQLAlchemyError as exc:
             self.session.rollback()
             raise AppError(
@@ -120,9 +157,6 @@ class AuthService:
                 "SERVICE_UNAVAILABLE",
                 "A autenticação está indisponível. Tente novamente.",
             ) from exc
-        if user is None or not user.is_active:
-            raise AppError(401, "UNAUTHORIZED", "Sessão inválida ou expirada.")
-        return user
 
     def _issue_tokens(self, user: User, family_id: UUID) -> TokenResponse:
         raw_token, token_hash = new_refresh_token()
@@ -135,8 +169,9 @@ class AuthService:
                 expires_at=utc_now() + timedelta(days=self.settings.refresh_token_days),
             )
         )
+        response = self._token_response(user.id, raw_token)
         self.session.commit()
-        return self._token_response(user.id, raw_token)
+        return response
 
     def _token_response(self, user_id: UUID, refresh_token: str) -> TokenResponse:
         return TokenResponse(
