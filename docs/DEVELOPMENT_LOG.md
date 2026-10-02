@@ -1,5 +1,54 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Auth frontend e integração SQLite aprovadas
+
+### Implementado
+- Trava síncrona evita submit duplicado em login/cadastro; sinal de cancelamento é conferido antes/depois do refresh e antes do envio autenticado. Campos possuem names/autocomplete adequados, sem alteração visual/CSS.
+- Harnesses auth/continuação/live usam porta HTTP efêmera real e preservam portas existentes. Live força API offline e SQLite temporário; falha de spawn também encerra recursos próprios/remove diretório exclusivo.
+
+### Arquivos principais alterados
+- `frontend/src/pages/Authentication.tsx`, `frontend/src/lib/auth.ts`, `frontend/package.json`
+- `frontend/tests/auth.mjs`, `frontend/tests/auth-session.mjs`, `frontend/tests/auth-form.mjs`
+- `frontend/tests/continuation.mjs`, `frontend/tests/live.mjs`
+- `docs/frontend-auth-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Gates antes bloqueados foram executados com aprovação específica fora do sandbox; nenhuma suíte geral ou módulo Node já aprovado repetido.
+- Testes live usam somente API/SQLite descartáveis, duas contas e catálogo offline; não utilizam serviços/dados reais nem LLM/providers externos.
+
+### Estado atual
+- Auth browser porta55554 PASS; continuação64151 PASS; live frontend54815/API54792 PASS (cadastro/login/logout/revogação, favoritos/playlists, persistência/isolamento entre contas, mobile/temas).
+- TypeScript/build2050 módulos PASS; bundle504,06kB/gzip158,12kB com aviso não fatal. Node/session/form, sintaxe/diff-check aprovados.
+- 18 capturas auth e20 de continuação atuais; Frontend e Maestro revisaram cadastro320light/login320dark sem sobreposição. QA assistiva e gerenciadores de senha permanecem fora da validação.
+- Frontend/código/doc congelados; commit local em preparação. Bug auth PostgreSQL confirmado permanece na unidade Backend/Banco separada.
+
+### Próximos passos
+- Commitar somente os nove arquivos frontend/relatório e este registro; nenhum push.
+- Concluir correção/gate PostgreSQL e consolidar docs/estado runtime; API8000 não foi observada na consulta atual, e nenhum teste frontend a utilizou ou reiniciou.
+
+## 2026-10-02 — Reprodução real de replay ancestral em PostgreSQL
+
+### Implementado
+- Banco executou o harness auth em PostgreSQL18.6/READ COMMITTED, sobre uma única instância oficial local descartável, com tmpfs/loopback55432 e identidade verificada.
+- Bug reproduzido: replay de ancestral retornou401, rotação do descendente retornou200 e bloqueio entre sessões foi observado, mas restou um refresh ativo na família.
+- Constraints/digests (seis negativas), consumo do mesmo token (200/401 e zero ativos), ownership/logout/expiração/cascade passaram; o resultado global foi NOT_PASSED.
+
+### Arquivos principais alterados
+- `docs/database-auth-session-2026-10-02.md` (relatório exclusivo Banco)
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Backend autorizado a corrigir a concorrência demonstrada, avaliando serialização transacional por família antes dos bloqueios de linha e releitura do estado. Sem migration/alteração de contrato.
+- Banco aguarda novo freeze/hash para repetir a reprodução em banco vazio exclusivo; schema existente/PG5432/serviços online preservados.
+
+### Estado atual
+- Instância de reprodução removida após reconferência da identidade; nenhuma integração auth PG aprovada ainda.
+- Commits locais já criados: `e6278dd` HTTP/limitador e `7192c54` auth/security SQLite/erros SQL. Bug PostgreSQL é a próxima unidade, ainda em implementação; sem push.
+
+### Próximos passos
+- Receber patch Backend, seus testes/freeze e hashes; executar gate PostgreSQL pós-fix com bloqueio observado e exigir zero refresh ativos na família.
+- Se aprovado, preservar a regressão num gate versionado reutilizável e registrar limites de HTTP/instâncias/deploy antes de integrar CI.
+
 ## 2026-10-02 — Consumo atômico de refresh e erros SQL validados
 
 ### Implementado

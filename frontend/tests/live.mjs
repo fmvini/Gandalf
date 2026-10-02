@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { once } from 'node:events'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { createServer as createTcpServer } from 'node:net'
+import { createServer as createHttpServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { resolve, sep } from 'node:path'
 import { chromium } from 'playwright'
@@ -11,27 +11,32 @@ import { createServer } from 'vite'
 const reservation = createTcpServer()
 await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve))
 const apiPort = reservation.address().port
+assert.ok(apiPort > 0 && apiPort !== 8000 && apiPort !== 5432, 'Preserve existing API and PostgreSQL ports')
 await new Promise(resolve => reservation.close(resolve))
 const temporaryRoot = resolve(tmpdir())
 const dataDir = await mkdtemp(resolve(temporaryRoot, 'gandalf-e2e-'))
 const apiRoot = resolve('..', 'api')
 const python = process.env.GANDALF_PYTHON || resolve(apiRoot, process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python')
-const api = spawn(python, ['local.py'], {
-  cwd: apiRoot,
-  env: { ...process.env, GANDALF_PORT: String(apiPort), GANDALF_LOCAL_DATA: dataDir },
-  windowsHide: true,
-  stdio: ['ignore', 'pipe', 'pipe'],
-})
+let api, apiClosed, apiSpawnError
 let apiLog = ''
-api.stdout.on('data', data => { apiLog += data })
-api.stderr.on('data', data => { apiLog += data })
-api.on('error', error => { apiLog += error.message })
 let browser
 let server
+let vite
 try {
+  api = spawn(python, ['local.py'], {
+    cwd: apiRoot,
+    env: { ...process.env, GANDALF_PORT: String(apiPort), GANDALF_LOCAL_DATA: dataDir, GANDALF_ONLINE: '0', GANDALF_HOST: '127.0.0.1', ONLINE_CATALOG: 'false', BOOK_PROVIDER: 'local' },
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  apiClosed = new Promise(done => api.once('close', done))
+  api.stdout.on('data', data => { apiLog += data })
+  api.stderr.on('data', data => { apiLog += data })
+  api.on('error', error => { apiSpawnError = error })
   const apiUrl = `http://127.0.0.1:${apiPort}`
   let ready = false
   for (let attempt = 0; attempt < 100; attempt++) {
+    if (apiSpawnError) throw apiSpawnError
     if (api.exitCode !== null) throw new Error('API exited: ' + apiLog)
     try {
       ready = (await fetch(apiUrl + '/health/ready', { signal: AbortSignal.timeout(500) })).ok
@@ -41,11 +46,15 @@ try {
   }
   assert.ok(ready, 'Real API did not become ready: ' + apiLog)
   process.env.VITE_API_BASE_URL = '/api/v1'
-  server = await createServer({
-    server: { host: '127.0.0.1', port: 0, proxy: { '/api': apiUrl } }, logLevel: 'silent',
+  vite = await createServer({
+    server: { middlewareMode: true, hmr: false, proxy: { '/api': apiUrl } }, logLevel: 'silent',
   })
-  await server.listen()
-  const base = 'http://127.0.0.1:' + server.httpServer.address().port
+  server = createHttpServer(vite.middlewares)
+  await new Promise(done => server.listen(0, '127.0.0.1', done))
+  const frontPort = server.address().port
+  assert.ok(frontPort > 0 && frontPort !== 5173, 'Preserve the existing frontend port')
+  console.log(`Live isolated ports: frontend ${frontPort}, API ${apiPort}; offline temporary SQLite`)
+  const base = 'http://127.0.0.1:' + frontPort
   browser = await chromium.launch({ headless: true })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   page.setDefaultTimeout(10_000)
@@ -284,12 +293,10 @@ try {
   console.log('Live E2E passed: real API, SQLite, public flows, registration/login/account/logout/revocation, music/book favorites and account isolation, desktop/mobile and both themes.')
 } finally {
   await browser?.close()
-  await server?.close()
-  if (api.exitCode === null) {
-    const closed = once(api, 'close')
-    api.kill()
-    await closed
-  }
+  if (server) await new Promise(done => server.close(done))
+  await vite?.close()
+  if (api?.pid && api.exitCode === null) api.kill()
+  await apiClosed
   assert.ok(dataDir.startsWith(temporaryRoot + sep) && dataDir.split(sep).at(-1).startsWith('gandalf-e2e-'))
   await rm(dataDir, { recursive: true, force: true })
 }

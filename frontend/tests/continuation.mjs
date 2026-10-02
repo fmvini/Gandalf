@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { createServer as createHttpServer } from 'node:http'
 import { chromium } from 'playwright'
 import { createServer } from 'vite'
 
-const server = await createServer({ server: { host: '127.0.0.1', port: 0 }, logLevel: 'silent' })
-await server.listen()
-const base = 'http://127.0.0.1:' + server.httpServer.address().port
+const vite = await createServer({ server: { middlewareMode: true, hmr: false }, logLevel: 'silent' })
+const server = createHttpServer(vite.middlewares)
+await new Promise(done => server.listen(0, '127.0.0.1', done))
+const port = server.address().port
+assert.ok(port > 0 && port !== 5173, 'Use an actual ephemeral port, preserving the existing frontend')
+console.log('Continuation fixture port: ' + port)
+const base = 'http://127.0.0.1:' + port
 const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 page.setDefaultTimeout(10000)
@@ -138,5 +143,6 @@ try {
 } finally {
   held?.resolve()
   await browser.close()
-  await server.close()
+  await new Promise(done => server.close(done))
+  await vite.close()
 }

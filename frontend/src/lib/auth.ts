@@ -65,15 +65,18 @@ async function refresh(expected: number, usedAccessToken: string, duringLogout =
 }
 
 async function authenticated<T>(path: string, init?: RequestInit): Promise<T> {
+  init?.signal?.throwIfAborted()
   const expected = revision
   checkOpen(expected)
   let current = checkSession(expected)
   if (Date.now() + 10_000 >= current.expiresAt) {
     await refresh(expected, current.access_token)
+    init?.signal?.throwIfAborted()
     current = checkSession(expected)
   }
   const usedAccessToken = current.access_token
   const request = () => {
+    init?.signal?.throwIfAborted()
     checkOpen(expected)
     const headers = new Headers(init?.headers)
     headers.set('Authorization', 'Bearer ' + checkSession(expected).access_token)
@@ -82,6 +85,7 @@ async function authenticated<T>(path: string, init?: RequestInit): Promise<T> {
   try { const result = await request(); checkSession(expected); checkOpen(expected); return result } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401 || init?.signal?.aborted) throw error
     await refresh(expected, usedAccessToken)
+    init?.signal?.throwIfAborted()
     try { const result = await request(); checkSession(expected); checkOpen(expected); return result } catch (retryError) {
       if (revision === expected && retryError instanceof ApiError && retryError.status === 401) clear(true)
       throw retryError
