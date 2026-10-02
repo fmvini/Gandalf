@@ -1,5 +1,28 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Auditoria de persistência e capas legadas
+
+### Implementado
+- Banco revisou ownership, upsert e estabilidade de UUIDs das fontes reais; documentação do modelo agora reflete `DO UPDATE`/`RETURNING` e vistos efêmeros do re-roll, sem nova migração.
+- Auditoria de capas somente leitura: 210 livros, 206 Open Library (32 sem capa), quatro locais (sem capa no JSON) e 174 URLs externas antigas sem `default=false`. Cinco caches BOOK estavam expirados; nenhum cache ativo ou divergência com catálogo demonstrado nesse snapshot.
+
+### Arquivos principais alterados
+- `docs/04-Data-Model.md`
+- `docs/database-session-2026-10-02.md`, `docs/database-covers-session-2026-10-02.md`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Preservar IDs, snapshots salvos e TTL; sem expurgo, atualização em lote ou migração incidental. Metadados do catálogo podem ser atualizados pelo fluxo normal de busca com fonte acessível, mantendo identidade.
+- Ausência de capa não comprova falha do provedor; imagens brancas HTTP 200 são um mecanismo possível. Correção do normalizador e fallback da interface são unidades próprias.
+
+### Estado atual
+- Backend de favoritos e re-roll registrado em `318d97a` e `f2adc7c`. Maestro aprovou os 366 testes, incluindo os três multiprocessos que a auditoria inicial não conseguiu executar no sandbox.
+- PostgreSQL/pgvector real segue pendente: Docker sem daemon acessível; PostgreSQL 18 existente exige autenticação e extensão vector não foi encontrada nos diretórios examinados. Nenhum servidor/dado alterado.
+
+### Próximos passos
+- Concluir e validar correções de capas/overflow com Frontend e Backend, sem reescrever favoritos ou origens.
+- Retomar gate PostgreSQL em instância descartável com pgvector disponível; testes SQLite e SQL compilado não substituem esse gate.
+
 ## 2026-10-02 — Renovação musical validada e favoritos versionados
 
 ### Implementado
