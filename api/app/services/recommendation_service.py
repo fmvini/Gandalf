@@ -143,22 +143,26 @@ class RecommendationService:
         filters = body.filters.model_copy()
         if kind == "music":
             filters = resolve_music_filters(references.context, body.filters)
-        excluded_ids = {str(value) for value in getattr(body, "excluded_book_ids", [])}
+        exclusion_field = (
+            "excluded_music_ids" if kind == "music" else "excluded_book_ids"
+        )
+        excluded_ids = {str(value) for value in getattr(body, exclusion_field, [])}
         result = self._rank(
             source,
             positive,
             negative,
             filters,
-            body.limit + (kind == "books"),
+            body.limit + 1,
             references.blocked_ids | excluded_ids,
             references.positive,
             preferred_genres=preferred_genres,
         )
         result["parsed_query"]["excluded_references"] = references.negative
-        if kind == "books":
-            result["meta"]["has_more"] = len(result["items"]) > body.limit
-            result["meta"]["next_offset"] = None
-            result["items"] = result["items"][: body.limit]
+        result["meta"]["has_more"] = (
+            len(result["items"]) > body.limit and len(excluded_ids) < 200
+        )
+        result["meta"]["next_offset"] = None
+        result["items"] = result["items"][: body.limit]
         return self.remember(result)
 
     def reading(self, book: BookItem, body: ReadingRequest) -> dict:

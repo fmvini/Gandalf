@@ -375,6 +375,24 @@ Busca o UUID no catálogo local; não faz uma consulta externa por identificador
 
 ### 6.1 `POST /recommendations/music`
 
+**Renovação implementada em 2026-10-02** (prefixo `/api/v1`): aceita `excluded_music_ids` (lista de até 200 UUIDs, padrão `[]`) e `offset` (0–300, padrão 0), além de `query`, `filters` e `limit` existentes. Query/filtros/limite devem vir do snapshot do pedido enviado; edições ainda não submetidas não alteram o re-roll. Exclusões cumulativas são aplicadas antes da seleção IA e do fallback, junto às referências/exclusões do pedido. UUIDs externos vêm das fontes reais e permanecem estáveis; o catálogo pode reconciliar IDs legados por identidade do provedor. Sem nova migração nem histórico persistente.
+
+```json
+{
+  "query": "Músicas instrumentais sem energia alta",
+  "filters": {"vocals": "none", "excluded_energy": ["high"]},
+  "limit": 10,
+  "excluded_music_ids": ["00000000-0000-0000-0000-000000000001"],
+  "offset": 15
+}
+```
+
+**Continuação comum a MUSIC/BOOK:** resposta mantém `recommendation_id`, `parsed_query`, `items` e `meta`. `meta.has_more` é booleano; `meta.next_offset` é inteiro ou `null`. Uma próxima página externa avança 15, somente até 300; se `null`, o cliente conserva o offset da última requisição e exclui todos os IDs vistos. No modo local, offset não fatia o catálogo: apenas as exclusões fazem avançar e `next_offset` é sempre `null`. Aos 200 IDs excluídos, `has_more=false`/`next_offset=null`; o cliente deve parar sem descartar IDs antigos. Entradas inválidas (UUID/campo/limite/offset) retornam `422 VALIDATION_ERROR`.
+
+`has_more=true` significa próxima página dentro do orçamento ou ao menos um resultado extra aceito depois de filtros, relevância e limite de dois itens por artista/autor. Avisos de falha, candidatos rejeitados e páginas além de 300 não contam. `false` encerra a amostra disponível, não garante exaustão de todo o catálogo. Busca online consulta uma página de 15 por termo (até dois termos), deduplica UUID e título/autoria, e classifica até 25 candidatos; a IA recebe até `limit+1` (máximo 25) na mesma chamada para verificar o item extra. Não varre páginas automaticamente nem amplia cotas. Metadados incompletos/seleção IA podem resultar em lista curta ou vazia mesmo com próxima página.
+
+Falha IA/provedor conserva fallback por metadados ou catálogo editorial real, com `meta.degraded=true`, fontes reais em `meta.sources` e aviso em `meta.hint`. Ausência de candidatos compatíveis retorna `200 items:[]`; falha do cache compartilhado/banco configurado continua `503 SERVICE_UNAVAILABLE`, sem fallback de memória. Interface conserva lista durante espera/cancelamento/erro/esgotamento; erro degradado pode oferecer retry do mesmo pedido. Nenhuma resposta upstream, chave ou SQL é exposta. Groq mantém provider/modelo/chave/cota e cache de Intent/Selection por 24 horas; esse cache é distinto dos vistos efêmeros e da origem sem consulta/intenção. [ADR-0017](adr/0017-ephemeral-discovery-reroll.md).
+
 **Contrato implementado em 2026-09-29** (prefixo `/api/v1`):
 
 ```json
@@ -451,7 +469,7 @@ Busca o UUID no catálogo local; não faz uma consulta externa por identificador
 
 ### 6.2 `POST /recommendations/books`
 
-**Renovação implementada em 2026-10-01** (prefixo `/api/v1`): mantém `query` e `limit` da descoberta; aceita `excluded_book_ids` (até 200 UUIDs já exibidos, padrão `[]`) e `offset` (0–300, padrão 0). Os IDs são excluídos antes da seleção por IA e também do fallback local/por regras. `meta.has_more` indica possibilidade de continuar e `meta.next_offset` informa a próxima página externa, ou `null`. A interface “Ver outros livros” substitui a lista para o mesmo pedido enviado, acumula exclusões enquanto a página está aberta e conserva a lista em espera/erro/cancelamento/esgotamento. Uma busca nova reinicia essas exclusões. Não é histórico persistente nem feedback.
+**Renovação implementada em 2026-10-01 e auditada em 2026-10-02** (prefixo `/api/v1`): mantém `query` e `limit` da descoberta; aceita `excluded_book_ids` (até 200 UUIDs já exibidos, padrão `[]`) e `offset` (0–300, padrão 0). Os IDs são excluídos antes da seleção por IA e também do fallback local/por regras. `meta.has_more` e `meta.next_offset` seguem o contrato comum da seção 6.1, inclusive limites/esgotamento: avisos e rejeições não indicam mais resultados. Filtros musicais em livros continuam retornando 422. A interface “Ver outros livros” substitui a lista para o mesmo pedido enviado, acumula exclusões enquanto a página está aberta e conserva a lista em espera/erro/cancelamento/esgotamento. Uma busca nova reinicia essas exclusões. Não é histórico persistente nem feedback.
 
 ```json
 {

@@ -31,6 +31,11 @@ class BookDiscoveryRequest(DiscoveryRequest):
     offset: int = Field(default=0, ge=0, le=300)
 
 
+class MusicDiscoveryRequest(DiscoveryRequest):
+    excluded_music_ids: list[UUID] = Field(default_factory=list, max_length=200)
+    offset: int = Field(default=0, ge=0, le=300)
+
+
 class ReadingRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
     book_id: UUID

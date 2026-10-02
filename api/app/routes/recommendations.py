@@ -6,7 +6,7 @@ from starlette.concurrency import run_in_threadpool
 from app.core.exceptions import AppError
 from app.schemas.recommendation import (
     BookDiscoveryRequest,
-    DiscoveryRequest,
+    MusicDiscoveryRequest,
     ReadingRequest,
 )
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
 
 
 @router.post("/music")
-async def music(request: Request, body: DiscoveryRequest):
+async def music(request: Request, body: MusicDiscoveryRequest):
     return await request.app.state.recommendation_service.recommend("music", body)
 
 

@@ -59,12 +59,13 @@ class OnlineRecommendationService(RecommendationService):
         self.ai, self.books, self.music = ai, books, music
 
     async def recommend(self, kind, body):
+        exclusion_field = (
+            "excluded_music_ids" if kind == "music" else "excluded_book_ids"
+        )
         return await self._online(
             kind,
             body,
-            excluded_ids={
-                str(value) for value in getattr(body, "excluded_book_ids", [])
-            },
+            excluded_ids={str(value) for value in getattr(body, exclusion_field, [])},
             offset=getattr(body, "offset", 0),
         )
 
@@ -188,7 +189,7 @@ class OnlineRecommendationService(RecommendationService):
         candidates.extend(row["item"] for row in local_ranked[:7])
         if not candidates:
             candidates = list(local)
-        unique, seen = [], set()
+        unique, seen, seen_ids = [], set(), set()
         for item in candidates:
             key = item_key(item)
             if (
@@ -197,10 +198,13 @@ class OnlineRecommendationService(RecommendationService):
                 or artist_counts[item.get("artist", "")] >= 2
             ):
                 continue
-            if key not in seen:
+            if key not in seen and str(item["id"]) not in seen_ids:
                 seen.add(key)
+                seen_ids.add(str(item["id"]))
                 unique.append(dict(item))
         candidates = unique[:25]
+        # Probe one extra compatible result without another provider/AI call.
+        selection_limit = min(body.limit + 1, 25)
         choices = None
         if interpreted_by_ai and candidates:
             try:
@@ -211,7 +215,7 @@ class OnlineRecommendationService(RecommendationService):
                     kind,
                     candidates,
                     filters.model_dump(),
-                    body.limit,
+                    selection_limit,
                     **(
                         {"target_duration_ms": target_duration_ms}
                         if target_duration_ms is not None
@@ -281,7 +285,7 @@ class OnlineRecommendationService(RecommendationService):
                         ),
                     }
                 )
-                if len(rows) >= body.limit:
+                if len(rows) >= selection_limit:
                     break
         else:
             for item in candidates:
@@ -291,7 +295,7 @@ class OnlineRecommendationService(RecommendationService):
                 set(intent.themes) | positive,
                 set(intent.excluded_themes) | negative,
                 filters,
-                body.limit,
+                selection_limit,
                 blocked_ids,
                 references.positive,
             )
@@ -310,6 +314,10 @@ class OnlineRecommendationService(RecommendationService):
                     "Classificação editorial do catálogo local.",
                     "Correspondência por regras com os metadados disponíveis.",
                 )
+        page_has_more = len(rows) > body.limit
+        rows = rows[: body.limit]
+        next_offset = offset + 15 if catalog_has_more and offset + 15 <= 300 else None
+        can_continue = len(excluded_ids) < 200
         sources = sorted({row["item"].get("provider", "local") for row in rows})
         hint = (
             "Pedido interpretado e sugestões ordenadas por IA."
@@ -344,14 +352,11 @@ class OnlineRecommendationService(RecommendationService):
                 "hint": hint,
                 **(
                     {
-                        "has_more": bool(warnings)
-                        or catalog_has_more
-                        or len(candidates) > len(rows),
-                        "next_offset": offset + 15
-                        if catalog_has_more and offset < 300
-                        else None,
+                        "has_more": can_continue
+                        and (page_has_more or next_offset is not None),
+                        "next_offset": next_offset if can_continue else None,
                     }
-                    if kind == "books"
+                    if target_duration_ms is None
                     else {}
                 ),
                 **(

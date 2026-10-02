@@ -1,5 +1,30 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Renovação musical validada e favoritos versionados
+
+### Implementado
+- Backend de favoritos consolidado no commit local `318d97a`, com snapshot seletivo anterior ao re-roll; frontend, banco e renovação excluídos desse commit.
+- Backend de renovação MUSIC/BOOK validado na suíte completa de 366 testes; contratos de UUIDs cumulativos, filtros, paginação limitada e disponibilidade após seleção preservados. Ruff83 e gates v7 K=5/10 sem regressões.
+- Reteste frontend de renovação aprovado após substituir foco JavaScript por Tab real no teste, conservando asserções de elemento ativo e outline. E2E live encontrou overflow em Favoritos a 320 px no tema escuro, encaminhado ao Frontend; capas seguem investigação/correção própria.
+
+### Arquivos principais alterados
+- `api/app/schemas/recommendation.py`, `api/app/routes/recommendations.py`
+- `api/app/services/recommendation_service.py`, `api/app/services/online_recommendations.py`, `api/tests/test_reroll.py`
+- `api/README.md`, `docs/05-API-Specification.md`, `docs/adr/0017-ephemeral-discovery-reroll.md`, `docs/adr/README.md`
+- `docs/backend-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Vistos apenas no cliente; sem migração/histórico/feedback. Renovação de descoberta não altera duração ou seleção da trilha online.
+- Commit da renovação separado de favoritos e da correção de capas; stage seletivo e nenhum push.
+
+### Estado atual
+- Backend de favoritos e renovação testado integralmente; commit local de renovação em preparação. A aprovação de frontend/live/QA é registrada separadamente.
+- Identificado bug puro do normalizador de capas: ID inválido 0/-1 da edição pode apagar capa válida da obra. Backend/Frontend/Banco coordenam a correção, sem reescrever snapshots ou dados existentes.
+
+### Próximos passos
+- Concluir commit seletivo de renovação e enviar os hashes aos agentes.
+- Finalizar live/QA e correção de capas com testes próprios; consolidar frontend e relatórios/documentos em commits locais separados.
+
 ## 2026-10-02 — Validação completa e retomada dos commits
 
 ### Implementado
