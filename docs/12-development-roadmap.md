@@ -1,5 +1,7 @@
 # Development Roadmap
 
+> **MusicProvider inicial — 2026-10-02:** protocolo name/search tipado e injeção pela factory implementados, com MusicBrainz default/mode offline preservados;163 testes focados PASS. Fontes/proveniência da trilha deixam de exigir MusicBrainz; tags não sobrescrevem atributos conhecidos. [Contrato/limites](music-provider-contract.md). G1 permanece aberto: interface inicial não prova cobertura, termos/licenças ou qualidade musical. UI de links alternativos em validação. Checkpoints de 01/10 abaixo são históricos; estado atual em IMPLEMENTATION_STATUS/DEVELOPMENT_LOG.
+
 > **Playlists básicas — 2026-10-01:** POST/GET/GET por ID/DELETE implementados na API com ownership, snapshots, migração reversível e testes SQLite. [Contrato efetivo](05-API-Specification.md#7-playlists-playlists), [ADR-0014](adr/0014-owner-scoped-playlists.md). Próxima fatia: integrar salvar trilha, listagem/detalhe/exclusão à conta mantendo renovação/cancelamento; favoritos/histórico e validação PostgreSQL seguem pendentes.
 
 > **CI inicial — 2026-10-01:** `.github/workflows/ci.yml` configura Ruff, pytest/SQLite, gate estrito do ranking v7 e build/E2E dos fluxos públicos. [Escopo e validação](CI.md). Primeira execução no GitHub, mypy, PostgreSQL/pgvector e auditorias ainda pendentes; a Fase 1 composta e G6 permanecem abertos.
@@ -110,7 +112,7 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 - [ ] Docker Compose com PostgreSQL + pgvector
 - [ ] SQLAlchemy + Alembic; **migração 0001** habilitando `vector`
 - [x] Modelos: `User`, `UserPreference`, `Interaction`, `SearchHistory` (esqueleto dos demais)
-- [x] Autenticação: registro, login, refresh, `GET /auth/me`, proteção de endpoints, hash seguro — testada em SQLite; PostgreSQL pendente
+- [x] Autenticação: registro, login, refresh, `GET /auth/me`, proteção de endpoints, hash seguro — SQLite e quatro grupos auth PostgreSQL reais aprovados; HTTP duas apps/rollout/demais corridas e CI hospedada pendentes
 - [x] Tratamento consistente de erros (`core/exceptions.py`) e formato de erro padronizado
 - [x] `GET /health` e `GET /health/ready`
 - [ ] Lint (`ruff`), tipos (`mypy`), `pytest` e CI mínima — Ruff/pytest/workflow inicial preparados; mypy e primeira execução hospedada pendentes
@@ -128,7 +130,7 @@ Pontos de decisão em que **não se avança** sem cumprir critérios. Existem pa
 
 **Entregas**
 
-- [ ] Interfaces `MusicProvider` e `BookProvider` (seção 31) — `BookProvider` inicial concluído; falta interface musical
+- [x] Interfaces iniciais `MusicProvider` e `BookProvider` (seção 31) — MusicProvider name/search/flags/envelope tipado e injeção concluídos; métodos ampliados de lookup/similares são desenho futuro
 - [x] `OpenLibraryProvider` inicial
 - [ ] **Spike de provider musical** (comparar candidatos por disponibilidade, limites, metadados, estabilidade e termos de uso) → **ADR-012**
 - [ ] Implementação do provider musical escolhido — MusicBrainz integrado experimentalmente; escolha final de G1 pendente

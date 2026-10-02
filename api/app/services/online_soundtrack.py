@@ -4,6 +4,7 @@ from collections import Counter
 from uuid import uuid4
 
 from app.core.exceptions import AppError
+from app.providers.base import MusicProvider
 from app.providers.local_catalog import normalize
 from app.schemas.recommendation import MusicFilters
 from app.services.music_filters import matches_music_filters, resolve_music_filters
@@ -36,7 +37,7 @@ TERM_MAP = {
 }
 
 
-async def generate_soundtrack(ai, music, book, body):
+async def generate_soundtrack(ai, music: MusicProvider, book, body):
     # A book's genre must not replace the user's requested musical atmosphere.
     request = f"Música para leitura, modo {body.mode}. {body.context}"
     query = request + f". Livro: {book.title[:150]}."
@@ -98,8 +99,13 @@ async def generate_soundtrack(ai, music, book, body):
                     reading=True,
                     instrumental=filters.vocals == "none",
                 )
-                candidates.extend(data["items"])
-                has_more |= data.get("has_more", False)
+                if (
+                    music.name
+                    and music.name != "local"
+                    and data["provider"] == music.name
+                ):
+                    candidates.extend(data["items"])
+                    has_more |= data.get("has_more", False)
             except AppError as exc:
                 warnings.append(exc.message)
         pages += 1
@@ -111,7 +117,8 @@ async def generate_soundtrack(ai, music, book, body):
             item = dict(raw)
             duration = item.get("duration_ms")
             if (
-                item.get("provider") != "musicbrainz"
+                item.get("provider") != music.name
+                or music.name == "local"
                 or type(duration) is not int
                 or not 90000 <= duration <= 600000
             ):
@@ -125,13 +132,19 @@ async def generate_soundtrack(ai, music, book, body):
             ):
                 continue
             tags = {normalize(tag) for tag in item.get("tags", [])}
-            if "instrumental" in tags:
+            inferred_from_tags = False
+            if item.get("has_vocals") is None and "instrumental" in tags:
                 item["has_vocals"] = False
+                inferred_from_tags = True
             known_themes, _ = interpret(" ".join(tags))
             if known_themes & negative or "vocal" in tags and filters.vocals == "none":
                 continue
             # Tag-based atmosphere is a preference, not a measured energy claim.
-            item["energy"] = "low" if tags & CALM_TAGS else item.get("energy")
+            if item.get("energy") is None and tags & CALM_TAGS:
+                item["energy"] = "low"
+                inferred_from_tags = True
+            if inferred_from_tags:
+                item["classification_source"] = "provider_tags"
             if not matches_music_filters(
                 item.get("has_vocals"), item.get("energy"), filters
             ):
@@ -195,7 +208,11 @@ async def generate_soundtrack(ai, music, book, body):
                     "position": len(selected) + 1,
                     "item": item,
                     "scores": {"context": min(1.0, score / 4)},
-                    "explanation": "Gravação real encontrada no MusicBrainz, com duração informada pela fonte. "
+                    "explanation": (
+                        "Gravação real encontrada no MusicBrainz, com duração informada pela fonte. "
+                        if music.name == "musicbrainz"
+                        else f"Gravação real encontrada na fonte {music.name}, com duração informada pela fonte. "
+                    )
                     + (
                         "A fonte identifica a faixa como instrumental. "
                         if item.get("has_vocals") is False
@@ -225,9 +242,13 @@ async def generate_soundtrack(ai, music, book, body):
             "mode": "online",
             "ai_used": ai_used,
             "degraded": bool(warnings),
-            "sources": ["musicbrainz"],
+            "sources": sorted({row["item"]["provider"] for row in selected}),
             "retrieval_rounds": pages,
-            "hint": "Faixas reais com duração informada pelo MusicBrainz; sem durações estimadas. "
+            "hint": (
+                "Faixas reais com duração informada pelo MusicBrainz; sem durações estimadas. "
+                if music.name == "musicbrainz"
+                else f"Faixas reais com duração informada pela fonte {music.name}; sem durações estimadas. "
+            )
             + (
                 "IA usada na ordenação. "
                 if ai_used

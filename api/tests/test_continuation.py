@@ -50,6 +50,8 @@ class AI:
 
 
 class Music:
+    name = "musicbrainz"
+
     def __init__(self, duration=300000, pages=6, duplicate=False, page_size=50):
         self.duration, self.pages, self.duplicate = duration, pages, duplicate
         self.page_size = page_size
@@ -79,7 +81,12 @@ class Music:
                 )
             if self.duplicate and page:
                 items[0].update(title="Calm track 0", artist="Artist 0")
-        return {"items": items, "has_more": page + 1 < self.pages}
+        return {
+            "items": items,
+            "total": len(items),
+            "provider": self.name,
+            "has_more": page + 1 < self.pages,
+        }
 
 
 class Books:

@@ -2,6 +2,8 @@
 
 **Estado:** Aceita no desenho para a abstração; escolha final das fontes pendente.
 
+**Implementação inicial de 2026-10-02:** port musical com name/search e injeção pela factory, preservando MusicBrainz como default online e catálogo local offline. A superfície de busca já usada é menor que os exemplos futuros de lookup/similares do desenho. Identidade/cache/persistência pertencem ao adaptador; catálogo JSON não aplica a unicidade de origem descrita no modelo futuro. [Contrato e critérios G1](../music-provider-contract.md). Backend163 PASS com mocks; isso não escolhe uma nova fonte nem fecha G1.
+
 ## Contexto
 
 As recomendações só podem incluir itens reais, mas APIs externas variam em cobertura, metadados, limites e termos de uso. O catálogo local precisa receber objetos normalizados sem acoplar ranking ou interface ao formato de cada serviço.

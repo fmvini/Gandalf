@@ -20,7 +20,7 @@ from app.core.exceptions import AppError
 from app.core.http import external_client
 from app.core.rate_limit import RateLimiter
 from app.database.session import make_engine
-from app.providers.base import BookProvider
+from app.providers.base import BookProvider, MusicProvider
 from app.providers.local_catalog import LocalBookProvider
 from app.providers.musicbrainz import MusicBrainzProvider
 from app.providers.open_library import OpenLibraryProvider
@@ -66,8 +66,12 @@ def error_response(
 
 
 def create_app(
-    *, settings: Settings | None = None, book_provider: BookProvider | None = None
+    *,
+    settings: Settings | None = None,
+    book_provider: BookProvider | None = None,
+    music_provider: MusicProvider | None = None,
 ) -> FastAPI:
+    """Injected adapters keep caller-owned resources; offline ignores music_provider."""
     config = settings or Settings()
 
     @asynccontextmanager
@@ -116,9 +120,11 @@ def create_app(
                 application.state.book_service = HybridBookService(
                     application.state.book_service
                 )
-                music = MusicBrainzProvider(
-                    client, store, config.external_cache_ttl_seconds
-                )
+                music = music_provider
+                if music is None:
+                    music = MusicBrainzProvider(
+                        client, store, config.external_cache_ttl_seconds
+                    )
                 ai = GroqClient(client, store, config)
                 application.state.music_provider = music
                 application.state.recommendation_service = OnlineRecommendationService(

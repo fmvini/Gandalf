@@ -225,6 +225,8 @@ frontend/
 
 ### 6.1 Ports (Interfaces)
 
+O contrato musical inicial implementado está documentado em [MusicProvider](music-provider-contract.md): name/search, envelope tipado e flags da busca existente, com injeção em create_app e163 testes focados aprovados com mocks. O trecho abaixo é o desenho ampliado; lookup/similares/embeddings não devem ser tratados como métodos já implementados.
+
 ```python
 # providers/base.py (ilustrativo)
 class MusicProvider(Protocol):

@@ -5,6 +5,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.ai.groq import Intent
 from app.core.exceptions import AppError
+from app.providers.base import MusicProvider
 from app.providers.local_catalog import BOOKS, MUSIC, normalize
 from app.services.music_filters import matches_music_filters, resolve_music_filters
 from app.services.online_soundtrack import generate_soundtrack
@@ -54,7 +55,7 @@ def metadata_tags(item):
 
 
 class OnlineRecommendationService(RecommendationService):
-    def __init__(self, ai, books, music, cache=None):
+    def __init__(self, ai, books, music: MusicProvider, cache=None):
         super().__init__(cache)
         self.ai, self.books, self.music = ai, books, music
 
@@ -249,13 +250,15 @@ class OnlineRecommendationService(RecommendationService):
                 if kind == "music":
                     vocals = item.get("has_vocals")
                     energy = item.get("energy")
-                    inferred = item.get("provider") == "musicbrainz"
+                    inferred = False
                     if vocals is None:
                         vocals = {"instrumental": False, "vocal": True}.get(
                             choice.vocals
                         )
+                        inferred |= vocals is not None
                     if energy is None:
                         energy = None if choice.energy == "unknown" else choice.energy
+                        inferred |= energy is not None
                     if not matches_music_filters(vocals, energy, filters):
                         continue
                     item.update(has_vocals=vocals, energy=energy)
@@ -279,7 +282,15 @@ class OnlineRecommendationService(RecommendationService):
                             else "A fonte não informou temas detalhados. "
                         )
                         + (
-                            "Energia e vocais são estimativas, não medições."
+                            (
+                                "Atributos desconhecidos preenchidos pela IA são estimativas, não medições."
+                                if inferred
+                                else (
+                                    "Atributos informados pelo catálogo; não são medições acústicas."
+                                    if vocals is not None or energy is not None
+                                    else "Voz e energia não informadas; sem estimativas."
+                                )
+                            )
                             if kind == "music"
                             else "A ausência de um tema nos metadados não garante sua ausência na obra."
                         ),
@@ -324,8 +335,19 @@ class OnlineRecommendationService(RecommendationService):
             if choices is not None
             else "Sugestões classificadas por regras."
         )
-        if "musicbrainz" in sources:
-            hint += " Metadados: MusicBrainz. Energia e vocais estimados pela IA quando informados."
+        if kind == "music":
+            external_sources = [source for source in sources if source != "local"]
+            if external_sources:
+                labels = [
+                    "MusicBrainz" if source == "musicbrainz" else source
+                    for source in external_sources
+                ]
+                hint += " Metadados: " + ", ".join(labels) + "."
+            if any(
+                row["item"].get("classification_source") == "ai_estimate"
+                for row in rows
+            ):
+                hint += " Atributos desconhecidos preenchidos pela IA são estimativas, não medições."
         if "open_library" in sources:
             hint += " Livros encontrados na Open Library."
         if "local" in sources:

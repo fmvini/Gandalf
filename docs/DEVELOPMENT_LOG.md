@@ -1,5 +1,32 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Port musical e preservação de atributos conhecidos
+
+### Implementado
+- MusicProvider inicial name/search e TypedDict normalizado; create_app permite injetar adaptador online sem remendar app.state, mantendo default MusicBrainz e offline local.
+- Trilhas usam fonte efetiva e validam envelope/item/adapter, origem externa e duração conhecida. Discovery marca ai_estimate somente para preenchimento real de unknown, independente de provider.
+- Corrigidas três reproduções reading: tags sobrescrevendo voz/energia conhecida e falta de proveniência ao derivar unknown. Tags agora preenchem apenas desconhecidos e indicam provider_tags.
+
+### Arquivos principais alterados
+- `api/app/providers/base.py`, `api/app/providers/musicbrainz.py`, `api/app/main.py`
+- `api/app/services/online_recommendations.py`, `api/app/services/online_soundtrack.py`
+- `api/tests/test_music_provider.py`, `api/tests/test_continuation.py` (somente fixture name/envelope)
+- `docs/music-provider-contract.md`, `docs/backend-music-provider-2026-10-02.md`, `docs/database-music-provider-2026-10-02.md`
+- `docs/03-System-Architecture.md`, `docs/04-Data-Model.md`, `docs/12-development-roadmap.md`, `docs/adr/0004-external-data-providers.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Port cobre a superfície realmente usada; sem novas fontes/config/deps/schema, lookup ou similares. Recursos do adaptador injetado pertencem ao caller; lifespan fecha cliente próprio.
+- Persistência/normalização/cache são obrigações do adaptador. Auditoria Banco confirmou isolamento provider/chave/limite/TTL e três violações sintéticas de identidade admitidas pelo store; não demonstra corrupção atual nem exige migration.
+
+### Estado atual
+- Backend163 PASS (29 novos+134 afetados)26,61s;29 PASS finais após lint equivalente; Ruff/formatação7/diff-check PASS. Antes:três casos reading FAIL; depois PASS. Mocks/FakeAI/SQLite novo, sem API/provedor real/LLM.
+- Banco: nove observações esperadas/ três violações sintéticas em duas tabelas SQLite em memória; relatório liberado, sem app/schema patch. G1 permanece aberto; critérios e fonte documental atual de rate limit por IP registrados no contrato.
+- Frontend amplia harness14 fixtures em duas buscas10+4: gate de label alternativo ainda pendente após limites/startup do harness; produto sem patch até reprodução funcional. Não considerar browser/build desta unidade aprovados ainda. Serviços existentes preservados; nenhum push.
+
+### Próximos passos
+- Commitar Backend/contrato/auditoria seletivamente após revisão. Concluir reprodução label search genérico, patch mínimo/tipos nullable e browser/build frontend, sem duplicar suites aprovadas.
+- Comparar cobertura real por gravação/atributos e revisar termos por campo antes de G1; não equiparar unknown a instrumental nem ampliar fonte em produção por este port.
+
 ## 2026-10-02 — Auth consolidada e API online restaurada
 
 ### Implementado

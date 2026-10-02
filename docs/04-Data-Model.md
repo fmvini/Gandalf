@@ -467,7 +467,16 @@ Tabela única polimórfica para vetores de conteúdo.
 | `response` | `jsonb` | Resposta normalizada, incluindo resultados vazios |
 | `expires_at` | `bigint` | Instante de expiração em milissegundos Unix; indexado |
 
-O cache só é lido enquanto válido. Entradas expiradas são removidas durante novas gravações. A tabela está preparada para outros tipos, mas somente buscas de livros a utilizam atualmente. SQLite usa JSON para os testes.
+O cache só é lido enquanto válido. Entradas expiradas são removidas durante novas gravações. Além de livros, OnlineStore usa `entity_type=ONLINE` para buscas MusicBrainz e respostas IA; provider/chave/limite distinguem as entradas. Modalidade e página fazem parte da chave produzida pelo adaptador. SQLite usa JSON para os testes. Não existe tabela separada provider_cache.
+
+**`music_catalog`** (implementado na revisão `0005_online_catalog`)
+
+| Coluna | Tipo | Restrições / descrição |
+|---|---|---|
+| `id` | `varchar(36)` | PK; UUID canônico determinista atribuído pelo adaptador |
+| `data` | `jsonb` (JSON no SQLite) | NOT NULL; item normalizado, incluindo provider/external_id e atributos conhecidos/nulos |
+
+O schema efetivo guarda provider/external_id somente no JSON; não aplica UNIQUE/FK de identidade externa como no desenho futuro de catálogo normalizado. OnlineStore faz upsert por id e não valida sua origem: namespace por fonte/external_id e coerência do payload são obrigações do adaptador. MusicBrainz mantém UUID5 da URL recording. Uma colisão entre adaptadores que violem esse contrato pode substituir o JSON; testes sintéticos dessa condição não demonstram corrupção atual. [Contrato inicial MusicProvider](music-provider-contract.md). Nenhuma migration/schema foi alterada nessa abstração.
 
 **`recommendation_results`** (implementado na revisão `0007_recommendation_results`)
 

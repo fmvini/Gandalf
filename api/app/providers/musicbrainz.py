@@ -8,13 +8,15 @@ import httpx
 from starlette.concurrency import run_in_threadpool
 
 from app.core.exceptions import AppError
+from app.providers.base import MusicItem, MusicSearchResult
+from app.services.online_store import OnlineStore
 
 
 def literal(text: str) -> str:
     return '"' + re.sub(r'([+\-!(){}\[\]^"~*?:\\/|&])', r"\\\1", text[:180]) + '"'
 
 
-def normalize_recording(raw):
+def normalize_recording(raw: object) -> MusicItem | None:
     if not isinstance(raw, dict) or not isinstance(raw.get("title"), str):
         return None
     try:
@@ -62,7 +64,15 @@ def normalize_recording(raw):
 
 
 class MusicBrainzProvider:
-    def __init__(self, client, store, ttl=3600, interval=1.1):
+    name = "musicbrainz"
+
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        store: OnlineStore,
+        ttl: int = 3600,
+        interval: float = 1.1,
+    ):
         self.client, self.store, self.ttl = client, store, ttl
         self.interval = interval
         self.lock = asyncio.Lock()
@@ -70,14 +80,14 @@ class MusicBrainzProvider:
 
     async def search(
         self,
-        query,
-        limit=20,
+        query: str,
+        limit: int = 20,
         *,
-        by_tag=False,
-        offset=0,
-        reading=False,
-        instrumental=False,
-    ):
+        by_tag: bool = False,
+        offset: int = 0,
+        reading: bool = False,
+        instrumental: bool = False,
+    ) -> MusicSearchResult:
         key = ("tag:" if by_tag else "text:") + query.strip().casefold()
         if reading:
             key = f"reading-v2:{instrumental}:" + key
@@ -145,7 +155,7 @@ class MusicBrainzProvider:
                 if type(count) is int
                 else len(payload["recordings"]) >= limit
             )
-            result = {
+            result: MusicSearchResult = {
                 "items": items,
                 "total": len(items),
                 "provider": "musicbrainz",
