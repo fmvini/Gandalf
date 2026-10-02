@@ -1,5 +1,26 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Metadados conhecidos na seleção musical por IA
+
+### Implementado
+- Seleção MUSIC recebe vocais booleanos/nulos e energia válida/nula dos candidatos; provider e origem da classificação são enviados somente quando informados. Corrigida perda de informação do payload, sem atribuir a ela causalidade comprovada para o vazio anterior de jazz.
+- Instrução diferencia classificações do catálogo de medições acústicas/estimativas e exige unknown sem evidência. Payload/instrução BOOK e contrato/duração da trilha preservados.
+
+### Arquivos principais alterados
+- `api/app/ai/groq.py`, `api/tests/test_ai_selection.py`, `docs/backend-music-selection-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Sem coercão de zero/string/null para instrumental; origem ausente não vira local. Filtros/exclusões/índices/diversidade continuam estritos e valores conhecidos vencem classificações contraditórias da IA.
+- Nova chave Selection decorre naturalmente do payload/instrução; Intent, modelo/chave/cota/retries/TTL intactos, sem expurgo de caches.
+
+### Estado atual
+- Backend aprovou 134 testes em cinco módulos e 14 testes novos finais após ajuste da instrução; Ruff/formato/diff-check passaram. Inspeção offline final confirma campos presentes nos 18 candidatos, nulos para desconhecidos e nenhuma origem inventada.
+- API existente ainda não carregou a alteração; nenhuma nova chamada LLM nesta unidade. Uso último observado 9/50. Seleção musical externa continua pendente até gate real; PostgreSQL real já aprovado no escopo registrado abaixo.
+
+### Próximos passos
+- Após commit, coordenar carregamento da API identificada preservando dados/configuração e gate previamente definido: “Jazz instrumental” e controle “Jazz”, limit3, até seis tentativas internas, sem outras consultas para perseguir resultado.
+- Concluir linha de classificação por faixa no Frontend e seus testes/build; registrar resultados reais e commits nos documentos de continuidade.
+
 ## 2026-10-02 — Gate PostgreSQL real e execução na CI
 
 ### Implementado
