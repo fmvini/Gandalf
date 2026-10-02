@@ -1,4 +1,35 @@
-# Ponto de retomada — 2026-10-01
+# Ponto de retomada — 2026-10-02
+
+## Checkpoint final — commits, re-roll e capas
+
+Ler primeiro as entradas recentes de `DEVELOPMENT_LOG.md`. Maestro coordenou os terminais existentes Frontend/Backend/Banco de Dados e serializou Git/documentos compartilhados; os registros de 01/10 e do sandbox inicialmente bloqueado são históricos. Todos os arquivos da entrega foram revisados e incluídos em commits locais seletivos, sem push.
+
+Commits: `318d97a` favoritos backend; `f2adc7c` re-roll backend; `1663c2c` auditoria Banco; `ef0c284` normalizador de capas; `137d492` integração frontend favoritos/re-roll/componentes; `03a51e9` capas/responsividade frontend. Schema `0008_favorites` preservado; sem migração para vistos efêmeros. O commit final de documentação deve ser consultado em `git log`.
+
+Validação: Maestro aprovou **366 testes backend**, inclusive três multiprocessos antes bloqueados; **38 testes de livros/capas** após fix; Ruff/formatação (84 arquivos) e gates v7 K=5/10 intactos. Dez módulos frontend aprovados em rodadas coordenadas: helper/smoke/components/auth/continuation/playlists/favorites da primeira suíte, reroll após correção Tab, covers pelo Frontend; Maestro reexecutou continuation/favorites/live após freeze. Live usa API real/SQLite temporário/duas contas e cobre persistência/isolamento/mobile/temas. Build final PASS, 2.050 módulos, aviso não fatal de bundle 502,97 kB. Não houve uma nova execução monolítica de npm test após as correções; resultados por rodada estão no log/relatórios.
+
+Favoritos/renovação funcionam na integração testada. Re-roll MUSIC/BOOK conserva pedido/filtros enviados, vistos cumulativos, cursor e seleção durante erro/espera/cancelamento; limite de 200, sem histórico/feedback/autosave. Alert público oficial shadcn listado no 21st.dev e AnimatedContent React Bits adaptado para Motion existente, créditos/licença/movimento reduzido; impeccable/taste aplicados. MCP21st autenticado indisponível, sem afirmar cota/recuperação autenticada.
+
+Capas: edição PT com `cover_i` inválido não apaga capa válida da obra; URLs novas usam `default=false`. BookCover compartilhado trata null/erro/1×1 e troca de URL; URL de metadado tem prioridade, asset local exige `provider=local`. Corrigidos seletor/selecionado de Ler com Música e dois defeitos a 320 px (margem do link em favoritos e texto dos modos). Frontend aprovou 60 capturas dark/light, 1440/390/320, movimento normal/reduzido; Maestro revisou capturas atuais e Duna visível no E2E com API/SQLite isolado. Home/JPEGs locais já funcionavam. Capa externa real/status/dimensões e catálogo online persistente pós-fix não comprovados por esses testes; diagnóstico de busca pós-fix não confirmou o alvo `provider=local`. Não expurgar cache/reescrever catálogo/snapshots: auditoria não demonstrou cache BOOK ativo legado.
+
+Runtime: API antiga PID 37452/sessão 27472 encerrada via Ctrl+C após identidade confirmada. **Única API online em 127.0.0.1:8000, PID 31444**, launcher 39748, mesmo `api/.local`/config; status/readiness 200, modelo Groq original `openai/gpt-oss-20b`. Novo filho sem proxies HTTP/HTTPS/ALL, ambiente global intacto; nenhum incremento de cota pelo restart. Primeira interpretação falhou antes de HTTP; diagnóstico posterior recommendations/books pode ter reservado tentativa. Leitura RO final de `ai_usage` em 2026-10-02: **2/50**, sem troca de chave/modelo/limite. Sem evidência de chave inválida.
+
+**Frontend existente: http://localhost:5173**, listener IPv6 `::1`, PID 25716, processo Vite do Gandalf confirmado; GET da página e BookCover transformado retornam 200, com verificação de `naturalWidth` e rastreamento de falha servidos. 127.0.0.1:5173 pode recusar por bind IPv6, sem indicar queda de localhost. Não foi criado servidor persistente duplicado. Confirmar identidade/portas antes de reiniciar; manter modo online e dados existentes.
+
+Próxima sessão:
+
+1. Conferir Git e processos; consultar os relatórios backend/frontend/database de sessão e capas em `docs/` para comandos e limites.
+2. Quando transporte público estiver acessível, consultar uma obra/edição PT e sua cover_url/status/dimensões reais, sem LLM para diagnosticar capa.
+3. Validar uma interpretação/recomendação externa dentro da cota existente, registrando fonte/ai_used/degraded e avisando usuário antes de mudar API/chave/modelo.
+4. Retomar PostgreSQL/pgvector em instância descartável: Docker sem daemon; PG18 existente exige autenticação/vector não encontrado. Nenhum servidor/dado alterado. Não concluir gates online/PG por fixtures.
+
+## Encerramento do dia — favoritos backend validados, frontend WIP
+
+Usuário encerrou por hoje. Schema `0008_favorites` entregue em `bfa418b`; backend de favoritos implementado e validado: 346 testes, Ruff/formatação e gates v7 K=5/10 sem regressões. Contrato [8.3](05-API-Specification.md#83-favoritos-individuais--contrato-implementado): POST IDs `recommendation_id`/`item_id` (201 novo/200 existente), GET paginado/tipo, POST status em lote até 60 IDs e DELETE por proprietário (204 inclusive ausente/terceiro). Snapshot do servidor conserva primeira gravação, sobrevive a cache/reinício e não gera histórico/feedback/ranking. Revisão corrigiu falha SQL ao validar conta (503) e janela de DELETE concorrente usando upsert com RETURNING do snapshot. [ADR-0016](adr/0016-owner-scoped-favorites.md); PostgreSQL real permanece pendente.
+
+**Retomar pelo frontend WIP antes de nova feature.** O agente Frontend reservou `frontend/**`, mantém mudanças modificadas/não rastreadas e não fez stage/commit. Build aprovado (2.045 módulos, aviso não fatal de bundle 500,83 kB) e teste isolado `node tests/favorites.mjs` completo aprovado; 36 capturas `favorites-*` em `.impeccable/review/`. `npm test`/live e seis demais módulos da árvore atual não foram executados/validados nesta etapa: autorização foi interrompida pelo pedido de encerramento. Não declarar interface de favoritos concluída nem incluir WIP no commit backend. Os documentos compartilhados foram liberados para este checkpoint, preservando registros anteriores.
+
+Na próxima sessão, conferir `git status` e ler a entrada mais recente do log, combinar com Frontend via Maestri e executar `npm test` em `frontend` (sete módulos, API/SQLite temporários). Enviar falhas com stack ao agente, repetir casos afetados após correção e revisar capturas simuladas/reais nos dois temas/1440/390/320 px. Validar favoritos de música/livro, filtros/remoção/isolamento e retorno do login sem autosave. Só então documentar e fazer commit frontend seletivo/local. Não alterar visual, chaves/cotas/modo ou servidores existentes incidentalmente. Migração 0008 obrigatória no banco correto; `local.py` aplica automaticamente. Sem push, sem histórico automático. Nenhuma tarefa nova foi iniciada após o encerramento.
 
 ## Cache compartilhado de origens e explicações — backend validado
 

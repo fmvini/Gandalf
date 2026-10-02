@@ -1,5 +1,29 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Checkpoint final de commits e serviços
+
+### Implementado
+- Todas as unidades liberadas pelos terminais Backend/Frontend/Banco revisadas e registradas em commits locais seletivos, incluindo documentação por etapa. Nenhum push.
+- Consolidado estado final em CONTINUATION/IMPLEMENTATION_STATUS, distinguindo evidência atual de checkpoints históricos e validação local/fixtures de provedores externos.
+
+### Arquivos principais alterados
+- `docs/DEVELOPMENT_LOG.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+
+### Decisões técnicas
+- Commits da entrega: `318d97a` favoritos backend; `f2adc7c` re-roll backend; `1663c2c` auditoria Banco; `ef0c284` normalizador de capas; `137d492` integração frontend; `03a51e9` capas/responsividade frontend. Consolidação documental em commit próprio; nenhum snapshot/artefato ignorado incluído.
+- Usado snapshot pré-capas para separar hunks sobrepostos sem descartar WIP. Testes repetidos apenas nos fluxos afetados após correções; módulo covers aprovado pelo Frontend sem duplicação no Maestro.
+
+### Estado atual
+- Backend: 366 testes integrais aprovados antes do fix isolado de capas; 38 testes de livros/capas após fix, Ruff/formato84 e gates v7 K=5/10 aprovados. Frontend: dez módulos aprovados em rodadas coordenadas; rodada final continuation/favorites/live com API real/SQLite/duas contas/temas/mobile e build2050 PASS. Capturas atuais revisadas; covers60, sem erros de runtime. Não houve nova execução monolítica de npm test após os fixes.
+- Runtime carregado: única API online `127.0.0.1:8000`, PID31444/launcher39748, mesmo banco/config, status/readiness200. API antiga37452/sessão27472 encerrada por Ctrl+C após identidade confirmada; nenhuma alteração de chave/modelo/limite ou dados no restart.
+- Frontend existente `http://localhost:5173`, IPv6 `::1`, PID25716/Vite do Gandalf; GET página e módulo BookCover200, guard1×1/rastreamento de falha servidos. Bind IPv6 explica recusa em 127.0.0.1; nenhum servidor persistente duplicado.
+- Capas locais verificadas, inclusive Duna no E2E real/SQLite isolado. Capas/fontes externas atuais e LLM real não comprovados, por falha de transporte nas consultas; Groq original configurado, cota RO observada2/50, sem evidência de chave inválida. PostgreSQL/pgvector real continua pendente.
+
+### Próximos passos
+- Conferir Git/processos ao retomar; manter modo online, configuração/cota e snapshots existentes.
+- Com transporte acessível, validar uma obra/edição PT/capa real e uma interpretação/recomendação externa limitada; registrar fonte/ai_used/degraded e avisar usuário antes de trocar API/chave/modelo.
+- Retomar PostgreSQL/pgvector em instância descartável com contexto próprio; não instalar/alterar o servidor existente incidentalmente. Comandos/evidências nos seis relatórios de sessão/capas em `docs/`.
+
 ## 2026-10-02 — Capas consistentes nos fluxos de livros
 
 ### Implementado
