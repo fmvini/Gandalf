@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, BookOpen, CircleAlert, Headphones, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
 import { musicDestination, post, type BookItem, type MusicItem, type RankedItem, type Recommendation } from '../lib/api'
-import { duration, intentWords } from '../lib/format'
+import { duration, intentWords, musicMetadataLabel } from '../lib/format'
 import { BookCover } from '../components/BookCover'
 import { Accordion } from '../components/ui/accordion'
 import { ToggleGroup } from '../components/ui/toggle-group'
@@ -53,7 +53,7 @@ function ResultImage({ url, title, type }: { url?: string | null; title: string;
 function MusicResult({ ranked, recommendationId }: { ranked: RankedItem<MusicItem>; recommendationId: string | null }) {
   const item = ranked.item
   const destination = musicDestination(item)
-  return <li className="result-row"><ResultImage url={item.image_url} title={item.title} type="music" /><div className="result-main"><div className="result-heading"><h3>{item.title}</h3><span>{duration(item.duration_ms)}</span></div><p>{item.artist}{item.album ? ' · ' + item.album : ''}</p>{item.tags?.length ? <div className="result-tags">{item.tags.slice(0, 3).map(tag => <span key={tag}>{tag}</span>)}</div> : null}<Explanation recommendationId={recommendationId} itemId={item.id} /><FavoriteButton itemId={item.id} title={item.title} /></div><a className="result-link" href={destination.href} target="_blank" rel="noopener noreferrer" aria-label={destination.label + ': ' + item.title}>{destination.label} <ArrowUpRight size={17} /></a></li>
+  return <li className="result-row"><ResultImage url={item.image_url} title={item.title} type="music" /><div className="result-main"><div className="result-heading"><h3>{item.title}</h3><span>{duration(item.duration_ms)}</span></div><p>{item.artist}{item.album ? ' · ' + item.album : ''}</p><p className="music-metadata">{musicMetadataLabel(item)}</p>{item.tags?.length ? <div className="result-tags">{item.tags.slice(0, 3).map(tag => <span key={tag}>{tag}</span>)}</div> : null}<Explanation recommendationId={recommendationId} itemId={item.id} /><FavoriteButton itemId={item.id} title={item.title} /></div><a className="result-link" href={destination.href} target="_blank" rel="noopener noreferrer" aria-label={destination.label + ': ' + item.title}>{destination.label} <ArrowUpRight size={17} /></a></li>
 }
 
 function BookResult({ ranked, recommendationId }: { ranked: RankedItem<BookItem>; recommendationId: string | null }) {

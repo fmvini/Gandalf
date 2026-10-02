@@ -1,5 +1,26 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Origem e classificação musical por faixa
+
+### Implementado
+- Descoberta musical mostra uma linha textual por faixa com origem informada, vocais/energia conhecidos ou não informados e rótulo explícito de estimativa por IA/tags quando o campo indica essa origem.
+- MusicItem tipa campos opcionais já enviados pela API; helper não infere origem/estimativa de tags, links, ai_used ou metadados agregados. Nenhum CSS/dependência/estado/ranking alterado.
+
+### Arquivos principais alterados
+- `frontend/src/lib/api.ts`, `frontend/src/lib/format.ts`, `frontend/src/pages/Discovery.tsx`
+- `frontend/tests/music-metadata.mjs`, `frontend/package.json`, `docs/frontend-music-selection-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- False significa instrumental; true, com voz; null/ausência permanece não informado. Conhecido não implica medição acústica; marker de estimativa é apresentado literalmente, sem origem local inventada para provider ausente.
+- Reutilizados tokens/tipografia e um parágrafo por item, preservando direção visual/impeccable/taste. Novo módulo integra npm test, sem repetir suíte geral ou fazer chamadas reais para provar UI.
+
+### Estado atual
+- Frontend: módulo novo PASS com dez fixtures, TypeScript/detector/sintaxe/diff-check PASS, oito capturas dark/light em1440/390/320 normal/reduzido, fonte14,08px/contraste mínimo5,96:1/zero overflow/erro de runtime.
+- Maestro: build final2050 módulos PASS (bundle503,70kB, aviso não fatal), reroll completo afetado PASS e capturas320light/1440dark revisadas. Qualidade da seleção externa permanece gate Backend separado.
+
+### Próximos passos
+- Consolidar o relatório da janela real Backend e os documentos de continuidade: consumo final 12/50, controle Jazz com três itens MusicBrainz, instrumental estrito ainda vazio e limites PG/CI. Nenhuma chamada extra para validar estes rótulos.
+
 ## 2026-10-02 — Metadados conhecidos na seleção musical por IA
 
 ### Implementado

@@ -1,3 +1,19 @@
+import type { MusicItem } from './api'
+
+export function musicMetadataLabel(item: MusicItem): string {
+  const source = item.provider === 'musicbrainz' ? 'MusicBrainz'
+    : item.provider === 'local' ? 'Catálogo local'
+      : item.provider ? 'Fonte: ' + item.provider : ''
+  const classification = item.classification_source === 'ai_estimate' ? 'Estimativa por IA'
+    : item.classification_source === 'provider_tags' ? 'Tags da fonte' : ''
+  const vocals = item.has_vocals === false ? 'Instrumental'
+    : item.has_vocals === true ? 'Com voz' : 'Vocais não informados'
+  const energy = item.energy === 'low' ? 'Energia baixa'
+    : item.energy === 'medium' ? 'Energia média'
+      : item.energy === 'high' ? 'Energia alta' : 'Energia não informada'
+  return [source, classification, vocals, energy].filter(Boolean).join(' · ')
+}
+
 export function duration(ms?: number) {
   if (!ms) return ''
   const minutes = Math.floor(ms / 60000)

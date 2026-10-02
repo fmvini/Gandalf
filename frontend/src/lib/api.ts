@@ -1,6 +1,8 @@
 export type MusicItem = {
   id: string; title: string; artist: string; album?: string; image_url?: string | null
   tags?: string[]; duration_ms?: number; links?: Record<string, string | null>
+  provider?: string | null; has_vocals?: boolean | null
+  energy?: 'low' | 'medium' | 'high' | null; classification_source?: string | null
 }
 
 export type BookItem = {

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node tests/discovery-state.mjs && node tests/smoke.mjs && node tests/components.mjs && node tests/auth.mjs && node tests/continuation.mjs && node tests/playlists.mjs && node tests/favorites.mjs && node tests/reroll.mjs && node tests/covers.mjs && node tests/live.mjs",
+    "test": "node tests/discovery-state.mjs && node tests/smoke.mjs && node tests/components.mjs && node tests/auth.mjs && node tests/continuation.mjs && node tests/playlists.mjs && node tests/favorites.mjs && node tests/reroll.mjs && node tests/music-metadata.mjs && node tests/covers.mjs && node tests/live.mjs",
+    "test:music-metadata": "node tests/music-metadata.mjs",
     "test:covers": "node tests/covers.mjs"
   },
   "dependencies": {
