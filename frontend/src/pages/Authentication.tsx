@@ -10,7 +10,7 @@ export default function Authentication({ mode }: { mode: 'login' | 'register' })
   const location = useLocation()
   const session = useSession()
   const initial = location.state as { email?: string; notice?: string; returnTo?: { pathname: string; state?: unknown } } | null
-  const returnTo = initial?.returnTo?.pathname === '/read-with-music' ? initial.returnTo : null
+  const returnTo = initial?.returnTo && ['/music', '/books', '/read-with-music', '/account/favorites'].includes(initial.returnTo.pathname) ? initial.returnTo : null
   const [email, setEmail] = useState(initial?.email || '')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')

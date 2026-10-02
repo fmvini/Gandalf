@@ -7,6 +7,7 @@ import ReadWithMusic from './pages/ReadWithMusic'
 import Authentication from './pages/Authentication'
 import Account from './pages/Account'
 import Playlist from './pages/Playlist'
+import Favorites from './pages/Favorites'
 import { useSession } from './lib/useSession'
 
 const links = [
@@ -69,6 +70,7 @@ export default function App() {
           <Route path="/register" element={<Authentication key="register" mode="register" />} />
           <Route path="/account" element={<Account />} />
           <Route path="/account/playlists/:id" element={<Playlist />} />
+          <Route path="/account/favorites" element={<Favorites />} />
           <Route path="*" element={<section className="not-found container"><h1>Esse caminho não existe.</h1><p>Volte ao início para encontrar música, livros ou uma trilha para ler.</p><Link className="button button-primary" to="/">Voltar ao início <ArrowUpRight size={18} /></Link></section>} />
         </Routes>
       </main>

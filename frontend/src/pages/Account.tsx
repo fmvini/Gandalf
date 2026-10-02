@@ -43,7 +43,7 @@ export default function Account() {
 
   if (!user) return <Navigate to="/login" replace state={{ notice: expired ? 'Sua sessão terminou. Entre novamente para acessar sua conta.' : undefined }} />
   return <section className="account-page container" aria-labelledby="account-title">
-    <div className="account-intro"><h1 id="account-title">Sua conta.</h1><p>Você está conectado como <strong>{user.username}</strong>.</p><Link className="account-explore" to="/music">Explorar sugestões <ArrowRight size={17} aria-hidden="true" /></Link></div>
+    <div className="account-intro"><h1 id="account-title">Sua conta.</h1><p>Você está conectado como <strong>{user.username}</strong>.</p><Link className="account-explore" to="/music">Explorar sugestões <ArrowRight size={17} aria-hidden="true" /></Link><Link className="account-favorites-link" to="/account/favorites">Ver seus favoritos <ArrowRight size={17} aria-hidden="true" /></Link></div>
     <div className="account-panel">
       {error ? <div className="account-error" role="alert" tabIndex={-1} ref={errorPanel}>{error}</div> : null}
       <div aria-busy={loading}><h2>Dados da conta</h2><dl className="account-details"><div><dt>Nome de usuário</dt><dd>{user.username}</dd></div><div><dt>E-mail</dt><dd>{user.email}</dd></div><div><dt>Conta criada em</dt><dd>{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(user.created_at))}</dd></div></dl></div>

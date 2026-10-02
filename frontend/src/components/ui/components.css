@@ -45,6 +45,12 @@
 .playlist-list .why .accordion-trigger { font-size: .82rem; }
 .playlist-list .why .accordion-trigger > span { color: var(--accent-strong); font-size: inherit; }
 .playlist-list .track-duration { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.inline-alert { padding: 16px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); }
+.inline-alert-description { min-width: 0; color: var(--muted); }
+.inline-alert-error { border-color: var(--error); }
+.inline-alert-error .inline-alert-description { color: var(--error); }
+.inline-alert-description p { overflow-wrap: anywhere; }
+.inline-alert-description .text-button { min-height: 44px; }
 @media (max-width: 520px) {
   .result-placeholder { gap: 13px; }
   .skeleton-art { width: 76px; height: 76px; }
@@ -55,6 +61,7 @@
   .preference-choice { padding-inline: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .discovery-results-transition { transform: none !important; }
   .accordion-content, .skeleton { animation: none !important; }
   .accordion-trigger > svg, .preference-choice { transition: none; }
 }

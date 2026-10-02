@@ -1,0 +1,17 @@
+.favorite-control { margin-top: 12px; }
+.favorite-button { display: inline-flex; gap: 7px; align-items: center; min-height: 44px; font-size: .85rem; }
+.favorite-button[aria-pressed="true"] { color: var(--accent-strong); }
+.favorite-message { color: var(--muted); font-size: .84rem; line-height: 1.55; max-width: 65ch; margin: 6px 0 0; }
+.favorite-message a { color: var(--accent-strong); text-decoration: underline; text-underline-offset: 4px; }
+.favorite-error { color: var(--error); }
+.favorites-status:empty { display: none; }
+.favorites-page { max-width: 1080px; padding-block: 40px 80px; }
+.favorites-page > .account-explore { margin: 0 0 32px; }
+.favorites-page h1 { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.15; letter-spacing: -.03em; margin-bottom: 16px; }
+.favorite-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.favorite-filters [aria-pressed="true"] { color: var(--accent-text); background: var(--accent); border-color: var(--accent); }
+.favorite-list h2 { font-size: 1.4rem; line-height: 1.25; margin-bottom: 8px; overflow-wrap: anywhere; }
+.favorite-row-actions, .favorite-empty-links { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; }
+.favorite-row-actions .result-link { margin-left: 0; }
+.account-favorites-link { display: flex; width: fit-content; margin-top: 12px; gap: 8px; min-height: 44px; align-items: center; color: var(--accent-strong); font-weight: 600; font-size: .9rem; }
+@media (max-width: 760px) { .favorites-page .library-heading { align-items: flex-start; flex-direction: column; } }

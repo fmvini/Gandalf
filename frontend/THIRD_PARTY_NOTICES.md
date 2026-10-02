@@ -10,6 +10,7 @@ As adaptações usam as fontes dos autores. Accordion e Toggle Group foram recup
 - `src/components/ui/accordion.tsx`: [Accordion de shadcn no 21st.dev](https://21st.dev/@shadcn/components/accordion), demo 1530. Adaptado para painel único recolhível, preferências e explicações carregadas sob demanda; primitivas Radix, tokens locais e movimento reduzido.
 - `src/components/ui/toggle-group.tsx`: [Toggle Group de shadcn no 21st.dev](https://21st.dev/@shadcn/components/toggle-group), demo 252. Adaptado para seleção única obrigatória de vocais/energia, opção indiferente, indicador de seleção e navegação por teclado Radix.
 - `src/components/ui/skeleton.tsx`: [Skeleton de shadcn no 21st.dev](https://21st.dev/@shadcn/components/skeleton), [fonte pública](https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/skeleton.tsx). Adaptado para placeholders decorativos de músicas, livros e trilhas, preservando mensagens/cancelamento e movimento reduzido.
+- `src/components/ui/alert.tsx`: [Alert de shadcn listado no 21st.dev](https://21st.dev/community/components/shadcn/alert/default), [fonte oficial](https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/alert.tsx), consultada em 02/10/2026. Adaptado do contêiner e descrição (`Alert`, `AlertDescription`) para estados inline de renovação: tokens locais, textos completos, erro assertivo e progresso/resultado educados. CSS nativo substitui Tailwind/CVA, sem dependências novas. **Fonte pública:** o MCP autenticado estava indisponível (`WinError 10061`); não houve recuperação autenticada nem confirmação de cota nesta sessão.
 
 Os componentes shadcn são cobertos pela [licença MIT](https://github.com/shadcn-ui/ui/blob/main/LICENSE.md). Os componentes adaptados acima são distribuídos sob a licença MIT:
 
@@ -38,6 +39,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## React Bits
+
+`src/components/ui/animated-content.tsx` adapta o comportamento de [AnimatedContent, por David Haz](https://reactbits.dev/animations/animated-content), a partir da [fonte TypeScript oficial](https://github.com/DavidHDev/react-bits/blob/main/src/ts-default/Animations/AnimatedContent/AnimatedContent.tsx), consultada em 02/10/2026. Da fonte, mantém deslocamento vertical curto, retorno ao repouso e saída suave; substitui GSAP/ScrollTrigger por `motion/react` já instalado. A transição marca a chegada de uma seleção nova, sem ocultar conteúdo, esperar scroll ou reaparecer após editar filtros. `prefers-reduced-motion` apresenta o conteúdo estático; não há desaparecimento, escala, blur ou repetição automática.
+
+Distribuído como parte do Gandalf sob [MIT + Commons Clause License Condition v1.0](https://github.com/DavidHDev/react-bits/blob/main/LICENSE.md), **não MIT simples**. Copyright (c) 2026 David Haz. O texto integral acompanha o produto em `public/licenses/react-bits.txt`. A licença permite uso como parte de aplicação/site/produto e restringe revenda, sublicenciamento e redistribuição dos componentes em si, inclusive versões portadas. Este componente integra o produto; não é distribuído como biblioteca independente.
 
 ## Capas
 

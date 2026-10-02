@@ -9,6 +9,7 @@ import './showcase.css'
 import './components/ui/components.css'
 import './account.css'
 import './playlists.css'
+import './favorites.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

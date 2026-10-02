@@ -44,6 +44,7 @@ try {
     else if (path === '/auth/me') response = { json: user }
     else if (path === '/auth/logout') response = { status: 204, body: '' }
     else if (path === '/auth/refresh') { refreshCalls++; response = refreshStatus === 200 ? { json: { access_token: 'access-new', refresh_token: 'refresh-new', expires_in: 900 } } : failure(refreshStatus) }
+    else if (path === '/users/me/favorites/status') response = { json: { favorites: {} } }
     else if (path === '/books/search') response = { json: { items: [{ id: 'book-a', title: 'Livro de teste', authors: ['Autora'] }] } }
     else if (path === '/recommendations/read-with-music') response = { json: { recommendation_id: 'reading-a', items: [{ position: 1, item: track }], playlist: { total_duration_ms: 180000, tracks_count: 1 } } }
     else if (path === '/playlists' && request.method() === 'POST') {

@@ -1,5 +1,34 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Favoritos e renovação de sugestões na interface
+
+### Implementado
+- Favoritos individuais de música/livro/faixas de leitura: estado em lote, salvar/remover, coleção paginada/filtrada na conta e retorno do login sem salvar automaticamente.
+- Renovação MUSIC/BOOK conserva pedido/filtros enviados, seleção durante espera/erro/cancelamento, vistos cumulativos e cursor; limite de 200 e retorno de autenticação preservados.
+- Alert da fonte pública shadcn listado no 21st.dev e AnimatedContent React Bits adaptado para Motion, sem nova dependência, com créditos/licença e movimento reduzido. Skills impeccable/taste aplicadas pelo Frontend.
+- Corrigido overflow320 de Favoritos: link dentro das ações não herda margem mobile de 89 px. Teste de foco usa Tab real e conserva asserção de outline visível.
+
+### Arquivos principais alterados
+- `frontend/src/App.tsx`, `frontend/src/main.tsx`, `frontend/src/pages/Account.tsx`, `frontend/src/pages/Authentication.tsx`
+- `frontend/src/pages/Discovery.tsx`, `frontend/src/pages/ReadWithMusic.tsx`, `frontend/src/pages/Favorites.tsx`
+- `frontend/src/components/FavoriteControls.tsx`, `frontend/src/lib/favorites.ts`, `frontend/src/favorites.css`
+- `frontend/src/lib/discovery.ts`, `frontend/src/components/RerollControls.tsx`, `frontend/src/components/ui/alert.tsx`, `frontend/src/components/ui/animated-content.tsx`, `frontend/src/components/ui/components.css`
+- `frontend/tests/discovery-state.mjs`, `frontend/tests/favorites.mjs`, `frontend/tests/reroll.mjs`, `frontend/tests/live.mjs`, `frontend/tests/playlists.mjs`
+- `frontend/README.md`, `frontend/package.json`, `frontend/THIRD_PARTY_NOTICES.md`, `frontend/public/licenses/react-bits.txt`, `docs/frontend-session-2026-10-02.md`
+
+### Decisões técnicas
+- Integração frontend versionada como unidade coerente de favoritos/renovação/componentes, separada da correção de capas pelo snapshot pré-capas. Nenhuma dependência nova, histórico de vistos ou autosave.
+- MCP21st autenticado não respondeu; componente veio da fonte pública oficial. Não afirmar consumo/cota ou recuperação autenticada atual.
+
+### Estado atual
+- Nove módulos anteriores/novos de estado e UI aprovados em rodadas coordenadas: primeira suíte passou helper/smoke/components/auth/continuation/playlists/favorites; reroll aprovado após ajuste de foco; rodada final **continuation/favorites/live aprovada**, API real/SQLite temporário/duas contas, filtros/remoção/isolamento e responsividade nos dois temas.
+- Build final **PASS**, 2.050 módulos, aviso não fatal de bundle 502,97 kB. Capturas atuais de favoritos/re-roll revisadas pelo Maestro; títulos e erros visíveis. Teste novo de capas/60 capturas aprovado pelo Frontend e registrado na unidade seguinte, sem duplicação concorrente.
+- Provedores/capas externas e PostgreSQL real continuam gates independentes pendentes; API online carregou patch de capas e status/readiness200 foram confirmados.
+
+### Próximos passos
+- Registrar unidade de capas frontend com BookCover, busca/selecionado de leitura e regressões de erro/1×1/troca de URL.
+- Consolidar hashes, runtime e limitações nos documentos compartilhados; nenhuma alteração de chave/modelo/cota ou push automático.
+
 ## 2026-10-02 — Correção de capas na normalização Open Library
 
 ### Implementado
