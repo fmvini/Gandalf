@@ -1,5 +1,49 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Aviso claro para renovação limitada
+
+### Implementado
+- Re-roll MUSIC/BOOK vazio e degradado informa a limitação da tentativa, a preservação da seleção anterior e a possibilidade de tentar novamente. Retry/esgotamento sem degradação mantêm mensagens próprias.
+- Regressões verificam variantes com/sem hint/has_more, snapshot pelo login, seleção/metadados anteriores e pedido/filtros/IDs/cursor preservados. Servidor do teste usa porta efêmera real, sem ocupar o frontend existente.
+
+### Arquivos principais alterados
+- `frontend/src/pages/Discovery.tsx`, `frontend/tests/reroll.mjs`
+- `docs/frontend-online-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- `degraded` pode limitar apenas uma etapa/fonte; não afirmar indisponibilidade de todas as fontes ou da IA. Hint anterior continua descrevendo a seleção preservada.
+- Auditoria dos três fluxos com fixtures, skills impeccable/taste e correção restrita ao problema reproduzido. Sem alteração de contrato, estado, dependências ou quotas.
+
+### Estado atual
+- Frontend aprovou módulo reroll completo afetado, TypeScript, detector e 14 capturas dark/light em 1440/390/320, movimento reduzido/normal; zero erros de runtime. Maestro revisou capturas mobile e aprovou build final de 2.050 módulos (aviso não fatal de bundle 503,12 kB).
+- Sem duplicar suíte geral ou chamadas externas no Frontend/Maestro. Backend conduz validação online limitada; seus resultados e o gate PostgreSQL são evidências separadas deste fix.
+
+### Próximos passos
+- Serializar commit local desta unidade e consolidar evidências Backend/Banco nos documentos de continuidade, distinguindo fontes externas de complemento local.
+- PostgreSQL/pgvector real ainda requer instância descartável; não usar o servidor/volume existente nem considerar fixtures como aprovação desse gate.
+
+## 2026-10-02 — Retomada da validação online coordenada
+
+### Implementado
+- Usuário solicitou continuar o desenvolvimento; checkpoint `ffdd6a6` e árvore limpa conferidos. Terminais Backend/Frontend/Banco existentes receberam escopos separados via Maestri; Maestro reserva Git e os três documentos compartilhados.
+- Backend valida transporte com uma consulta pública por fonte e, somente se fontes responderem, uma interpretação Groq dentro da cota existente. Frontend audita degradação dos três fluxos por fixtures, sem chamadas reais de recomendação. Banco verifica gate PostgreSQL e prepara harness/receita se Docker indisponível.
+
+### Arquivos principais alterados
+- `docs/DEVELOPMENT_LOG.md`
+- Relatórios exclusivos previstos: `docs/backend-online-session-2026-10-02.md`, `docs/frontend-online-session-2026-10-02.md`, `docs/database-postgres-session-2026-10-02.md`.
+
+### Decisões técnicas
+- Uma única origem de probes externos/LLM: Backend. Não duplicar chamadas, suites gerais ou processos; manter configuração/modelo/chave/cota e snapshots.
+- Banco confirmou Docker indisponível também elevado. Harness PostgreSQL permanece ignorado até execução real; sem container/pull/instalação ou alteração do PostgreSQL18 existente.
+
+### Estado atual
+- Etapa em andamento, sem nova funcionalidade declarada concluída. Gates anteriores de código/testes permanecem registrados nas entradas abaixo.
+- Backend/Frontend iniciaram diagnóstico e auditoria; correções relevantes serão autorizadas por escopo, testadas, documentadas e commitadas localmente pelo Maestro. Nenhum push.
+
+### Próximos passos
+- Receber evidência de transporte e uma proposta concreta de resiliência UX; implementar apenas escopo que resolva defeito reproduzido.
+- Revisar receita/harness PostgreSQL e limitações, validar alterações específicas e consolidar documentos/commits da nova etapa.
+
 ## 2026-10-02 — Checkpoint final de commits e serviços
 
 ### Implementado

@@ -1,11 +1,18 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { createServer as createHttpServer } from 'node:http'
 import { chromium } from 'playwright'
 import { createServer } from 'vite'
 
-const server = await createServer({ server: { host: '127.0.0.1', port: 0 }, logLevel: 'silent' })
-await server.listen()
+// Vite treats port:0 as its default port. Middleware on a Node HTTP listener
+// gives this isolated test an actual ephemeral port, preserving the live UI.
+const vite = await createServer({ server: { middlewareMode: true, hmr: false }, logLevel: 'silent' })
+const server = createHttpServer(vite.middlewares)
+await new Promise(done => server.listen(0, '127.0.0.1', done))
+const port = server.address().port
+assert.ok(port > 0 && port !== 5173, 'Use an actual ephemeral test port')
+console.log('Isolated reroll test port: ' + port)
 let browser
 let held
 try {
@@ -13,7 +20,7 @@ try {
   const context = await browser.newContext({ reducedMotion: 'reduce' })
   const page = await context.newPage()
   page.setDefaultTimeout(10000)
-  const base = 'http://127.0.0.1:' + server.httpServer.address().port
+  const base = 'http://127.0.0.1:' + port
   const reviewDir = resolve('..', '.impeccable', 'review')
   await mkdir(reviewDir, { recursive: true })
   const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
@@ -102,7 +109,7 @@ try {
   await capture('music-error')
   failure = false; next = rec([], null, false, true)
   await reroll().click()
-  await page.getByRole('alert').filter({ hasText: 'Não encontramos novas músicas nesta tentativa.' }).waitFor()
+  await page.getByRole('alert').filter({ hasText: 'Esta tentativa teve uma limitação e não trouxe novas opções.' }).waitFor()
   assert.equal(await reroll().isDisabled(), false, 'Degraded empty result allows retry even with has_more false')
   assert.equal(await heading(2).count(), 1)
   next = rec([4], 30)
@@ -182,10 +189,116 @@ try {
   assert.deepEqual(requests.at(-1).excluded_music_ids, Array.from({ length: 199 }, (_, i) => uuid(i + 1)))
   assert.ok(await reroll().isDisabled())
   await page.getByRole('status').filter({ hasText: 'Você chegou ao limite de sugestões desta busca.' }).waitFor()
+  // A degraded attempt describes the new failure separately from metadata of
+  // the selection we kept. Exercise both flows without real provider/IA calls.
+  const limitation = 'Esta tentativa teve uma limitação e não trouxe novas opções. Sua seleção anterior continua aqui. Tente novamente.'
+  const variants = [
+    { has_more: false, hint: 'Uma fonte teve uma limitação nesta tentativa.' },
+    { has_more: true, hint: 'A interpretação por IA teve uma limitação nesta tentativa.' },
+    { has_more: false },
+    {},
+  ]
+  for (const kind of ['music', 'books']) {
+    for (const [index, variant] of variants.entries()) {
+      const isolated = await browser.newContext({ reducedMotion: 'reduce' })
+      try {
+        const audit = await isolated.newPage()
+        audit.setDefaultTimeout(10000)
+        audit.on('pageerror', error => errors.push(error.message))
+        const calls = [], favoriteWrites = []
+        const selected = kind === 'music' ? track(700) : { id: uuid(700), title: 'Livro da seleção anterior', authors: ['Autora de fixture'], provider: 'open_library', cover_url: null }
+        const selectionHint = 'Pedido interpretado e sugestões ordenadas por IA. ' + (kind === 'music' ? 'Metadados: MusicBrainz.' : 'Livros encontrados na Open Library.')
+        const response = (entry, offset = 15) => ({ recommendation_id: uuid(9700), items: [{ position: 1, item: entry }], meta: { hint: selectionHint, ai_used: true, sources: [kind === 'music' ? 'musicbrainz' : 'open_library'], has_more: true, next_offset: offset, degraded: false } })
+        let reply = response(selected)
+        await audit.route('**/api/v1/**', route => {
+          const request = route.request(), path = new URL(request.url()).pathname.replace('/api/v1', '')
+          if (path === '/recommendations/' + kind) { calls.push(request.postDataJSON()); return route.fulfill({ json: reply }) }
+          if (path === '/auth/login') return route.fulfill({ json: { access_token: 'fixture-access', refresh_token: 'fixture-refresh', expires_in: 900 } })
+          if (path === '/auth/me') return route.fulfill({ json: user })
+          if (path === '/users/me/favorites/status') return route.fulfill({ json: { favorites: {} } })
+          if (path === '/users/me/favorites' && request.method() === 'POST') favoriteWrites.push(request.postDataJSON())
+          throw new Error('Unexpected endpoint in degraded fixture: ' + path)
+        })
+        await audit.goto(base + '/' + kind)
+        if (kind === 'music') {
+          await audit.getByText('Ajustar preferências', { exact: false }).click()
+          await audit.getByRole('radiogroup', { name: 'Vocais' }).getByRole('radio', { name: 'Instrumental', exact: true }).click()
+          await audit.getByRole('radiogroup', { name: 'Energia' }).getByRole('radio', { name: 'Baixa', exact: true }).click()
+        }
+        const query = 'Pedido enviado antes da tentativa limitada'
+        await audit.getByLabel('Seu pedido', { exact: true }).fill(query)
+        await audit.getByRole('button', { name: 'Encontrar sugestões', exact: true }).click()
+        await audit.getByRole('heading', { name: selected.title, exact: true }).waitFor()
+        await audit.getByLabel('Seu pedido', { exact: true }).fill('Rascunho preservado após limitação')
+        if (kind === 'music') await audit.getByRole('radiogroup', { name: 'Energia' }).getByRole('radio', { name: 'Alta', exact: true }).click()
+        reply = { recommendation_id: uuid(9800), items: [], meta: { degraded: true, ai_used: false, sources: [], next_offset: null, ...variant } }
+        const renew = () => audit.getByRole('button', { name: kind === 'music' ? 'Ver outras músicas' : 'Ver outros livros', exact: true })
+        await renew().click()
+        const alert = audit.locator('.reroll-message [role="alert"]')
+        await audit.getByText(limitation, { exact: true }).waitFor()
+        assert.equal(await alert.textContent(), limitation)
+        assert.equal(await alert.getAttribute('aria-atomic'), 'true')
+        assert.equal(await renew().isDisabled(), false, 'All degraded variants allow explicit retry')
+        assert.equal(await audit.locator('.result-row').count(), 1)
+        assert.equal(await audit.getByRole('heading', { name: selected.title, exact: true }).count(), 1)
+        assert.equal(await audit.getByText(selectionHint, { exact: true }).count(), 1, 'Preserved hint still describes the preserved selection')
+        if (variant.hint) assert.equal(await audit.getByText(variant.hint, { exact: true }).count(), 0, 'Do not replace the selection hint with the failed attempt metadata')
+        const submitted = calls.at(-1)
+        assert.equal(submitted.query, query)
+        assert.equal(submitted.offset, 15)
+        assert.deepEqual(submitted[kind === 'music' ? 'excluded_music_ids' : 'excluded_book_ids'], [selected.id])
+        if (kind === 'music') assert.deepEqual(submitted.filters, { vocals: 'none', energy: 'low' })
+
+        if (index === 0) {
+          // An error snapshot must survive login without refetch or auto-save.
+          await audit.getByRole('button', { name: 'Salvar nos favoritos: ' + selected.title, exact: true }).click()
+          await audit.getByRole('link', { name: 'Entrar para salvar', exact: true }).click()
+          await audit.getByLabel('E-mail', { exact: true }).fill(user.email)
+          await audit.getByLabel('Senha', { exact: true }).fill('test phrase 123')
+          const countBeforeLogin = calls.length
+          await audit.getByRole('button', { name: 'Entrar', exact: true }).click()
+          await audit.getByText(limitation, { exact: true }).waitFor()
+          assert.equal(calls.length, countBeforeLogin, 'Login does not rerun the limited attempt')
+          assert.deepEqual(favoriteWrites, [], 'Login never auto-saves')
+          assert.equal(await renew().isDisabled(), false)
+          assert.equal(await audit.getByLabel('Seu pedido', { exact: true }).inputValue(), 'Rascunho preservado após limitação')
+          if (kind === 'music') {
+            await audit.getByText('Ajustar preferências', { exact: false }).click()
+            assert.equal(await audit.getByRole('radiogroup', { name: 'Energia' }).getByRole('radio', { name: 'Alta', exact: true }).getAttribute('aria-checked'), 'true')
+          }
+          for (const [width, theme, motion] of [[1440, 'dark', 'reduce'], [1440, 'light', 'reduce'], [390, 'dark', 'reduce'], [390, 'light', 'reduce'], [320, 'dark', 'reduce'], [320, 'light', 'reduce'], [320, 'dark', 'no-preference']]) {
+            await audit.setViewportSize({ width, height: width === 1440 ? 900 : 844 })
+            await audit.emulateMedia({ reducedMotion: motion })
+            await audit.evaluate(theme => document.documentElement.setAttribute('data-theme', theme), theme)
+            await audit.evaluate(() => document.fonts.ready)
+            await audit.waitForFunction(() => document.getAnimations().every(animation => animation.effect?.getComputedTiming().iterations === Infinity || animation.playState === 'finished'))
+            await audit.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))))
+            assert.ok(await audit.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${kind} limitation fits ${width}/${theme}/${motion}`)
+            assert.equal(await alert.textContent(), limitation)
+            await audit.locator('.results-section').screenshot({ path: resolve(reviewDir, `reroll-${kind}-limited-${width}-${theme}-${motion}.png`) })
+          }
+        }
+        const fresh = { ...selected, id: uuid(701), title: selected.title + ' nova' }
+        reply = response(fresh, 30)
+        await renew().click()
+        await audit.getByRole('heading', { name: fresh.title, exact: true }).waitFor()
+        assert.deepEqual(calls.at(-1), submitted, 'Retry keeps snapshot, exclusions and cursor after degradation/login')
+        assert.equal(await audit.locator('.reroll-message [role="alert"]').count(), 0, 'A successful renewal clears the limited-attempt message')
+        // Natural exhaustion has a distinct status, not a limitation alert.
+        reply = { recommendation_id: uuid(9900), items: [], meta: { degraded: false, has_more: false, next_offset: null } }
+        await renew().click()
+        await audit.getByRole('status').filter({ hasText: 'Você já viu as sugestões disponíveis para este pedido.' }).waitFor()
+        assert.equal(await renew().isDisabled(), true)
+        assert.equal(await audit.getByRole('heading', { name: fresh.title, exact: true }).count(), 1)
+        assert.equal(await audit.getByText(limitation, { exact: true }).count(), 0)
+      } finally { await isolated.close() }
+    }
+  }
   assert.deepEqual(errors, [])
-  console.log('Reroll UI passed: submitted query/filters, deduplication, null offset, retry/degradation, cancel then new search, auth return, 199+1 boundary, static reduced motion and responsive themes.')
+  console.log('Reroll UI passed: submitted query/filters, deduplication, null offset, retry/degradation, cancel then new search, auth return, 199+1 boundary; MUSIC/BOOK limited-attempt alerts with/without hint/has_more, error snapshots through login, unchanged cursor/IDs/selection metadata; reduced/normal motion and responsive themes. All APIs use fixtures.')
 } finally {
   held?.resolve()
   await browser?.close()
-  await server.close()
+  await new Promise(done => server.close(done))
+  await vite.close()
 }

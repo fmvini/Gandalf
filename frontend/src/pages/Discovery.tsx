@@ -130,11 +130,13 @@ export default function Discovery({ kind }: { kind: Kind }) {
       const freshItems = freshSuggestions<MusicItem | BookItem>(result.items, seenItems.current, body.limit)
       nextOffset.current = result.meta?.next_offset ?? body.offset
       if (!freshItems.length) {
-        // Degradation is a transient source failure, even if the service cannot
-        // know a next page. Keep the prior selection and allow an explicit retry.
+        // Degradation can limit one step or source, without a known next page.
+        // Keep the prior selection and allow an explicit retry.
         const canRetry = result.meta?.degraded || result.meta?.has_more
         setRerollStatus(canRetry ? 'error' : 'exhausted')
-        setRerollError(canRetry
+        setRerollError(result.meta?.degraded
+          ? 'Esta tentativa teve uma limitação e não trouxe novas opções. Sua seleção anterior continua aqui. Tente novamente.'
+          : canRetry
           ? `Não encontramos ${kind === 'music' ? 'novas músicas' : 'novos livros'} nesta tentativa. Tente novamente para continuar a busca.`
           : `Você já viu as sugestões disponíveis para este pedido. Amplie ou ajuste a descrição para buscar mais ${kind === 'music' ? 'músicas' : 'livros'}.`)
         return
