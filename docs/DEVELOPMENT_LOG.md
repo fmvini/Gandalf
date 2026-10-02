@@ -1,5 +1,84 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Retomada das validações e commit da proteção HTTP
+
+### Implementado
+- Usuário informou correção das permissões Git e autorizou continuar. Maestro reutilizou os três terminais: Frontend conclui browser/continuação/live/build; Backend verifica os três testes multiprocessos pendentes; Banco executa gate auth PostgreSQL descartável.
+- Unidade HTTP/limitador revisada e preparada para commit local: respostas auth sem cache, exceções auth sem parâmetros sensíveis e retenção limitada de chaves expiradas/ativas.
+
+### Arquivos principais alterados
+- `api/app/main.py`, `api/app/core/rate_limit.py`
+- `api/tests/test_auth_http_security.py`, `api/tests/test_rate_limit.py`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Serializar commits por unidade validada, sem push. Não repetir os 470 casos aprovados sem alterações; executar apenas gates antes bloqueados e regressões de novas correções.
+- Nova política de aprovação `auto_review` permite solicitar execução específica fora do sandbox quando necessário; a política `never` do checkpoint abaixo é histórica.
+
+### Estado atual
+- Proteção HTTP/limitador: 14 testes aprovados na rodada anterior, incluidos na suíte com 470 PASS; Ruff/formatação aprovados e diff revisado. Nenhuma nova alteração funcional nesta retomada antes do commit.
+- Gates Frontend, multiprocessos e PostgreSQL em andamento; não afirmar aprovação antecipada. Serviço auth/Frontend ainda sem commit; patches anteriores permanecem congelados até resultado real.
+
+### Próximos passos
+- Registrar hashes dos commits efetivos e receber resultados dos três terminais; corrigir somente falhas reproduzidas, testar e commitar cada unidade com seu registro de progresso.
+- Consolidar CONTINUATION/IMPLEMENTATION_STATUS ao final, distinguindo aprovação SQLite/PG/browser e limites restantes.
+
+## 2026-10-02 — Correções auth coordenadas e gates pendentes
+
+### Implementado
+- Maestro retomou os três terminais existentes (Frontend, Backend e Banco de Dados), preservando as alterações da auditoria anterior e serializando Git/documentos compartilhados.
+- Respostas de autenticação recebem `Cache-Control: no-store` e `Pragma: no-cache`, inclusive em erros; exceções inesperadas desse grupo são registradas sem mensagem, traceback ou parâmetros sensíveis.
+- Limitador remove chaves expiradas e limita sua capacidade a 10.000 chaves, sem remover bloqueios ativos para aceitar novas chaves.
+- Backend trata hash inválido com 401 genérico, impede dois sucessores do mesmo refresh em SQLite com consumo condicional atômico e converte falhas SQL de leitura/escrita em rollback/503 sanitizado. FOR UPDATE PostgreSQL e contrato de reuso da família preservados.
+- Frontend impede submits duplicados na mesma tarefa, verifica cancelamento antes/depois de refresh e antes do envio autenticado; campos têm name/autocomplete adequados. Tokens em memória, rotação compartilhada, ownership e visual preservados.
+- Banco reconstruiu harness ignorado para futura validação auth PostgreSQL e registrou constraints, contrato e risco de replay ancestral/descendente ainda não reproduzido.
+
+### Arquivos principais alterados
+- `api/app/main.py`, `api/app/core/rate_limit.py`
+- `api/tests/test_auth_http_security.py`, `api/tests/test_rate_limit.py`
+- `api/app/core/security.py`, `api/app/services/auth_service.py`, `api/tests/test_auth.py`, `api/tests/test_security.py`
+- `frontend/src/pages/Authentication.tsx`, `frontend/src/lib/auth.ts`, `frontend/package.json`
+- `frontend/tests/auth.mjs`, `frontend/tests/auth-session.mjs`, `frontend/tests/auth-form.mjs`
+- `docs/backend-auth-session-2026-10-02.md`, `docs/frontend-auth-session-2026-10-02.md`, `docs/database-auth-session-2026-10-02.md`
+- `docs/DEVELOPMENT_LOG.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+
+### Decisões técnicas
+- Continuar pela unidade de autenticação já em andamento, antes de outra feature. Backend reserva hash/refresh/rollback; Frontend reserva formulário/sessão; Banco reserva auditoria PostgreSQL e relatório exclusivo.
+- Não elevar nem contornar o sandbox com política `approval never`. Autorização funcional para Docker não concede acesso ao pipe nesta sessão; nenhum container foi criado nesta retomada.
+- Corrigir somente falhas demonstradas; hipótese READ COMMITTED de replay ancestral escapando um descendente requer reprodução em PostgreSQL antes de novo patch. Nenhuma migration/model/dependência alterada.
+
+### Estado atual
+- Código/testes dos três escopos congelados. Maestro: suíte API completa **470 aprovados e três falhas de ambiente**, em 75,63s; os três testes de multiprocessos (dois favoritos e um cache) falham em `multiprocessing.Pipe/CreateFile`, `WinError 5`, antes das asserções. Não declarar suíte integral verde. Subset Backend auth/security 48 aprovados; subset headers/logs/limitador 14 aprovados. Ruff `app tests scripts` e formatação de 79 arquivos aprovados; aviso preexistente Starlette/httpx.
+- Frontend: testes Node do módulo de sessão e handler do formulário, TypeScript, sintaxe e detector aprovados. Browser pós-fix bloqueado antes dos testes por `spawn EPERM`; Maestro também tentou `npm.cmd run build`: TypeScript passou e Vite bloqueou em esbuild. Live/continuation não executados nesta retomada por esses pré-requisitos bloqueados; testes VM não provam DOM/autofill/acessibilidade.
+- Banco: 12 recusas offline, dois checks de freeze por hash e Ruff aprovados, execução sem coordenação recusada; integração auth PostgreSQL **não executada**, Docker bloqueado pelo pipe. Harness em `.impeccable/` não acompanha o checkout; reconstrução/receita e limites no relatório exclusivo.
+- Commit local **bloqueado pelo ambiente**: `git add` seletivo recusou criar `.git/index.lock` (`Permission denied`). Nenhum stage/commit/push novo; serviços/dados reais preservados e sem LLM/rede de providers nesta etapa.
+
+### Próximos passos
+- Em sessão com subprocessos/pipes permitidos, executar os três testes de multiprocessos pendentes e `frontend/tests/auth.mjs`, `frontend/tests/continuation.mjs`, `frontend/tests/live.mjs`, além do build. Não repetir todos os 470 casos sem mudança/falha adicional que justifique.
+- Executar auth PostgreSQL em uma instância descartável verificada conforme `docs/database-auth-session-2026-10-02.md`; reproduzir replay ancestral versus rotação descendente antes de propor serialização por família.
+- Quando Git tiver permissão, revisar diffs e fazer commits locais seletivos: proteção HTTP/limitador, serviço auth/security, frontend auth e documentação Banco/continuidade. Incluir o log da unidade em cada commit coerente, somente após gates pertinentes; nenhum push automático.
+
+## 2026-10-02 — Auditoria coordenada de cadastro e sessão
+
+### Implementado
+- Usuário priorizou login/registro funcionais e seguros; checkpoint `13e0a49` limpo consultado. Backend audita credenciais/JWT/rotação/erros, Frontend reproduz fluxos com mocks e Banco avalia constraints/concorrência em instância descartável.
+- Maestro reserva Git/documentos compartilhados e limitador/logs/headers; gate real SQLite `live.mjs` ocorrerá após freeze, sem duplicar testes de mocks dos agentes.
+
+### Arquivos principais alterados
+- `docs/DEVELOPMENT_LOG.md`
+- Relatórios exclusivos previstos: `docs/backend-auth-session-2026-10-02.md`, `docs/frontend-auth-session-2026-10-02.md`, `docs/database-auth-session-2026-10-02.md`.
+
+### Decisões técnicas
+- Preservar API online, frontend/PG existentes e dados reais. Nenhuma LLM/rede de providers necessária para autenticação; fixtures/bancos temporários exclusivos e tokens/senhas sintéticos não serão impressos.
+- Corrigir somente falhas reproduzidas e testar os contratos afetados; não converter auditoria limitada em certificação de segurança/produção. Seguir ADR-0006: tokens em memória, access curto e refresh rotativo.
+
+### Estado atual
+- Auditoria em andamento; login/cadastro ainda não recebem nova aprovação nesta etapa. Gate PG auth será coordenado após proposta Banco; nenhuma mudança em modelos/migrations presumida.
+
+### Próximos passos
+- Receber reproduções/escopos, corrigir falhas, executar testes afetados/integração e revisar QA de login/registro nos dois temas/mobile.
+- Atualizar resultados/limites, serializar commits locais coerentes e somente então retomar outra área. Sem push automático.
+
 ## 2026-10-02 — Consolidação Docker e gate musical externo
 
 ### Implementado

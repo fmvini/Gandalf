@@ -12,6 +12,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
 
 from app.ai.groq import GroqClient
 from app.core.config import Settings
@@ -39,10 +40,17 @@ from app.services.recommendation_service import RANKING_VERSION, RecommendationS
 logger = logging.getLogger("gandalf.api")
 
 
+def protect_auth_response(request: Request, response: Response) -> Response:
+    if request.url.path.startswith("/api/v1/auth/"):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Pragma"] = "no-cache"
+    return response
+
+
 def error_response(
     request: Request, status_code: int, code: str, message: str, **extra: object
 ) -> JSONResponse:
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status_code,
         content={
             "error": {
@@ -53,6 +61,8 @@ def error_response(
             }
         },
     )
+    protect_auth_response(request, response)
+    return response
 
 
 def create_app(
@@ -143,6 +153,7 @@ def create_app(
         request.state.request_id = request_id
         started = perf_counter()
         response = await call_next(request)
+        protect_auth_response(request, response)
         response.headers["X-Request-ID"] = request_id
         logger.info(
             json.dumps(
@@ -196,7 +207,19 @@ def create_app(
 
     @application.exception_handler(Exception)
     async def internal_error(request: Request, exc: Exception) -> JSONResponse:
-        logger.exception("Unexpected API error", exc_info=exc)
+        if request.url.path.startswith("/api/v1/auth/"):
+            # Exceptions may embed submitted credentials or SQL parameters.
+            logger.error(
+                json.dumps(
+                    {
+                        "event": "auth_internal_error",
+                        "request_id": request.state.request_id,
+                        "exception_type": type(exc).__name__,
+                    }
+                )
+            )
+        else:
+            logger.exception("Unexpected API error", exc_info=exc)
         return error_response(
             request, 500, "INTERNAL_ERROR", "Ocorreu um erro inesperado."
         )
