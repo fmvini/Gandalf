@@ -1,5 +1,28 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Auth consolidada e API online restaurada
+
+### Implementado
+- Documentos de continuidade/estado/API/security reconciliados com os gates efetivamente aprovados, commits locais e limites restantes.
+- API8000 ausente restaurada após patch PG, em modo online e com configuração/dados `api/.local` originais; serviços existentes Frontend/PostgreSQL preservados.
+
+### Arquivos principais alterados
+- `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+- `docs/05-API-Specification.md`, `docs/09-security-specification.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Resultados separados:470 PASS iniciais +3 multiprocessos PASS posteriores completam473 casos originais em rodadas complementares;52 auth/security e20 guards são subsets/unidades adicionais, sem alegar nova suíte total.
+- Health/status verifica runtime/configuração, sem solicitar recomendações externas nem gastar LLM. Sem alteração de chave/modelo/limite/schema/dados de conta.
+
+### Estado atual
+- Commits locais `e6278dd`, `7192c54`, `290eb69`, `5b7f17a`, `2f00bc1`; nenhum push. Auth browser/continuation/live/build e PG real versionado PASS; todos os containers descartáveis removidos.
+- Launcher API9084/worker20872 em127.0.0.1:8000; `/health`200, `/health/ready`200 database/schema ok, `/api/v1/system/status`200 catálogo online/Groq configurado `openai/gpt-oss-20b`. Frontend25716/5173 e PG10140/5432 intactos;55432/55433 sem listener no snapshot final.
+- CI hospedada, HTTP entre duas apps PG, corrida logout/refresh, rollout/mistura de versões e QA assistiva permanecem pendentes; build emite aviso não fatal de chunk504,06kB.
+
+### Próximos passos
+- Observar jobs/artefatos da CI após push explicitamente autorizado; sem envio automático.
+- Definir reprodução própria para HTTP PG/rollout e demais corridas antes de ampliar certificação auth. Para produto, seguir matriz MUSIC/revisão humana do checkpoint v7 ou criar contrato de histórico/perfil/feedback antes de implementação.
+
 ## 2026-10-02 — Gate auth PostgreSQL versionado e integrado à CI
 
 ### Implementado

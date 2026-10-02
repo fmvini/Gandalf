@@ -1,6 +1,42 @@
 # Ponto de retomada — 2026-10-02
 
-## Etapa atual — PostgreSQL real e seleção musical com metadados
+## Etapa atual — autenticação corrigida, gates aprovados e commits locais
+
+Maestro coordenou os terminais existentes Frontend, Backend e Banco de Dados, com reservas exclusivas e Git/docs compartilhados serializados. Entregas auth encerradas e versionadas; nenhum push. Commits locais: `e6278dd` headers/logs/limitador, `7192c54` hash/SQL/refresh SQLite, `290eb69` submit/cancelamento frontend, `5b7f17a` serialização PG por família e `2f00bc1` regressão PG versionada/CI.
+
+**Validação:** 470 testes passaram na rodada integral inicial; os três casos multiprocessos bloqueados antes das asserções passaram depois, com aprovação específica, sem alterar asserções. São 473 casos originais aprovados em rodadas complementares, não uma nova execução monolítica. Subset auth/security final52 PASS; headers/logs/limitador14 PASS; novo gate20 testes offline/12 recusas CLI PASS. Ruff/formatação e actionlint PASS. Frontend Node/session/form/TypeScript, auth browser/continuation/live SQLite temporário e build2050 módulos PASS; aviso não fatal de chunk504,06kB. Suítes já aprovadas não foram duplicadas.
+
+**PostgreSQL real:** Banco reproduziu bug ancestral/descendente antes (200/401, espera observada, um refresh ativo); advisory lock da família antes de row locks e releitura após espera corrigiram para zero ativos. Gate ignorado pós-patch e script versionado passaram em instâncias distintas descartáveis PostgreSQL18.6/READ COMMITTED: quatro grupos, seis constraints/digests, mesmo-token200/401/zero ativos e ownership/logout/expiração/cascata. Terceira instância validou também o trecho literal da CI que cria outro DBUUID vazio. Todas removidas por ID/identidade conferidos; PG5432 preservado. Script: `api/scripts/postgres_auth_gate.py`; execução opt-in só em DBUUID vazio, conforme `CI.md`. Evidências before/after/versioned ignoradas separadas.
+
+**Runtime conferido após commits:** API8000 estava ausente e foi restaurada em modo online, usando `api/.local`/config/modelo originais. Launcher9084/worker20872; `/health`, `/health/ready` e `/api/v1/system/status`200, database/schema ok, catálogo online, Groq configurado `openai/gpt-oss-20b`. Isso verifica configuração, sem chamada externa/LLM nem nova cota consumida por esta retomada auth. Frontend25716 em5173 e PostgreSQL10140 em5432 preservados; portas descartáveis55432/55433 livres na consulta final. PID é snapshot, conferir antes de qualquer ação futura.
+
+Próximos passos:
+
+1. Após **push explicitamente autorizado**, observar os três jobs/artefatos da CI; execução hospedada/deploy ainda pendentes. Sem push automático.
+2. Antes de ampliar garantia PG, criar gate próprio para HTTP entre duas apps, rollout pré-populado/mistura de versões e corrida logout/refresh/desativação/exclusão. Não tratar os quatro grupos atuais como stress/segurança integral.
+3. Continuar seleção musical a partir do checkpoint v7 abaixo: definir matriz/revisão humana para instrumental estrito e re-roll externo, respeitando orçamento autorizado. Health/config não comprova fontes/qualidade online.
+4. Histórico/perfil/feedback exigem contrato próprio antes de schema/API/UI; não usar favoritos como eventos de feedback implícitos.
+
+Relatórios: `backend-auth-session-2026-10-02.md`, `frontend-auth-session-2026-10-02.md`, `database-auth-session-2026-10-02.md`. Contratos API/security/ADR0006 e `DEVELOPMENT_LOG.md` refletem as correções. Registros abaixo preservam checkpoints históricos; os bloqueios então vigentes foram superados nos gates acima.
+
+## Checkpoint anterior — auditoria auth com gates então bloqueados
+
+Maestro retomou os terminais existentes Frontend, Backend e Banco de Dados. Código/testes e entregas estão congelados para revisão; a unidade de autenticação tem gates pendentes antes de conclusão integral. Cada agente reserva seus arquivos; Maestro serializa Git e documentos compartilhados.
+
+Headers privados (`no-store`/`no-cache`), logs sanitizados de exceções auth e limitador com recuperação de chaves expiradas/capacidade limitada: 14 testes aprovados. Backend corrigiu hash inválido, refresh SQLite concorrente e falhas SQL com rollback/503: 48 testes auth/security aprovados. Frontend corrigiu envio duplicado e cancelamento antes/depois do refresh; testes Node/session/form, TypeScript, sintaxe e detector aprovados. Banco: 12 guards e dois checks de freeze por hash offline aprovados; nenhuma integração auth PG.
+
+**Gate final Maestro:** suíte API completa 470 PASS/3 FAIL de ambiente em75,63s. Falhas antes das asserções, em multiprocessing.Pipe/CreateFile WinError5: `test_favorites.py::test_concurrent_processes_deduplicate_atomically`, `test_favorites.py::test_concurrent_repeated_create_and_delete_return_detached_snapshots`, `test_recommendation_cache.py::test_concurrent_sqlite_processes_enforce_global_capacity`. Não marcar suíte verde nem modificar esses testes para eliminar o bloqueio. Ruff `app tests scripts`/formatação79 PASS. Build frontend tentou `tsc -b && vite build`: tipos aprovados, Vite EPERM; live/continuation não executados por pré-requisitos bloqueados.
+
+Bloqueios comprovados naquele checkpoint: browser `node tests/auth.mjs` falhou antes dos testes em `spawn EPERM` do esbuild; Banco não acessava o pipe Docker. Política então vigente `approval never` impedia elevar/contornar. **Git também estava bloqueado**: `git add -- <arquivos relevantes>` falhou ao criar `.git/index.lock` (`Permission denied`). Nenhum commit/push novo, container, restart ou alteração de dados existentes naquela fase. A retomada autorizada seguinte resolveu os gates específicos descritos no topo.
+
+Próximos passos:
+
+1. Ler os três relatórios `backend-auth-session-2026-10-02.md`, `frontend-auth-session-2026-10-02.md` e `database-auth-session-2026-10-02.md`; revisar diffs congelados. Não repetir gates aprovados sem motivo.
+2. Em sessão com subprocessos/pipes permitidos, executar os três node IDs pytest acima e `node tests/auth.mjs`, `node tests/continuation.mjs`, `npm.cmd run build` e `node tests/live.mjs` em `frontend`, preservando serviços existentes e dados temporários exclusivos. Não interpretar testes Node sem DOM como QA browser.
+3. Executar gate auth PostgreSQL em UMA instância descartável verificada; testar refresh concorrente/reuso e replay ancestral versus rotação descendente em READ COMMITTED. Esse último risco foi identificado por análise, ainda não reproduzido; não declarar resolvido nem aprovado.
+4. Quando `.git` puder ser escrito, revisar `git diff`, rodar testes restantes e fazer commits seletivos coerentes com o log; não usar `git init`, `git add .` nem push automático.
+
+## Checkpoint anterior — PostgreSQL real e seleção musical com metadados
 
 Commits locais, sem push: `c13b552` gate PostgreSQL/pgvector e CI; `97b07b6` metadados conhecidos no seletor MUSIC; `89e2387` origem/classificação por faixa no frontend. Maestro coordenou Backend, Frontend e Banco, reservando Git e documentos compartilhados. As seções abaixo são checkpoints históricos; disponibilidade do Docker e PID/cota antigos não descrevem o runtime atual.
 

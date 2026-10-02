@@ -233,6 +233,8 @@ Resposta:
 
 ## 3. Autenticação (`/auth`)
 
+Respostas de `/api/v1/auth/*`, incluindo erros, enviam `Cache-Control: no-store` e `Pragma: no-cache`. Falhas SQL de leitura ou escrita recebem `503 SERVICE_UNAVAILABLE` com mensagem genérica após rollback; conflitos de registro continuam `409 CONFLICT`.
+
 | Método | Rota | Acesso | Descrição |
 |---|---|:---:|---|
 | POST | `/auth/register` | 🔓 | Cria conta |
@@ -248,7 +250,7 @@ Resposta:
 { "email": "ana@exemplo.com", "username": "ana", "password": "S3nh@Forte!" }
 ```
 
-**Validações:** e-mail válido; `username` 3–32 chars `[a-zA-Z0-9_.-]`; senha ≥ 10 chars (política em Security Spec).
+**Validações:** e-mail válido; `username` 3–32 caracteres ASCII `[A-Za-z0-9_.-]`; senha de 10–128 caracteres, preservando espaços e Unicode. E-mail/username são armazenados com `casefold`; a senha não é aparada nem normalizada.
 
 **Response `201`**
 ```json
@@ -296,6 +298,8 @@ Resposta:
 ### 3.4 `POST /auth/logout`
 
 **Request:** `{ "refresh_token": "d8f7…" }` · **Response:** `204 No Content`.
+
+Revoga apenas o refresh informado pertencente ao usuário autenticado. Refresh antigo já rotacionado é no-op; não revoga seu descendente. O access JWT continua válido até expirar, pois não há denylist de access tokens.
 
 ### 3.5 `GET /auth/me`
 

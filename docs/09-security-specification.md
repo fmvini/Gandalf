@@ -67,7 +67,7 @@ Definir os requisitos, controles e práticas de segurança da plataforma: autent
 ### 5.1 Registro
 
 - Campos: e-mail, username, senha.
-- Validação: e-mail válido (formato) e **normalizado** (minúsculas); `username` com conjunto de caracteres restrito (ex.: `[a-z0-9_.-]`, 3–30); unicidade em e-mail e username.
+- Validação implementada: e-mail válido (formato) e normalizado por `casefold`; `username` ASCII `[A-Za-z0-9_.-]`, 3–32 caracteres, armazenado com `casefold`; unicidade em e-mail e username.
 - **Política de senha:** mínimo 10 caracteres (alinhado a recomendações modernas, priorizando comprimento em vez de regras de composição); bloquear senhas comuns/vazadas (lista local top-N, ou verificação k-anonimato via serviço de senhas vazadas — opcional); máximo razoável (ex.: 128) para evitar DoS por hashing.
 - **Resposta de registro não deve permitir enumeração:** idealmente resposta uniforme; se o produto exigir avisar "e-mail já cadastrado", mitigar com rate limit (registrar a decisão em ADR).
 
@@ -78,6 +78,7 @@ Definir os requisitos, controles e práticas de segurança da plataforma: autent
 - Suporte a **rehash** transparente ao logar quando parâmetros mudarem.
 - Comparação em tempo constante (fornecida pela biblioteca).
 - **Nunca** logar, retornar ou armazenar senha em claro.
+- Hash vazio ou estruturalmente inválido retorna erro genérico de credenciais. Rehash e criação do refresh são confirmados na mesma transação; falhas SQL de autenticação fazem rollback e retornam `503 SERVICE_UNAVAILABLE` sem parâmetros sensíveis.
 
 ### 5.3 Login
 
@@ -112,6 +113,8 @@ Definir os requisitos, controles e práticas de segurança da plataforma: autent
 **Logout:** revoga o refresh token informado e o cliente descarta ambos os tokens em memória. Access token expira naturalmente (curta duração); opcional: *denylist* por `jti` se necessário.
 
 **Recuperação de sessão:** `GET /auth/me` com access token; se expirado e ainda houver refresh token em memória, o cliente chama `/auth/refresh` transparentemente.
+
+**Cache e logs implementados:** respostas de `/api/v1/auth/*`, inclusive erros, usam `Cache-Control: no-store` e `Pragma: no-cache`. Exceções inesperadas desse grupo são registradas apenas por tipo/evento/request_id, sem mensagem, traceback ou parâmetros SQL. Isso não substitui a política de sanitização dos demais grupos de rotas.
 
 ### 5.5 Recuperação de senha e verificação de e-mail (recomendado; pode ser pós-MVP)
 
@@ -192,6 +195,7 @@ Seção 62 do escopo: *rate limiting*. Especificação:
 Implementação:
 
 - Limitador em memória por processo implementado nas rotas de auth; **Redis** ou equivalente para limites distribuídos quando houver múltiplas instâncias (seção 60 do escopo — Redis opcional).
+- Cada instância do limitador retém no máximo 10.000 chaves ativas, recupera chaves expiradas e rejeita novas chaves com 429 quando está cheia; não remove bloqueios ativos para abrir espaço. O limite continua por processo, sem coordenação distribuída.
 - Respostas `429` com `Retry-After`; frontend mostra mensagem amigável (doc 08 §8.3).
 - Chave atual de auth: IP e rota; login/registro também usam hash do e-mail normalizado. Nas demais rotas futuras, preferir usuário autenticado ou IP (**atenção a proxies:** confiar em `X-Forwarded-For` apenas do proxy conhecido).
 - **Orçamento diário de custo de IA** (doc 06 §10): ao esgotar, modo degradado (sem LLM) em vez de falha total.
