@@ -1,5 +1,50 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Gate PostgreSQL real e execução na CI
+
+### Implementado
+- Gate executado e aprovado em Docker oficial PostgreSQL18.6/pgvector0.8.6/citext1.8, primeiro no harness local e depois no script versionado sobre outro banco vazio do mesmo container descartável.
+- Verificados migrations/metadata/READ COMMITTED/extensões/readiness, favoritos concorrentes/isolamento/snapshot e cache concorrente/TTL/limite256/cascata, upgrade/downgrade até base. Nenhum defeito de modelo/migration encontrado.
+- Script reutilizável recusa destinos inadequados antes de migrar; 17 testes de proteção aprovados. Job CI separado usa imagem por digest, tmpfs, loopback e JSON final, sem converter a suíte SQLite em PostgreSQL.
+
+### Arquivos principais alterados
+- `api/scripts/postgres_gate.py`, `api/tests/test_postgres_gate.py`
+- `.github/workflows/ci.yml`, `docs/CI.md`, `docs/database-docker-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Usuário autorizou Docker, incluindo obtenção da imagem necessária. Container/bancos exclusivos por UUID, label/tmpfs/porta55432 conferidos; nenhuma utilização de PG18/5432, compose/volume ou dados existentes.
+- Imagem fixada em digest `2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a`. Stdout apenas JSON final; progresso em stderr e falhas sanitizadas por etapa/classe. CI preserva exit status com pipefail.
+
+### Estado atual
+- Duas execuções PostgreSQL reais e Ruff/17 guards aprovados pelo Banco; actionlint1.7.12 aprovado pelo Maestro. Serviço descartável removido após identidade verificada, processos existentes preservados.
+- CI hospedada ainda não executada. HTTP autenticado entre instâncias PostgreSQL, constraints negativas completas, refresh concorrente e rollout pré-populado permanecem fora da cobertura; aprovação deste gate não é conclusão integral de persistência/deploy.
+- Backend/Frontend continuam na unidade paralela de metadados/classificações musicais, sem LLM adicional até janela própria.
+
+### Próximos passos
+- Serializar commit local do gate/script/CI/documentação após entrega final Banco. Nenhum push automático; a primeira execução hospedada ainda precisa ser observada depois de envio autorizado.
+- Concluir testes e commits de metadados musicais e sua apresentação por faixa; validar uma amostra real limitada com o cliente atualizado, mantendo campos desconhecidos/filtros estritos.
+
+## 2026-10-02 — Retomada com Docker autorizado
+
+### Implementado
+- Usuário autorizou usar Docker e continuar o desenvolvimento. Checkpoint `8d94c76`/Git limpo consultados; terminais existentes receberam escopos separados via Maestri.
+- Docker Desktop/Engine Linux acessível fora do sandbox; consulta normal falha por permissão. Containers ausentes na consulta e imagem pgvector ainda não disponível localmente. Banco autorizado a obter imagem oficial e executar uma instância descartável com tmpfs/porta própria.
+
+### Arquivos principais alterados
+- `docs/DEVELOPMENT_LOG.md`
+- Relatórios exclusivos previstos: `docs/database-docker-session-2026-10-02.md`, `docs/backend-music-selection-session-2026-10-02.md`, `docs/frontend-music-selection-session-2026-10-02.md`.
+
+### Decisões técnicas
+- Banco executa PostgreSQL/pgvector e prepara gate reutilizável somente após execução real. Maestro reserva CI, Git e os três documentos compartilhados; preservar PostgreSQL18/5432, volume compose e serviços existentes.
+- Backend avalia payload/metadados da seleção musical antes de alterar integração; Frontend revisa clareza das origens/estimativas. Nenhuma chamada LLM adicional autorizada antes de proposta concreta e orçamento.
+
+### Estado atual
+- Etapa em andamento; disponibilidade atual do Docker supera a indisponibilidade histórica registrada abaixo. PostgreSQL real ainda não aprovado por mera disponibilidade do daemon.
+
+### Próximos passos
+- Receber resultado real do gate, corrigir apenas defeitos demonstrados e integrar sua execução versionada/CI após validação.
+- Aprovar unidade pequena de seleção musical com testes, consolidar docs e commits locais sem push.
+
 ## 2026-10-02 — Fontes online e capa externa verificadas
 
 ### Implementado
