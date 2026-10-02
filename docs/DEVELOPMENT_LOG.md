@@ -1,5 +1,33 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Fontes online e capa externa verificadas
+
+### Implementado
+- Backend validou fontes públicas Open Library/MusicBrainz e interpretação Groq com o cliente real da aplicação. API BOOK entregou três obras externas em português com IA ativa/sem degradação.
+- API MUSIC/re-roll devolveu dois lotes locais, seis UUIDs únicos, cursor 0→15→30 e IA ativa/sem degradação. Consulta adicional de jazz retornou vazia; seleção musical externa continua pendente, sem perseguir novas queries.
+- Replay offline restrito aos hashes/dados públicos dessa consulta encontrou 15 gravações MusicBrainz + três candidatos locais, mas Selection da IA com zero escolhas. Não houve rejeições por filtros/score/diversidade; motivo da omissão não consta no schema. Zero rede/reserva/escrita no replay, sem bug API demonstrado.
+- Capa “O Hobbit” real respondeu200/JPEG25.626bytes/180×285. Maestro confirmou uma única GET externa no Chromium e imagem visível em 390 px, usando API simulada com metadados públicos reais; zero erros/requests inesperados e nenhuma LLM nessa verificação.
+- Banco preparou receita/harness PostgreSQL descartável, sem executar integração nem alterar o servidor existente. Fix de mensagem frontend já registrado em `949f642`.
+
+### Arquivos principais alterados
+- `docs/backend-online-session-2026-10-02.md`, `docs/database-postgres-session-2026-10-02.md`
+- `docs/DEVELOPMENT_LOG.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+
+### Decisões técnicas
+- Probe inicial HTTPX padrão/certifi falhou issuer20; não representava o cliente da aplicação, que já usa `ssl.create_default_context()`/raízes do sistema. Rodada corrigida passou com TLS validado; sem patch, nova chave ou mudança de modelo/provider/cota. Contextos explícitos são documentados por [HTTPX](https://www.python-httpx.org/advanced/ssl/) e [Python SSL](https://docs.python.org/3.12/library/ssl.html#ssl.create_default_context).
+- `ai_used`/`sources` das respostas efetivas distinguem ordenação por IA de itens externos; fonte200 direta ou cache agregado não prova seleção externa. Limites por rodada e consumo registrados, sem retries manuais.
+- Harness PG permanece ignorado até execução real. Fixtures existentes são SQLite e teste PG só gera SQL: DATABASE_URL não converte a suíte. Não integrar CI como gate verde antes de executar instância descartável.
+
+### Estado atual
+- Uso Groq **2→9/50** na etapa; modelo original, configurações/dados/processos preservados, nenhuma evidência de chave inválida. API PID31444/8000 e frontend existente localhost:5173 mantidos, status/readiness200 e build de 2.050 módulos PASS.
+- BOOK externo/IA, interpretação real e uma capa externa/componente comprovados pontualmente; re-roll MUSIC comprovado com seleção local. Não afirmar aprovação ampla de ranking musical, trilha, todas as capas ou PostgreSQL.
+- Docker indisponível normal/elevado; PG18/5432 e volume persistente não tocados. Guard/import/13 recusas do harness passaram sem conexão; gate real continua pendente.
+
+### Próximos passos
+- Priorizar qualidade da seleção MUSIC: funil Jazz já diagnosticado offline (18 candidatos/zero escolhas da IA). Avaliar informação disponível no payload/voz/energia e amostras públicas antes de mudar prompt/fallback; futura validação externa precisa de orçamento próprio, preservando restrições e IDs reais.
+- Validar re-roll BOOK externo e ampliar amostras/revisão humana sem ampliar cotas incidentalmente. Seguir receita Banco para PostgreSQL descartável quando ambiente estiver acessível.
+- Consolidar commit documental seletivo e conferir Git limpo/serviços preservados, sem push. Evidências ignoradas e limites estão nos relatórios de sessão; não tratá-las como artefatos disponíveis em outro checkout.
+
 ## 2026-10-02 — Aviso claro para renovação limitada
 
 ### Implementado

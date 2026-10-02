@@ -1,6 +1,29 @@
 # Ponto de retomada — 2026-10-02
 
-## Checkpoint final — commits, re-roll e capas
+## Etapa atual — fontes reais, capa externa e aviso de renovação
+
+Retomada sobre `ffdd6a6`, com Backend/Frontend/Banco existentes e Git/documentos compartilhados serializados pelo Maestro. Fix de aviso no commit local `949f642`: re-roll vazio degradado explica a limitação da tentativa e preserva a seleção/retry. Módulo reroll afetado, TypeScript e 14 capturas por fixtures passaram; Maestro aprovou build de 2.050 módulos e revisou capturas mobile. Nenhuma nova suíte geral foi duplicada.
+
+Cliente real `app.core.http.external_client` validou TLS/fontes: Open Library e MusicBrainz HTTP200, três itens normalizados por fonte; Groq interpretou o pedido público com sucesso. O probe inicial usou certifi padrão e falhou verify_code20; essa evidência não representava a aplicação, que já usa confiança do SO. Sem patch TLS, nova chave, troca de modelo/provider ou mudança da cota.
+
+API real: “Músicas calmas para estudar” retornou dois lotes de três itens, IA ativa/sem degradação, cursor 0→15→30 e seis UUIDs sem repetição, **somente catálogo local**. “Livros de fantasia e aventura em portugues” retornou três obras Open Library em português com IA ativa/sem degradação. “Jazz instrumental” retornou vazio, IA ativa/sem degradação/next_offset15. MusicBrainz direto200 não comprova entrega musical externa no ranking; esse gate continua aberto. Uso observado **2→9/50** ao longo da etapa; nenhum retry manual para perseguir resultado.
+
+Replay offline da consulta pública Jazz encontrou 15 candidatos MusicBrainz + três locais, filtro vocal instrumental e Selection da IA com **zero escolhas**. Não houve rejeições por filtro/score/diversidade; não foi ausência de candidatos. Somente hashes derivados dessa consulta/dados públicos, rede/reserva/escrita proibidas e nenhuma chamada efetivada. Motivo da omissão não vem no schema; metadados insuficientes são hipótese, não causa comprovada. Evidência ignorada `backend-online-jazz-offline-funnel-20261002.json` e relatório Backend.
+
+Capa real de “O Hobbit” (`OL27482W`, cover14849956): BackendGET200/JPEG25.626bytes/180×285 e Maestro confirmou uma única GET200 no Chromium, imagem visível na descoberta em 390 px, mesmas dimensões e zero erros. No navegador, API foi simulada com os metadados públicos normalizados; não houve nova recomendação/LLM. Isso valida uma amostra de imagem externa/componente, não todas as capas do catálogo.
+
+Serviços preservados: API online PID31444/8000, mesmo banco/config/modelo original, status/readiness200; frontend existente localhost:5173 preservado, sem restart/servidor persistente duplicado. PostgreSQL/pgvector real continua pendente: Docker sem daemon normal/elevado; PG18/5432 e volume do compose intocados. Harness local ignorado preparado/verificado apenas por import/guards, sem integração PG nem inclusão em Git.
+
+Relatórios: `backend-online-session-2026-10-02.md`, `frontend-online-session-2026-10-02.md`, `database-postgres-session-2026-10-02.md`. Artefatos/scripts/capturas de diagnóstico ficam ignorados em `.impeccable/`; se ausentes em outro checkout, reconstruir a verificação antes de executá-la.
+
+Próximos passos:
+
+1. Priorizar qualidade da seleção musical: o funil Jazz já confirmou 18 candidatos/zero escolhas da IA. Avaliar o payload/metadados de voz/energia e amostras públicas antes de alterar prompt/fallback; não mudar filtros ou classificar desconhecido como instrumental para obter sucesso. Reconstruir fixtures próprias se caches expirarem, sem ler consultas privadas.
+2. Validar seleção externa MUSIC e re-roll BOOK externo com orçamento explícito de testes/cota, preservando query/filtros/IDs/cursor. Amostras atuais não fecham G1/G2 nem avaliação musical/trilha completa.
+3. Para PG, seguir preflight/receita do relatório Banco em um único container descartável com imagem local/porta55432 ou55433/bancoUUID/tmpfs; não usar compose/volume existente. Somente após execução real decidir integração versionada de testes/CI; não exportar DATABASE_URL esperando converter fixtures SQLite.
+4. Manter commits locais seletivos e atualizar DEVELOPMENT_LOG; nenhum push automático. Confirmar Git/processos/cache/cota ao retomar, sem inferir disponibilidade permanente pelos HTTP200 desta etapa.
+
+## Checkpoint anterior — commits, re-roll e capas
 
 Ler primeiro as entradas recentes de `DEVELOPMENT_LOG.md`. Maestro coordenou os terminais existentes Frontend/Backend/Banco de Dados e serializou Git/documentos compartilhados; os registros de 01/10 e do sandbox inicialmente bloqueado são históricos. Todos os arquivos da entrega foram revisados e incluídos em commits locais seletivos, sem push.
 
