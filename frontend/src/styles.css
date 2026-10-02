@@ -157,6 +157,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .book-options button:hover { background: var(--surface-raised); }
 .mini-cover { width: 40px; height: 54px; flex: none; display: grid; place-items: center; background: var(--soft); border-radius: 4px; overflow: hidden; color: var(--accent-strong); }
 .mini-cover img { width: 100%; height: 100%; object-fit: cover; }
+.book-cover-fallback { display: grid; place-items: center; width: 100%; height: 100%; color: var(--accent-strong); }
 .book-options button span:last-child, .selected-book > span:nth-child(2) { display: grid; gap: 4px; }
 .book-options strong, .selected-book strong { font-size: .87rem; }
 .book-options small, .selected-book small { color: var(--muted); font-size: .77rem; }
@@ -166,6 +167,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .mode-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .reading-mode { min-height: 91px; text-align: left; display: grid; align-content: center; gap: 5px; padding: 14px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 12px; }
 .reading-mode strong { font-size: .87rem; }
+.reading-mode strong, .reading-mode span { min-width: 0; overflow-wrap: anywhere; }
 .reading-mode span { color: var(--muted); font-size: .74rem; line-height: 1.3; }
 .reading-mode.selected { background: var(--soft); border-color: var(--accent); }
 .reading-mode:hover { border-color: var(--accent); }

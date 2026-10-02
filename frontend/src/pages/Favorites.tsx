@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, BookOpen, Headphones, RefreshCw, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Headphones, RefreshCw, Trash2 } from 'lucide-react'
 import { useSession } from '../lib/useSession'
 import { musicDestination, type BookItem, type MusicItem } from '../lib/api'
 import { favoriteError, favorites, type Favorite, type FavoritePage, type FavoriteType } from '../lib/favorites'
-import { localBookCover } from '../lib/showcase'
+import { BookCover } from '../components/BookCover'
 
 export default function Favorites() {
   const { user, expired } = useSession()
@@ -70,7 +70,7 @@ function SavedItem({ favorite, removing, onRemove }: { favorite: Favorite; remov
   const music = favorite.type === 'MUSIC'
   const track = favorite.item as MusicItem
   const book = favorite.item as BookItem
-  const image = music ? track.image_url : book.cover_url || (book.provider === 'local' ? localBookCover(book.title) : undefined)
+  const image = track.image_url
   const destination = music ? musicDestination(track) : book.external_url ? { href: book.external_url, label: 'Ver livro' } : null
-  return <li className="result-row"><div className={'result-image ' + (music ? 'music' : 'books')}>{image && !imageFailed ? <img src={image} alt="" loading="lazy" onError={() => setImageFailed(true)} /> : music ? <Headphones size={30} aria-hidden="true" /> : <BookOpen size={30} aria-hidden="true" />}</div><div className="result-main"><h2>{favorite.item.title}</h2><p>{music ? track.artist : book.authors.join(', ')}</p><div className="favorite-row-actions">{destination ? <a className="result-link" href={destination.href} target="_blank" rel="noopener noreferrer" aria-label={destination.label + ': ' + favorite.item.title}>{destination.label}<ArrowUpRight size={17} aria-hidden="true" /></a> : null}<button className="text-button favorite-button" type="button" disabled={!!removing} onClick={onRemove} aria-label={'Remover dos favoritos: ' + favorite.item.title}><Trash2 size={16} aria-hidden="true" />{removing === favorite.id ? 'Removendo…' : 'Remover favorito'}</button></div></div></li>
+  return <li className="result-row"><div className={'result-image ' + (music ? 'music' : 'books')}>{!music ? <BookCover book={book} loading="lazy" /> : image && !imageFailed ? <img src={image} alt="" loading="lazy" onError={() => setImageFailed(true)} /> : <Headphones size={30} aria-hidden="true" />}</div><div className="result-main"><h2>{favorite.item.title}</h2><p>{music ? track.artist : book.authors.join(', ')}</p><div className="favorite-row-actions">{destination ? <a className="result-link" href={destination.href} target="_blank" rel="noopener noreferrer" aria-label={destination.label + ': ' + favorite.item.title}>{destination.label}<ArrowUpRight size={17} aria-hidden="true" /></a> : null}<button className="text-button favorite-button" type="button" disabled={!!removing} onClick={onRemove} aria-label={'Remover dos favoritos: ' + favorite.item.title}><Trash2 size={16} aria-hidden="true" />{removing === favorite.id ? 'Removendo…' : 'Remover favorito'}</button></div></div></li>
 }

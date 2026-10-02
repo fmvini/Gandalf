@@ -1,5 +1,30 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Capas consistentes nos fluxos de livros
+
+### Implementado
+- `BookCover` compartilhado por descoberta, favoritos e lista/livro selecionado de Ler com Música. Corrigida ausência da capa local no seletor; URL de metadados tem prioridade e asset por título exige `provider=local`.
+- Erro de carregamento e imagem branca 1×1 usam placeholder; falha vinculada à URL permite carregar uma fonte diferente no mesmo componente montado, sem loops de retry.
+- Corrigida sobreposição de Cinematográfica/Calma em 320 px com quebra do texto dentro do cartão, preservando fonte/tamanho; regressão mede retângulos de cada linha, além do overflow da página.
+
+### Arquivos principais alterados
+- `frontend/src/components/BookCover.tsx`, `frontend/src/lib/showcase.ts`, `frontend/src/pages/Discovery.tsx`, `frontend/src/pages/Favorites.tsx`, `frontend/src/pages/ReadWithMusic.tsx`, `frontend/src/styles.css`
+- `frontend/tests/covers.mjs`, `frontend/tests/fixtures/book-cover.tsx`, `frontend/package.json`, `frontend/README.md`
+- `docs/frontend-covers-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Preservar identidade/título/autoria e snapshots. Nenhum enriquecimento/requisição adicional, novo asset/dependência ou reescrita de banco.
+- Tratamento de capas separado do commit de integração `137d492`; nove módulos anteriores conservados, novo módulo `covers` e comando `test:covers`.
+
+### Estado atual
+- Frontend: **covers PASS**, 60 capturas em 1440/390/320, dark/light, movimento normal/reduzido; regressões de HTTP404, GIF200 1×1, troca de URL montada, prioridade de metadado e homônimo externo; zero erros de runtime.
+- Maestro: **continuation/favorites/live PASS** após freeze; build **PASS**, 2.050 módulos. Capturas atuais revisadas, inclusive Duna visível na seleção do E2E com API real/SQLite temporário e cartão320 sem sobreposição.
+- Home/assets locais já funcionavam antes do fix. Diagnóstico sobre catálogo online persistente pós-fix não confirmou Duna local; capa externa real/status/dimensões continua pendente. Diagnóstico inicial também chamou recommendations/books; leitura RO posterior observou **2/50** tentativas Groq, sem mudança de limite/chave/modelo.
+
+### Próximos passos
+- Consolidar commits/runtime/validações nos documentos de continuidade e verificar árvore Git limpa, sem push.
+- Quando transporte estiver disponível, validar uma amostra externa real sem ampliar cotas ou reescrever snapshots; PostgreSQL/pgvector real continua gate separado.
+
 ## 2026-10-02 — Favoritos e renovação de sugestões na interface
 
 ### Implementado
