@@ -1,6 +1,26 @@
 # Ponto de retomada — 2026-10-02
 
-## Etapa atual — fontes reais, capa externa e aviso de renovação
+## Etapa atual — PostgreSQL real e seleção musical com metadados
+
+Commits locais, sem push: `c13b552` gate PostgreSQL/pgvector e CI; `97b07b6` metadados conhecidos no seletor MUSIC; `89e2387` origem/classificação por faixa no frontend. Maestro coordenou Backend, Frontend e Banco, reservando Git e documentos compartilhados. As seções abaixo são checkpoints históricos; disponibilidade do Docker e PID/cota antigos não descrevem o runtime atual.
+
+**PostgreSQL:** duas execuções reais aprovadas em Docker oficial PostgreSQL18.6/pgvector0.8.6/citext1.8, cada uma sobre banco vazio exclusivo. Script versionado `api/scripts/postgres_gate.py` verifica destino/identidade/schema vazio antes de migrar; 17 testes de proteção passaram. Cobertura: migrations/metadata/extensões/readiness, upserts e criar/excluir favoritos concorrentes, isolamento/primeiro snapshot, cache concorrente/TTL/limite256/cascata e roundtrip até base. Container UUID/label/tmpfs/loopback55432 removido após conferência de identidade; nenhum volume/dado existente alterado. Job PostgreSQL separado em CI usa imagem por digest e JSON final sanitizado; actionlint passou. **CI hospedada ainda não executada**, e HTTP autenticado entre instâncias PG, refresh concorrente, constraints negativas completas e rollout sobre dados existentes não foram cobertos. Receita, comandos e limites: [relatório Banco](database-docker-session-2026-10-02.md) e [CI](CI.md).
+
+**Seleção/UI:** payload MUSIC transmite bool exato/null, energia válida/null e origem somente quando informada. Instrução preserva unknown e distingue classificação de medição; BOOK/Intent/filtros/índices/duração/modelo/chave/cota/TTL mantidos. Frontend apresenta fonte, estimativa/tags e valores desconhecidos por faixa, sem inferir origem de tags/ai_used. Backend: 134 testes do subset e 14 novos finais; Ruff/formato global86 passou. Frontend: módulo focado com dez fixtures/oito capturas, reroll completo afetado, TypeScript e build2050 módulos passaram (aviso não fatal de bundle503,70kB). Suítes integrais não repetidas nesta unidade; histórico permanece abaixo.
+
+**Gate real após carregamento do commit:** exatamente duas POST limit3. “Jazz instrumental” retornou200, IA ativa/sem degradação, zero itens/next15. Controle “Jazz” retornou200, IA ativa/sem degradação, **três itens MusicBrainz** com vocais/energia nulos. Aprovação pontual de entrega externa, sem avaliação auditiva/gênero independente nem prova de melhora causal do ranking. Não converter desconhecido em instrumental; caso estrito segue pendente. Consumo **9→12/50**, três novas tentativas de orçamento seis, Intent live com expiry idêntico; nenhum retry manual/query extra. Relatório: [gate MUSIC real](backend-music-selection-live-session-2026-10-02.md). BOOK/capa externa e re-roll MUSIC local da etapa anterior continuam evidências separadas.
+
+**Runtime atual:** única API online `127.0.0.1:8000`, worker **42664**, launcher40364, mesmo `api/.local` e modelo `openai/gpt-oss-20b`, status/readiness200 ao final. Substituiu somente o worker identificado31444 após porta livre confirmada. Frontend **25716** em `http://localhost:5173` (::1), PostgreSQL existente **10140**/5432 preservados. Confirmar identidade antes de qualquer restart; não presumir PIDs permanentes. Docker foi autorizado pelo usuário e ficou acessível fora do sandbox; indisponibilidade anterior é histórica.
+
+Próximos passos:
+
+1. Investigar offline o caso instrumental com fixtures públicas próprias: avaliar evidência vocal disponível, perda/ausência de classificação e seleção antes de propor alteração. Não relaxar filtros nem tratar null como instrumental; revisar gênero/relevância dos três itens do controle com avaliação humana.
+2. Auditar separadamente `classification_source` de saída: MusicBrainz selecionado recebe `ai_estimate` inclusive quando classificação é nula/valor conhecido. UI preserva o literal; não corrigir proveniência incidentalmente nem alegar medição.
+3. Validar re-roll BOOK externo/MUSIC externo e qualidade da trilha em amostras específicas, com orçamento coordenado e consumo antes/depois; duas POST desta etapa não testaram esgotamento/re-roll externo ou fecharam G1/G2.
+4. Observar job PostgreSQL hospedado após envio explicitamente autorizado; ampliar HTTP/auth entre instâncias PG, constraints e refresh concorrente em DB descartável. O gate exige destino exclusivo; DATABASE_URL não converte fixtures SQLite.
+5. Ler log/status, conferir Git/processos/cota ao retomar e manter commits seletivos sem push automático. Scripts/capturas de diagnóstico em `.impeccable/` são ignorados e podem não existir em outro checkout.
+
+## Checkpoint anterior — fontes reais, capa externa e aviso de renovação
 
 Retomada sobre `ffdd6a6`, com Backend/Frontend/Banco existentes e Git/documentos compartilhados serializados pelo Maestro. Fix de aviso no commit local `949f642`: re-roll vazio degradado explica a limitação da tentativa e preserva a seleção/retry. Módulo reroll afetado, TypeScript e 14 capturas por fixtures passaram; Maestro aprovou build de 2.050 módulos e revisou capturas mobile. Nenhuma nova suíte geral foi duplicada.
 

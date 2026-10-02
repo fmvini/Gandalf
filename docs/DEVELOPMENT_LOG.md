@@ -1,5 +1,31 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Consolidação Docker e gate musical externo
+
+### Implementado
+- Commits locais coordenados: `c13b552` PostgreSQL real/script/CI; `97b07b6` metadados no seletor MUSIC; `89e2387` origem/classificação por faixa. Nenhum push.
+- Gate real da API atualizada: Jazz entregou três MusicBrainz com IA ativa/sem degradação; Jazz instrumental permaneceu vazio. Conhecido/nulo e filtros estritos preservados, sem forçar escolhas.
+- Continuidade/status reconciliados com PostgreSQL real aprovado no escopo do script, CI hospedada pendente, runtime atualizado e resultados efetivos.
+
+### Arquivos principais alterados
+- `docs/backend-music-selection-live-session-2026-10-02.md`
+- `docs/DEVELOPMENT_LOG.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+
+### Decisões técnicas
+- Duas POST previamente definidas/limit3, três tentativas de orçamento seis, consumo9→12/50. Cache Intent manteve expiry; nenhuma query/retry extra após resultado. Não atribuir causa da omissão à perda corrigida do payload sem evidência.
+- Reiniciada somente API identificada após commit; mesmos dados/configuração/modelo/chave/TLS/cota. Vocais/energia dos três itens externos ficaram nulos; `ai_estimate` literal de saída preexistente não significa medição nem classificação conhecida.
+- PG real cobre migrações, extensões, favoritos/cache concorrentes e roundtrip; não certifica produção nem HTTP auth entre instâncias/refresh/constraints completas. Container descartável removido, PG existente preservado.
+
+### Estado atual
+- API única PID42664/8000, launcher40364, online/schema/readiness200 ao final; frontend25716/localhost5173 e PG10140/5432 preservados. Cota final12/50, sem necessidade demonstrada de outra chave.
+- Entrega externa MUSIC aprovada pontualmente no controle sem restrição vocal; caso instrumental e qualidade ampla ainda pendentes. BOOK/capa externos e re-roll local têm evidências anteriores separadas.
+- Testes desta unidade: Backend134 subset/14 finais; PG duas execuções reais/17 guards; Ruff global86/actionlint PASS; Frontend módulo novo/dez fixtures/oito capturas, reroll afetado/TypeScript/build2050 PASS. Aviso não fatal bundle503,70kB. Nenhuma nova suíte integral nem CI hospedada executada.
+
+### Próximos passos
+- Revisar offline classificação vocal/proveniência e relevância do controle Jazz, com fixtures públicas e avaliação humana; não tratar desconhecido como instrumental.
+- Validar re-roll externo BOOK/MUSIC em rodada específica coordenada; observar CI hospedada após push autorizado e ampliar cobertura HTTP/auth/refresh PG em banco exclusivo.
+- Conferir identidade de serviços/Git/cota antes de retomar. Artefatos ignorados não são parte do checkout; relatórios versionados contêm comandos/limites.
+
 ## 2026-10-02 — Origem e classificação musical por faixa
 
 ### Implementado
