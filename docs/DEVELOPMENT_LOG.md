@@ -1,5 +1,29 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Gate auth PostgreSQL versionado e integrado à CI
+
+### Implementado
+- Preservada a regressão real de replay ancestral/rotação descendente em script opt-in, com AuthService real, sessões independentes READ COMMITTED, barreira de commit e bloqueio observado obrigatório.
+- CI cria segundo DBUUID vazio no mesmo serviço descartável, executa gate auth após o geral e coleta JSON sanitizado separado. Reutiliza guards de destino/identidade/schema vazio; snapshot de fontes início/fim sem pins permanentes.
+
+### Arquivos principais alterados
+- `api/scripts/postgres_auth_gate.py`, `api/tests/test_postgres_auth_gate.py`
+- `.github/workflows/ci.yml`, `docs/CI.md`
+- `docs/database-auth-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Lifecycle Docker e credenciais ficam no runner local ignorado; código versionado só acessa destino explicitamente coordenado e vazio.
+- Novo banco UUID evita reaproveitar migrations/dados do gate geral; CREATE DATABASE usa psycopg Identifier após identidade validada.
+
+### Estado atual
+- 20 testes offline/12 recusas CLI/Ruff/formatação/actionlint PASS. Script versionado e trecho literal de criação DB da CI executados em nova instância PostgreSQL18.6: quatro grupos PASS, incluindo seis constraints, mesmo-token200/401/zero ativos e ancestral rotação200/replay401/bloqueio observado/zero ativos.
+- Container UUID247930c87b604d54bec3645e5e0f0698 removido por ID/identidade conferidos; artefatos auth-postgres-versioned-* ignorados separados de before/after Banco. PG5432/dados reais preservados.
+- Patch PG já em commit local `5b7f17a`; CI hospedada não executada. Gate não certifica HTTP duas apps, stress auth multiprocessos, corrida logout/refresh nem rollout/mistura de versões.
+
+### Próximos passos
+- Commitar esta unidade test/CI seletivamente, sem push. Consolidar documentos de retomada e contrato auth com os resultados atuais.
+- Confirmar health/status da API restaurada e registrar runtime; executar/verificar CI hospedada somente após push explicitamente autorizado.
+
 ## 2026-10-02 — Replay por família corrigido e aprovado em PostgreSQL
 
 ### Implementado

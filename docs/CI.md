@@ -7,7 +7,7 @@ Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Configurado
 | Job | Ambiente | Verificações |
 | --- | --- | --- |
 | `API e ranking local` | Ubuntu 24.04, Python 3.12 | Instalação da API com ferramentas de desenvolvimento, Ruff/lint e formatação, pytest com SQLite/provedores simulados, comparação estrita K=5/10 contra v7 |
-| `PostgreSQL e pgvector reais` | Ubuntu 24.04, Python 3.12, pgvector 0.8.6/PostgreSQL 18 | `scripts/postgres_gate.py`: migrations/metadata/extensões/readiness, favoritos concorrentes/isolamento/snapshot e cache concorrente/TTL/limite/cascata, round-trip em banco descartável |
+| `PostgreSQL e pgvector reais` | Ubuntu 24.04, Python 3.12, pgvector 0.8.6/PostgreSQL 18 | `scripts/postgres_gate.py`: migrations/favoritos/cache/round-trip; `scripts/postgres_auth_gate.py`, em outro banco vazio: constraints/digests, consumo concorrente e replay ancestral/rotação descendente, ownership/logout/expiração/cascata |
 | `Build e fluxos públicos` | Ubuntu 24.04, Node 24, Python 3.12, Chromium | `npm ci`, instalação do Chromium/bibliotecas, TypeScript/build e `npm test` conforme o script versionado do frontend |
 
 Os testes de navegador usam respostas simuladas e uma API real iniciada pelo E2E com SQLite temporário. `GANDALF_PYTHON=python` aponta para o Python preparado pela Action; não depende de uma `.venv` previamente criada no runner. `GANDALF_ONLINE=0` mantém essa API no modo local. `frontend/tests/live.mjs` é um E2E com API local, apesar do nome; não é uma avaliação real de Open Library, MusicBrainz ou Groq.
@@ -18,13 +18,15 @@ O job PostgreSQL usa a imagem oficial fixada no digest testado localmente, tmpfs
 
 O resultado final PASS/NOT_PASSED é JSON em stdout; progresso fica em stderr, sem DSN/senha/SQL. Shell Bash com `pipefail` conserva falha do script ao coletar com `tee`; nenhum PASS parcial. Guards/import não substituem execução real. A suíte SQLite continua separada: exportar DATABASE_URL não a converte para PostgreSQL.
 
+O gate auth exige `GANDALF_AUTH_PG_ALLOW=isolated-coordinated-backend-frozen` e `GANDALF_AUTH_PG_URL`, reutilizando os mesmos guards de destino/identidade/schema vazio. A CI cria um segundo banco `gandalf_gate_{UUID}` no mesmo serviço descartável, com nome escapado por `psycopg.sql.Identifier`; não reaproveita o schema migrado pelo gate geral. O script fotografa hashes das fontes no início/fim, recusando mudanças durante a execução sem fixar uma revisão eterna. Usa AuthService real e sessões independentes em READ COMMITTED: barreira antes do commit e `pg_blocking_pids` comprovam a espera na corrida ancestral/descendente. Sem bloqueio observado ou com qualquer refresh ativo após replay, o gate falha.
+
 Os jobs falham se algum check falhar, sem retry que esconda perdas. A comparação usa `--fail-on-case-regression`: perdas individuais também bloqueiam, mesmo que as médias não caiam. Baselines atuais: `docs/eval-reports/local-v7-piano-detective-k5.json` e `local-v7-piano-detective-k10.json`. Atualizá-los exige uma etapa de ranking validada e documentada; não regenerá-los automaticamente na CI.
 
 ## Resultados e diagnóstico
 
 - `api-results`: relatório JUnit do pytest e relatórios JSON K=5/10, quando gerados.
 - `frontend-screenshots`: somente PNGs de `.impeccable/review/`, quando gerados pelos testes.
-- `postgres-results`: somente JSON final do gate, com versões/checks/etapa segura, sem credenciais/banco bruto.
+- `postgres-results`: JSONs finais `postgres-gate.json` e `postgres-auth-gate.json`, com versões/checks/hashes/etapa segura, sem credenciais/banco bruto.
 - Os artefatos são coletados mesmo após falha e retidos por sete dias. Se uma etapa anterior impedir sua geração, o upload avisa; o check que falhou permanece vermelho.
 - Logs das etapas ficam no run do GitHub Actions. Não há upload de `.env`, banco, segredo JWT ou da pasta `.impeccable/` inteira.
 - Uma execução nova do mesmo workflow/ref cancela a anterior. Limites: dez minutos para API/PostgreSQL e quinze para build/E2E.
@@ -46,12 +48,14 @@ Node instala pelo `frontend/package-lock.json`. Python instala as faixas de vers
 
 ## Validação realizada e próximos passos
 
+Em 2026-10-02, após corrigir a corrida de replay, Maestro executou o **script auth versionado** em uma nova instância exclusiva PostgreSQL18.6: os quatro grupos passaram, incluindo seis constraints negativas, mesmo-token200/401/zero ativos e ancestral rotação200/replay401/bloqueio observado/zero ativos. O trecho Python de criação do banco vazio da CI foi executado literalmente nessa instância e passou. 20 testes offline do gate, 12 recusas CLI, Ruff/formatação e actionlint passaram. Container removido após identidade verificada; nenhum serviço/dado existente alterado pelo gate. Relatório: [auditoria auth Banco](database-auth-session-2026-10-02.md). Essa evidência local não certifica o runner hospedado.
+
 Em 2026-10-02, Docker Desktop/Engine Linux autorizado pelo usuário: gate real aprovado em PostgreSQL18.6/pgvector0.8.6/citext1.8, no harness e no script versionado reexecutado sobre banco vazio. Os 17 testes de proteção passaram, assim como Ruff e actionlint1.7.12 no novo workflow. Container exclusivo com tmpfs foi removido após conferência de ID/label, sem tocar servidores/volumes existentes. Evidências/limites em `docs/database-docker-session-2026-10-02.md`; isso não substitui a execução hospedada abaixo.
 
 O YAML passou no [actionlint v1.7.12](https://github.com/rhysd/actionlint/releases/tag/v1.7.12), baixado da fonte oficial com SHA-256 conferido. No Windows, os comandos de Ruff/formatação passaram, 220 testes da API geraram JUnit e os gates K=5/10 contra v7 passaram sem perdas ou mudança de catálogo. `npm run build` e `npm test` (smoke, componentes e E2E com API real) passaram no checkout após a integração de UI `beb7569`, usando as variáveis da CI.
 
-O teste de carregamento responsivo agora espera o layout se ajustar após mudar viewport/tema antes de verificar overflow. A espera é limitada pelo timeout do Playwright e continua falhando se houver overflow persistente. Essa correção de uma linha foi autorizada pelo usuário; componentes, estilos e animações não foram alterados nesta etapa. Novas alterações de autenticação do outro terminal permanecem fora deste commit e precisam de validação própria.
+O teste de carregamento responsivo espera o layout se ajustar após mudar viewport/tema antes de verificar overflow. A espera é limitada pelo timeout do Playwright e continua falhando se houver overflow persistente. Na unidade auth posterior, testes de estado, browser auth/continuation, live com SQLite temporário e build também passaram; evidências e limites em [relatório Frontend](frontend-auth-session-2026-10-02.md).
 
 **Ainda não há execução validada no runner hospedado.** O workflow está preparado para um futuro push autorizado; não foi enviado automaticamente. Depois desse envio, verificar os três jobs e os artefatos. Ubuntu, instalação limpa de dependências e bibliotecas do Chromium precisam dessa confirmação remota.
 
-O gate G6 permanece aberto: CI hospedada verde, auditoria final e deploy público não estão concluídos. O novo job cobre o gate PostgreSQL descrito acima; HTTP autenticado entre duas instâncias PostgreSQL, constraints negativas completas, refresh concorrente, rollout pré-populado, mypy e avaliações online reais continuam fora de sua cobertura. O exemplo mais amplo de `docs/11-deployment-guide.md` continua um desenho futuro.
+O gate G6 permanece aberto: CI hospedada verde, auditoria final e deploy público não estão concluídos. O job cobre apenas os cenários PostgreSQL descritos acima; HTTP autenticado entre duas apps PG, stress multiprocessos auth, corrida logout/refresh/desativação/exclusão, falhas reais de commit PG, demais constraints, rollout pré-populado/mistura de versões, mypy e avaliações online reais continuam fora de sua cobertura. O exemplo mais amplo de `docs/11-deployment-guide.md` continua um desenho futuro.

@@ -108,12 +108,44 @@ jobs:
         run: |
           mkdir -p ../.impeccable/ci
           python scripts/postgres_gate.py | tee ../.impeccable/ci/postgres-gate.json
+      - name: Criar banco vazio exclusivo para autenticação
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from uuid import uuid4
+          import psycopg
+          from psycopg import sql
+          from scripts.postgres_gate import validate_target
+
+          url = validate_target(os.environ["GANDALF_PG_GATE_URL"])
+          database = "gandalf_gate_" + uuid4().hex
+          with psycopg.connect(
+              host=url.host, port=url.port, dbname=url.database,
+              user=url.username, password=url.password,
+              connect_timeout=5, autocommit=True,
+          ) as connection:
+              identity = connection.execute("SELECT current_database(), current_user").fetchone()
+              if identity != (url.database, "gandalf_gate"):
+                  raise RuntimeError("Disposable CI database identity mismatch.")
+              connection.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(database)))
+          auth_url = url.set(database=database).render_as_string(hide_password=False)
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as stream:
+              stream.write("GANDALF_AUTH_PG_URL=" + auth_url + "\n")
+          PY
+      - name: Testar refresh concorrente e replay em PostgreSQL real
+        env:
+          GANDALF_AUTH_PG_ALLOW: isolated-coordinated-backend-frozen
+        run: |
+          python scripts/postgres_auth_gate.py | tee ../.impeccable/ci/postgres-auth-gate.json
       - name: Guardar resultado PostgreSQL
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: postgres-results
-          path: .impeccable/ci/postgres-gate.json
+          path: |
+            .impeccable/ci/postgres-gate.json
+            .impeccable/ci/postgres-auth-gate.json
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 7
