@@ -1,8 +1,9 @@
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, update
+from sqlalchemy import select, text, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -73,11 +74,29 @@ class AuthService:
             return self._rotate_refresh(token)
 
     def _rotate_refresh(self, token: str) -> TokenResponse:
+        query = select(RefreshToken).where(
+            RefreshToken.token_hash == refresh_hash(token)
+        )
+        if self.session.get_bind().dialect.name == "postgresql":
+            # Discover the family without a row lock. All refresh/replay paths
+            # acquire the family lock first, avoiding ancestor/child deadlocks.
+            initial = self.session.scalar(query)
+            if initial is None:
+                raise AppError(401, "UNAUTHORIZED", "Sessão inválida ou expirada.")
+            lock_key = int.from_bytes(
+                sha256(b"gandalf:refresh-family:" + initial.family_id.bytes).digest()[
+                    :8
+                ],
+                "big",
+                signed=True,
+            )
+            self.session.execute(
+                text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key}
+            )
+            # Under READ COMMITTED this new statement sees successors committed
+            # while waiting; refresh ORM state as well as the database snapshot.
         record = self.session.scalar(
-            select(RefreshToken)
-            .where(RefreshToken.token_hash == refresh_hash(token))
-            .with_for_update()
-            .execution_options(populate_existing=True)
+            query.with_for_update().execution_options(populate_existing=True)
         )
         if record is None:
             raise AppError(401, "UNAUTHORIZED", "Sessão inválida ou expirada.")

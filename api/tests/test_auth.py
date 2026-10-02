@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from pathlib import Path
 from threading import Barrier
+from types import SimpleNamespace
 from uuid import UUID
 
 import jwt
@@ -12,6 +13,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.elements import TextClause
 
 from alembic import command
 from app.core.config import Settings
@@ -573,5 +575,175 @@ def test_username_duplicate_is_generic_and_failed_insert_does_not_persist(auth_c
     try:
         with Session(engine) as session:
             assert len(session.scalars(select(User)).all()) == 2
+    finally:
+        engine.dispose()
+
+
+class PostgresLockProbe:
+    """Capture lock protocol on SQLite; real PostgreSQL is a separate gate."""
+
+    def __init__(self, session, on_family_lock=None):
+        self.session = session
+        self.on_family_lock = on_family_lock
+        self.events = []
+        self.keys = []
+
+    def __getattr__(self, name):
+        return getattr(self.session, name)
+
+    def get_bind(self):
+        return SimpleNamespace(dialect=SimpleNamespace(name="postgresql"))
+
+    def scalar(self, statement):
+        locked = statement._for_update_arg is not None
+        self.events.append("row" if locked else "read")
+        if locked:
+            assert statement.get_execution_options()["populate_existing"] is True
+        return self.session.scalar(statement)
+
+    def execute(self, statement, params=None):
+        if isinstance(statement, TextClause):
+            assert str(statement) == "SELECT pg_advisory_xact_lock(:key)"
+            self.events.append("family")
+            assert type(params["key"]) is int
+            assert -(2**63) <= params["key"] < 2**63
+            self.keys.append(params["key"])
+            if self.on_family_lock:
+                self.on_family_lock()
+            return None
+        return self.session.execute(statement, params)
+
+
+def test_postgres_protocol_reloads_revocation_after_family_wait(auth_client):
+    client, database_url = auth_client
+    register(client)
+    first = login(client).json()
+    second = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]}
+    ).json()
+    engine = create_engine(database_url)
+
+    def replay_during_wait():
+        with Session(engine) as other:
+            with pytest.raises(AppError) as replay:
+                AuthService(other, client.app.state.settings).refresh(
+                    first["refresh_token"]
+                )
+            assert replay.value.status_code == 401
+
+    try:
+        with Session(engine, expire_on_commit=False) as session:
+            # Retain pre-revocation ORM state to require an actual reread.
+            cached = session.scalar(
+                select(RefreshToken).where(
+                    RefreshToken.token_hash == refresh_hash(second["refresh_token"])
+                )
+            )
+            assert cached.revoked_at is None
+            probe = PostgresLockProbe(session, replay_during_wait)
+            with pytest.raises(AppError) as failure:
+                AuthService(probe, client.app.state.settings).refresh(
+                    second["refresh_token"]
+                )
+            assert failure.value.status_code == 401
+            assert probe.events == ["read", "family", "row"]
+            assert cached.revoked_at is not None
+        with Session(engine) as session:
+            records = session.scalars(select(RefreshToken)).all()
+            assert len(records) == 2
+            assert all(record.revoked_at is not None for record in records)
+    finally:
+        engine.dispose()
+
+
+def test_postgres_protocol_uses_same_family_key_across_generations(auth_client):
+    client, database_url = auth_client
+    register(client)
+    first = login(client).json()
+    independent = login(client).json()
+    engine = create_engine(database_url)
+
+    def rotate(token):
+        with Session(engine) as session:
+            probe = PostgresLockProbe(session)
+            response = AuthService(probe, client.app.state.settings).refresh(token)
+            assert probe.events == ["read", "family", "row"]
+            return response, probe.keys[0]
+
+    try:
+        second, parent_key = rotate(first["refresh_token"])
+        third, child_key = rotate(second.refresh_token)
+        other, other_key = rotate(independent["refresh_token"])
+        assert parent_key == child_key
+        assert other_key != parent_key
+        with Session(engine) as session:
+            probe = PostgresLockProbe(session)
+            with pytest.raises(AppError) as failure:
+                AuthService(probe, client.app.state.settings).refresh(
+                    first["refresh_token"]
+                )
+            assert failure.value.status_code == 401
+            assert probe.events == ["read", "family", "row"]
+            assert probe.keys == [parent_key]
+        with Session(engine) as session:
+            records = session.scalars(select(RefreshToken)).all()
+            latest = next(
+                record
+                for record in records
+                if record.token_hash == refresh_hash(third.refresh_token)
+            )
+            unrelated = next(
+                record
+                for record in records
+                if record.token_hash == refresh_hash(other.refresh_token)
+            )
+            assert latest.revoked_at is not None
+            assert unrelated.revoked_at is None
+    finally:
+        engine.dispose()
+
+
+def test_postgres_protocol_unknown_refresh_does_not_acquire_locks(auth_client):
+    client, database_url = auth_client
+    engine = create_engine(database_url)
+    try:
+        with Session(engine) as session:
+            probe = PostgresLockProbe(session)
+            with pytest.raises(AppError) as failure:
+                AuthService(probe, client.app.state.settings).refresh(
+                    "unknown-public-fixture"
+                )
+            assert failure.value.status_code == 401
+            assert probe.events == ["read"]
+            assert probe.keys == []
+    finally:
+        engine.dispose()
+
+
+def test_postgres_family_lock_failure_rolls_back_and_returns_503(auth_client):
+    client, database_url = auth_client
+    register(client)
+    first = login(client).json()
+    engine = create_engine(database_url)
+
+    def fail_lock():
+        raise OperationalError(
+            "SELECT family_lock", (), Exception("database unavailable")
+        )
+
+    try:
+        with Session(engine) as session:
+            probe = PostgresLockProbe(session, fail_lock)
+            with pytest.raises(AppError) as failure:
+                AuthService(probe, client.app.state.settings).refresh(
+                    first["refresh_token"]
+                )
+            assert failure.value.status_code == 503
+            assert probe.events == ["read", "family"]
+            assert not session.in_transaction()
+        with Session(engine) as session:
+            records = session.scalars(select(RefreshToken)).all()
+            assert len(records) == 1
+            assert records[0].revoked_at is None
     finally:
         engine.dispose()

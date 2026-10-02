@@ -1,5 +1,30 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Replay por família corrigido e aprovado em PostgreSQL
+
+### Implementado
+- Refresh/replay PostgreSQL usa advisory lock transacional da família antes de qualquer FOR UPDATE; lookup inicial sem row lock e releitura READ COMMITTED/populate_existing após espera.
+- Chave signed64 deriva de namespace SHA-256 + UUID da família. UPDATE condicional SQLite, JWT, logout por token e isolamento de famílias preservados; sem migration/schema.
+- Banco repetiu exatamente a corrida ancestral/descendente em PostgreSQL18.6/READ COMMITTED: espera confirmada, rotação200/replay401 e **zero refresh ativos**, contra um ativo antes do patch.
+
+### Arquivos principais alterados
+- `api/app/services/auth_service.py`, `api/tests/test_auth.py`
+- `docs/adr/0006-jwt-authentication-strategy.md`
+- `docs/backend-auth-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Serializar antes de row locks evita snapshot anterior ao commit do descendente e mantém ordem uniforme no caminho refresh/replay; lookup inicial não autoriza consumo sem releitura.
+- Resultado real separado de quatro probes SQLite do protocolo. Gate opt-in versionado reutilizável fica numa unidade seguinte, sem lifecycle Docker/credenciais reais.
+
+### Estado atual
+- Backend:52 PASS auth/security (30 auth+22 security),12,20s; Ruff/formatação/diff-check PASS. Gate real pós-patch PASS em todos os quatro grupos, incluindo seis constraints negativas, mesmo-token200/401/zero ativos e ownership/logout/expiração/cascade.
+- Instância pós-patch exclusiva removida após identidade conferida; PG5432/dados reais preservados. HTTP em duas apps/rollout pré-populado/logout concorrente ainda não cobertos.
+- Commits locais anteriores: `e6278dd`, `7192c54` e frontend `290eb69`; nenhum push. Patch PG em preparação para commit após entrega final do relatório Backend.
+
+### Próximos passos
+- Commitar patch/ADR/testes e relatório congelado; Banco versiona o gate e seus guards, depois executa esse script real em DB exclusivo vazio antes de integrar CI.
+- Restaurar a API8000 ausente em modo online/config/dados originais após o commit e verificar somente health/status sem consumo LLM; consolidar docs de continuidade.
+
 ## 2026-10-02 — Auth frontend e integração SQLite aprovadas
 
 ### Implementado
