@@ -1,5 +1,27 @@
 # Registro de desenvolvimento
 
+## 2026-10-02 — Correção de capas na normalização Open Library
+
+### Implementado
+- Edição portuguesa só substitui a capa da obra quando `cover_i` é inteiro estrito positivo. IDs 0/-1 ou inválidos deixam de apagar a capa válida da obra; ausência verdadeira continua `null`.
+- Novas URLs de capa incluem `?default=false`, permitindo 404 e fallback visual quando a imagem não existe, em vez de imagem branca HTTP 200.
+
+### Arquivos principais alterados
+- `api/app/providers/open_library.py`, `api/tests/test_book_covers.py`, `api/tests/test_books.py`
+- `docs/backend-covers-session-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Preservar UUID, título e autoria da edição escolhida; sem requisições extras por capa, mudanças de schema/TTL ou reescrita de catálogo/snapshots.
+- Correção da interface e carregamento em runtime são etapas separadas deste commit do provedor.
+
+### Estado atual
+- Maestro: **38 testes de livros/capas aprovados**, 1 aviso já existente; Backend: Ruff e formato dos três arquivos aprovados. Suíte anterior de 366 testes permanece evidência de favoritos/re-roll.
+- API existente PID 37452 ainda não carregou o patch. Consultas públicas falharam no transporte mesmo fora do sandbox e com `trust_env=False`; capa externa atual/status/dimensões ainda não comprovados. Nenhuma chamada LLM ou troca de chave/modelo/cota nesta correção.
+
+### Próximos passos
+- Backend carregar patch em uma única API após verificar identidade do processo/porta, preservando modo online, banco e configuração; verificar status/readiness locais.
+- Frontend concluir tratamento de imagens ausentes, erro/1×1 e troca de URL; validar busca e livro selecionado em Ler com Música e registrar testes/QA.
+
 ## 2026-10-02 — Auditoria de persistência e capas legadas
 
 ### Implementado

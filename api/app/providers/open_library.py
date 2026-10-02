@@ -83,7 +83,11 @@ def normalize_book(raw: object) -> BookItem | None:
     if portuguese is None:
         title = translated_title(title, authors) or title
     cover_id = raw.get("cover_i")
-    if portuguese is not None and type(portuguese.get("cover_i")) is int:
+    if (
+        portuguese is not None
+        and type(portuguese.get("cover_i")) is int
+        and portuguese["cover_i"] > 0
+    ):
         cover_id = portuguese["cover_i"]
     year = raw.get("first_publish_year")
     url = f"https://openlibrary.org/works/{external_id}"
@@ -96,7 +100,7 @@ def normalize_book(raw: object) -> BookItem | None:
         else None,
         description=normalize_description(raw.get("description")),
         subjects=normalize_subjects(raw.get("subject")),
-        cover_url=f"https://covers.openlibrary.org/b/id/{cover_id}-M.jpg"
+        cover_url=f"https://covers.openlibrary.org/b/id/{cover_id}-M.jpg?default=false"
         if isinstance(cover_id, int) and not isinstance(cover_id, bool) and cover_id > 0
         else None,
         external_url=url,

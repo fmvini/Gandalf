@@ -244,7 +244,10 @@ def test_open_library_provider_normalizes_real_response_shape() -> None:
     book = result.items[0]
     assert book.external_id == "OL27448W"
     assert book.external_url == "https://openlibrary.org/works/OL27448W"
-    assert book.cover_url == "https://covers.openlibrary.org/b/id/258027-M.jpg"
+    assert (
+        book.cover_url
+        == "https://covers.openlibrary.org/b/id/258027-M.jpg?default=false"
+    )
     assert book.publication_year == 1954
     assert book.description == "Uma jornada pela Terra-média."
     assert book.subjects == ["Fantasia", "Aventura"]
@@ -296,7 +299,10 @@ def test_portuguese_edition_keeps_canonical_work_identity_and_cover():
     )
     assert localized.title == "A vida invisível de Addie LaRue"
     assert localized.id == original.id and localized.external_id == original.external_id
-    assert localized.cover_url == "https://covers.openlibrary.org/b/id/2-M.jpg"
+    assert (
+        localized.cover_url
+        == "https://covers.openlibrary.org/b/id/2-M.jpg?default=false"
+    )
 
 
 def test_translation_alias_does_not_rename_another_authors_book():
