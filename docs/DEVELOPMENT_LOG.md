@@ -1,5 +1,33 @@
 # Registro de desenvolvimento
 
+## 2026-10-03 — Avaliador offline e protocolo de coleta G1
+
+### Implementado
+- CLI stdlib para snapshots musicais normalizados, sem app/engine/env/rede: valida contrato e identidade, relata disponibilidade/unknown/proveniência, duplicatas e conflitos com denominadores explícitos.
+- Auditoria de identidade precede descarte de metadados inválidos; quarentena global sem vencedor. Reobservações/variantes não inflam número de itens nem atribuem classificação por item a cada campo.
+- Manifesto exploratório12 casos/seis grupos, template24 pares sem observações e exemplo fixture. Plano de coleta/revisão humana e requisitos documentais dos candidatos, sem ativar fonte ou coleta.
+
+### Arquivos principais alterados
+- `api/scripts/music_provider_eval.py`, `api/tests/test_music_provider_eval.py`
+- `docs/music-provider-g1-evaluation.md`, `docs/evaluation/music-provider-g1-plan-v1.json`
+- `docs/evaluation/music-provider-g1-snapshot-template.json`, `docs/evaluation/music-provider-fixture-v1.json`
+- `docs/backend-music-evaluation-2026-10-03.md`, `docs/database-music-evaluation-2026-10-03.md`, `docs/frontend-music-evaluation-2026-10-03.md`
+- `docs/adr/0012-music-provider-selection.md`, `docs/music-provider-contract.md`, `docs/12-development-roadmap.md`
+- `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- fixture/recorded e stage global provider_search/recommendation são explícitos. g1_approved=false/NOT_EVALUATED invariáveis: exit0 aprova formato/análise, não qualidade, autenticação da captura ou fonte.
+- `total>=len(items)` e has_more são declarações, não tamanho/exaustão do catálogo. classification_source é por item; proveniência individual precisa antes/depois/evidência. Snapshot não prova determinismo temporal/cache/constraints/áudio/licenças.
+- Backend reservou CLI/testes/relatório; Banco e Frontend somente pareceres RO; Maestro plano/amostras/docs compartilhados/Git. Fontes de termos públicas consultadas, sem dados musicais ou credenciais.
+
+### Estado atual
+- 84 testes novos PASS/0,30s; Ruff/formatação2 arquivos PASS; freeze/hashes conferidos. CLI real root: fixture6 expected/5 observed/1error/1empty/3nonempty/1missing/3rows; template24missing/0observed. Item inválido exit1 e stdin inválido exit2, JSON genérico sem traceback; g1_approved false em todos.
+- JSONs/plano/template correspondência12cases/6groups PASS; diff-check PASS. Aplicação/frontend/schema/deps/CI/runtime e dados existentes intocados; nenhuma suíte geral/auth/UI duplicada, DB/coleta/LLM ou push. G1 permanece aberto.
+
+### Próximos passos
+- Fixar critérios de aceitação/revisão independente e obter escopo/orçamento explícito para coleta; manifesto propõe24 buscas/zero retries/enriquecimento/LLM, mas authorized=false. Resolver chave/acesso/termos do candidato antes de coletar.
+- Produzir diário/snapshots recorded de mesma fase, avaliar pelo CLI e revisar correspondência por gravação/atributos; decidir fonte/fallback no ADR-0012 somente com evidência real. Latência/cache/descrições/gêneros/embeddings exigem prova separada.
+
 ## 2026-10-03 — MusicProvider consolidado e API atualizada
 
 ### Implementado

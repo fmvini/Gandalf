@@ -2,6 +2,8 @@
 
 **Estado:** Em avaliação na Fase 2; MusicBrainz integrado experimentalmente, sem escolha definitiva para G1.
 
+**Protocolo de avaliação em 2026-10-03:** [plano offline G1](../music-provider-g1-evaluation.md) e manifesto v1 definem12 casos/seis grupos comuns, etapas de captura e revisão independente. Nenhuma coleta nova foi executada. O avaliador de snapshots foi entregue com84 testes focados, Ruff/formatação e entrypoints CLI aprovados; conformidade de JSON nunca constitui aprovação G1. MusicProvider inicial e injeção foram concluídos nos commits e5b4d75/753a9c1; atributos conhecidos são preservados e derivações tags/IA identificadas, com limitação de proveniência por item. A licença Data License foi acessada nesta revisão, superando o bloqueio429 anterior; campos suplementares/termos dos candidatos e uso comercial continuam sujeitos à análise específica descrita no plano. Não há novo adaptador Last.fm ou nova fonte habilitada.
+
 **Reconciliação em 2026-09-29:** `api/app/providers/musicbrainz.py` implementa busca textual/por tags, normalização, cache persistente e catálogo por ID. Testes em `api/tests/test_online.py` usam transporte simulado. Isso não fecha a avaliação comparativa, licenças ou cobertura real. Energia/vocais são estimativas da IA identificadas na resposta, não metadados da fonte. Evidências e links datados abaixo são históricos; não houve nova consulta externa nesta revisão. MusicBrainz está em uso experimental; a escolha final permanece pendente.
 
 ## Contexto

@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "fixture",
+  "stage": "provider_search",
+  "providers": ["fixture-a", "fixture-b"],
+  "cases": [
+    {"id": "reference", "group": "reference"},
+    {"id": "tags", "group": "tags"},
+    {"id": "empty", "group": "tags"}
+  ],
+  "observations": [
+    {
+      "case_id": "reference", "provider": "fixture-a", "outcome": "success",
+      "result": {
+        "provider": "fixture-a", "total": 30, "has_more": true,
+        "items": [{
+          "id": "00000000-0000-4000-8000-000000000001",
+          "title": "Faixa de teste A", "artist": "Artista de teste",
+          "tags": ["piano"], "duration_ms": null, "has_vocals": null, "energy": null,
+          "provider": "fixture-a", "external_id": "source-a-1",
+          "links": {"provider": "https://catalog.example.test/a/1"}
+        }]
+      }
+    },
+    {
+      "case_id": "reference", "provider": "fixture-b", "outcome": "success",
+      "result": {
+        "provider": "fixture-b", "total": 1, "has_more": false,
+        "items": [{
+          "id": "00000000-0000-4000-8000-000000000002",
+          "title": "Faixa de teste B", "artist": "Artista de teste",
+          "tags": ["instrumental"], "duration_ms": 180000, "has_vocals": false, "energy": null,
+          "classification_source": "provider_tags", "provider": "fixture-b", "external_id": "source-b-1",
+          "links": {"search": "https://search.example.test/?q=fixture"}
+        }]
+      }
+    },
+    {"case_id": "tags", "provider": "fixture-a", "outcome": "error", "result": null},
+    {
+      "case_id": "tags", "provider": "fixture-b", "outcome": "success",
+      "result": {
+        "provider": "fixture-b", "total": 1, "has_more": false,
+        "items": [{
+          "id": "00000000-0000-4000-8000-000000000003",
+          "title": "Faixa de teste C", "artist": "Artista de teste",
+          "tags": [], "duration_ms": 220000, "has_vocals": true, "energy": "high",
+          "classification_source": "ai_estimate", "provider": "fixture-b", "external_id": "source-b-2",
+          "links": {}
+        }]
+      }
+    },
+    {
+      "case_id": "empty", "provider": "fixture-b", "outcome": "success",
+      "result": {"provider": "fixture-b", "total": 0, "has_more": false, "items": []}
+    }
+  ]
+}

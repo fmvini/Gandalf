@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "recorded",
+  "stage": "provider_search",
+  "providers": ["musicbrainz", "lastfm"],
+  "cases": [
+    {"id": "piano-reference", "group": "piano"},
+    {"id": "piano-tag", "group": "piano"},
+    {"id": "jazz-reference", "group": "jazz"},
+    {"id": "jazz-tag", "group": "jazz"},
+    {"id": "rock-reference", "group": "rock"},
+    {"id": "rock-tag", "group": "rock"},
+    {"id": "electronic-reference", "group": "electronic"},
+    {"id": "electronic-tag", "group": "electronic"},
+    {"id": "brazil-reference", "group": "brazil"},
+    {"id": "brazil-tag", "group": "brazil"},
+    {"id": "voice-reference", "group": "voice"},
+    {"id": "voice-tag", "group": "voice"}
+  ],
+  "observations": []
+}

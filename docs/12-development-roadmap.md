@@ -1,5 +1,7 @@
 # Development Roadmap
 
+> **Preparação G1 — 2026-10-03:** avaliador offline de snapshots entregue,84 testes focados/Ruff/formatação/CLI PASS; [protocolo e manifesto](music-provider-g1-evaluation.md) com12 casos/seis grupos, template sem observações e exemplo fixture explícito. Missing/erro/vazio/proveniência/duplicatas/conflitos separados, sem aprovação automática. Coleta real/comparação/revisão humana e condições de uso continuam pendentes; não marcar spike ou G1 concluídos por esta ferramenta.
+
 > **MusicProvider inicial — 2026-10-03:** protocolo name/search tipado e injeção pela factory implementados, com MusicBrainz default/mode offline preservados;163 testes focados PASS. Fontes/proveniência da trilha deixam de exigir MusicBrainz; tags não sobrescrevem atributos conhecidos. Frontend14 fixtures/browser/tipos/build PASS: busca genérica com rótulo correto e duração null explícita. [Contrato/limites](music-provider-contract.md). G1 permanece aberto: interface inicial não prova cobertura, termos/licenças ou qualidade musical. Checkpoints de 01/10 abaixo são históricos; estado atual em IMPLEMENTATION_STATUS/DEVELOPMENT_LOG.
 
 > **Playlists básicas — 2026-10-01:** POST/GET/GET por ID/DELETE implementados na API com ownership, snapshots, migração reversível e testes SQLite. [Contrato efetivo](05-API-Specification.md#7-playlists-playlists), [ADR-0014](adr/0014-owner-scoped-playlists.md). Próxima fatia: integrar salvar trilha, listagem/detalhe/exclusão à conta mantendo renovação/cancelamento; favoritos/histórico e validação PostgreSQL seguem pendentes.

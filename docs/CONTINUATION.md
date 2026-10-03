@@ -1,6 +1,22 @@
 # Ponto de retomada — 2026-10-03
 
-## Etapa atual — MusicProvider inicial concluído e runtime atualizado
+## Etapa atual — avaliação G1 offline preparada
+
+Maestro coordenou os mesmos três terminais: Backend implementou CLI/testes; Banco e Frontend revisaram identidade/proveniência em documentos exclusivos. Nova unidade: `api/scripts/music_provider_eval.py`, `api/tests/test_music_provider_eval.py`, [protocolo G1](music-provider-g1-evaluation.md) e três JSONs em `docs/evaluation/`. Sem alteração da aplicação, schema, dependências, CI, runtime ou dados existentes.
+
+**Gates:**84 testes novos PASS em0,30s, Ruff/formatação2 arquivos PASS. CLI real executado pelo Maestro: fixture6 pares/5 observados/1 erro/1 vazio/3 não vazios/1 ausente/3 linhas, template24 ausentes/zero observações, contrato inválido exit1 e entrada stdin inválida exit2 sanitizados. g1_approved=false invariável, inclusive recorded. Mapas de identidade incluem registros com metadados inválidos; conflitos globais não escolhem vencedor. Duplicatas/reobservações/variantes e denominadores elegíveis explícitos. Não repetir suites gerais/auth/UI ou diagnósticos Banco aprovados sem novo motivo.
+
+**Estado:** MusicBrainz permanece experimental. Plano12 casos/seis grupos é exploratório e ainda não coletado; Last.fm continua candidato sem novo adaptador/chave/integração. Consultadas somente páginas públicas de documentação, sem recordings/API8000/DB/LLM. Condições e licenças por campo registradas no protocolo; não são aprovação de publicação. O último snapshot de runtime é o checkpoint abaixo; esta unidade não reiniciou nem verificou os serviços.
+
+Próximos passos específicos:
+
+1. Revisar critérios prévios de aceitação e correspondência por gravação/revisão humana. O manifesto propõe24 chamadas de busca/zero retries/enriquecimento/LLM, mas `collection.authorized=false`: obter orçamento/escopo explícitos e resolver acesso/termos antes de executar coleta.
+2. Conservar diário sanitizado, versões/horário/cache/orçamento/hash e pedidos/flags do manifesto. Alimentar snapshots recorded de mesma fase, executar CLI e revisar fatos/proveniência por atributo; não converter template vazio ou fixture em cobertura real.
+3. Decidir fonte/fallback e atualizar ADR-0012 somente com evidência comparativa e condições de uso resolvidas. Latência/cache, descrições/gêneros e utilidade para embeddings exigem provas próprias; G1 permanece aberto. CI hospedada depende de push explícito; histórico/perfil/feedback exige contrato próprio.
+
+Relatórios congelados: `backend-music-evaluation-2026-10-03.md`, `database-music-evaluation-2026-10-03.md`, `frontend-music-evaluation-2026-10-03.md`. Git local/docs compartilhados serializados pelo Maestro; nenhum push.
+
+## Checkpoint anterior — MusicProvider inicial concluído e runtime atualizado
 
 Terminais existentes coordenados com reservas exclusivas; entregas Backend/Banco congeladas e Frontend finalizado pelo Maestro após limite de uso do terminal. Commits locais `e5b4d75` (port/factory/proveniência/known) e `753a9c1` (links/tipos/fixtures), sem push. [Contrato](music-provider-contract.md), relatórios [Backend](backend-music-provider-2026-10-02.md), [Banco](database-music-provider-2026-10-02.md) e [Frontend](frontend-music-provider-2026-10-02.md).
 

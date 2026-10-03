@@ -1,0 +1,32 @@
+{
+  "plan_version": 1,
+  "status": "PLANNED_NOT_COLLECTED",
+  "stage": "provider_search",
+  "providers": ["musicbrainz", "lastfm"],
+  "collection": {
+    "authorized": false,
+    "proposed_max_http_calls": 24,
+    "max_calls_per_provider": 12,
+    "limit": 10,
+    "offset": 0,
+    "reading": false,
+    "instrumental": false,
+    "retries": 0,
+    "enrichment_calls": 0,
+    "llm_calls": 0
+  },
+  "cases": [
+    {"id": "piano-reference", "group": "piano", "query": "Clair de lune Debussy", "by_tag": false},
+    {"id": "piano-tag", "group": "piano", "query": "piano", "by_tag": true},
+    {"id": "jazz-reference", "group": "jazz", "query": "Take Five Dave Brubeck", "by_tag": false},
+    {"id": "jazz-tag", "group": "jazz", "query": "jazz", "by_tag": true},
+    {"id": "rock-reference", "group": "rock", "query": "No Surprises Radiohead", "by_tag": false},
+    {"id": "rock-tag", "group": "rock", "query": "alternative rock", "by_tag": true},
+    {"id": "electronic-reference", "group": "electronic", "query": "Avril 14th Aphex Twin", "by_tag": false},
+    {"id": "electronic-tag", "group": "electronic", "query": "ambient", "by_tag": true},
+    {"id": "brazil-reference", "group": "brazil", "query": "Águas de março Tom Jobim", "by_tag": false},
+    {"id": "brazil-tag", "group": "brazil", "query": "bossa nova", "by_tag": true},
+    {"id": "voice-reference", "group": "voice", "query": "Ne me quitte pas Jacques Brel", "by_tag": false},
+    {"id": "voice-tag", "group": "voice", "query": "chanson", "by_tag": true}
+  ]
+}
