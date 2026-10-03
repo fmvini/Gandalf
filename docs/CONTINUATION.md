@@ -1,6 +1,14 @@
 # Ponto de retomada — 2026-10-03
 
-## Etapa atual — integração local de deploy validada
+## Etapa atual — endpoints entre duas apps PostgreSQL validados
+
+Novo `api/scripts/postgres_http_gate.py` reutiliza os guards PG existentes e aplica migrations uma vez em banco UUID vazio. Duas create_app/TestClient/lifespans/engines independentes verificam rotas reais, sem overrides: auth/JWT/refresh cruzados, replay/logout, headers, cache público compartilhado, favoritos/playlists por proprietário e teardown. Transporte ASGI em um processo; sem mudança de produção/schema/cliente ou duplicação das suítes anteriores.
+
+**PASS real:** UUID `553df499-8193-40f6-bf21-35b7c7e29b2c`, PostgreSQL18.6/head0008/vector0.8.6/citext1.8, nove checks/44 requests. SQL independente confirmou duas contas/um favorito/uma playlist com três faixas/um cache/oito refreshes (um ativo), AI0 e zero conexões cliente residuais. Bloco literal da CI criou auth/HTTP DBs vazios separados; somente o gate novo executado. Sourcefreeze/cleanup e remoção do arquivo privado PASS. Backend38 testes/Ruff/formatação, actionlint e revisão Maestro do artifact PASS. Relatórios [Backend](backend-http-postgres-session-2026-10-03.md), [Banco](database-http-postgres-session-2026-10-03.md) e [Frontend](frontend-http-postgres-session-2026-10-03.md).
+
+Próxima fatia de integração: processos TCP separados, sessão vigente durante restart e identificação de upstream; ASGI não aprova isso nem rollout/mistura de versões. CI hospedada requer push explicitamente autorizado. G1 mantém requisito de coleta autorizada; nenhum LLM/provider/serviço existente usado nesta etapa. Não repetir gates aprovados sem mudança/falha nova.
+
+## Checkpoint anterior — integração local de deploy validada
 
 Maestro coordenou Backend/Frontend/Banco com reservas exclusivas e consolidou o runner após liberação. [Receita executável](deployment-integration.md): Compose base+PostgreSQL, entrypoint `api/deploy.py` com ambiente explícito/migrations antes de servir, build estático Nginx e proxy com DNS dinâmico. CA de builder opcional via segredo BuildKit temporário; nenhum TLS desabilitado.
 

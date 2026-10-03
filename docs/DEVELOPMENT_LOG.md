@@ -1,5 +1,34 @@
 # Registro de desenvolvimento
 
+## 2026-10-03 — Gate de endpoints entre duas aplicações PostgreSQL
+
+### Implementado
+- Novo gate de endpoints ASGI usa duas aplicações reais, com JWT/refresh cruzados, replay/logout, origem pública compartilhada e isolamento de favoritos/playlists.
+- CI prepara bancos vazios distintos para os gates de autenticação e HTTP, sem reaproveitar schemas migrados; coleta resultado sanitizado do novo gate.
+
+### Arquivos principais alterados
+- `.github/workflows/ci.yml`
+- `api/scripts/postgres_http_gate.py`, `api/tests/test_postgres_http_gate.py`
+- `docs/CI.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+- `docs/backend-http-postgres-session-2026-10-03.md`, `docs/database-http-postgres-session-2026-10-03.md`, `docs/frontend-http-postgres-session-2026-10-03.md`
+
+### Decisões técnicas
+- Duas aplicações ASGI reais, lifespans e engines independentes, com o mesmo PostgreSQL e JWT sintéticos; reuso dos guards de destino/identidade/schema vazio existentes. Sem alterar produto, autenticação ou schema.
+- Maestro mantém Git/CI/documentos compartilhados; Backend implementa script/testes, Banco prepara a única instância PG descartável e Frontend revisa contrato/limites.
+- Cobertura de endpoints via ASGI em um processo; TCP entre processos, browser com vários upstreams e rollout permanecem fora desta etapa.
+
+### Estado atual
+- Backend: 38 testes focados PASS em 2,13s, Ruff/formatação PASS; um aviso conhecido TestClient. Fixture example.test foi corrigida para example.com mantendo a prova 422 do domínio reservado. Revisão Frontend completou o uso dos novos access tokens na outra app.
+- Execução real PASS/exit0 em 20:30:19–20:30:30 UTC, UUID `553df499-8193-40f6-bf21-35b7c7e29b2c`: nove checks, 21 requests A/23 B; PostgreSQL 18.6/READ COMMITTED/head0008/vector0.8.6/citext1.8. SQL confirmou duas contas, um favorito, uma playlist com três faixas, um resultado público, oito refreshes/um ativo e AI0; zero conexões cliente residuais e zero refreshes não revogados expirados.
+- Bloco literal da CI executado no mesmo PG próprio: bancos auth/HTTP UUID distintos; somente o novo gate HTTP executado. Fonte congelada inalterada, SHA agregado `b08d71a67ad5909f29124586a38db94177e38e3df48a9077a38cfc3208a5faa0`. Cleanup por ID/labels confirmado, porta novamente livre e arquivo privado GITHUB_ENV removido.
+- Artefato ignorado `.impeccable/runtime/http-postgres-result-553df499-8193-40f6-bf21-35b7c7e29b2c.json`, SHA256 `7e7a16d0eca4bcc0ff2c5acb6c68c8efab32fc4b540566c73f4573c1abc92d81`. Maestro conferiu coerência/sanitização; nenhuma URL, senha, token ou e-mail no resultado.
+- Alteração do workflow passou no actionlint e na compilação de seu bloco Python; CI hospedada continua pendente. Sem mudança de autenticação/schema/produção nem repetição dos gates anteriores.
+- Integração local Nginx/API/PG do commit `1b1c9b7` permanece a última execução fullstack aprovada.
+
+### Próximos passos
+- Próxima ampliação de integração: duas APIs em processos TCP separados com sessão vigente, restart/rollout coordenado e prova de upstream; não inferir essa cobertura do transporte ASGI aprovado.
+- Executar CI hospedada somente após push explicitamente autorizado. Manter gates anteriores e contrato de logout/limite por app; sem novo provider/LLM ou coleta G1 não autorizada.
+
 ## 2026-10-03 — Integração Nginx/API/PostgreSQL validada
 
 ### Implementado
