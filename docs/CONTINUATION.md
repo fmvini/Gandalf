@@ -1,6 +1,18 @@
 # Ponto de retomada — 2026-10-03
 
-## Etapa atual — endpoints entre duas apps PostgreSQL validados
+## Etapa atual — TCP e sessão vigente após restart validados
+
+`api/scripts/postgres_tcp_gate.py` e worker de teste validam duas APIs Uvicorn em processos reais/loopback, PG/JWT comuns e identidade por resposta UUID/instância/PID. Migrations uma vez antes dos workers; tokens no mesmo cliente durante restart B, sem login. Nova B aceita conta/recursos/refresh; access novo funciona em A, logout A impede refresh B. Ownership e snapshots preservados. Sem `.env`, mocks ou mudança de produto.
+
+**PASS final:** UUID `4328bd8e-e2fa-492f-b8f1-016fcb8394d2`, PG18.6/READ COMMITTED/head0008/vector0.8.6/citext1.8, sete checks/30 requests; SQL2 contas/1 favorito/1 playlist3 faixas/1 cache/4 refreshes1 ativo/AI0/conexões0. Fonte75/cleanup/PID/porta verificados;57 testes/Ruff/formatação PASS. Maestro concluiu após limite dos três agentes, sem atribuir revisão independente. Duas falhas do guard PID Windows precederam a correção do redirector, ambas com cleanup confirmado. [Backend](backend-tcp-postgres-session-2026-10-03.md), [Banco](database-tcp-postgres-session-2026-10-03.md), [Frontend](frontend-tcp-postgres-session-2026-10-03.md).
+
+Próximos passos específicos:
+
+1. Integrar TCP ao job PostgreSQL com quarto DBUUID vazio e artifact próprio; validar literalmente o bootstrap. Workflow ainda executa geral/auth/ASGI; TCP manual local não comprova Ubuntu hospedado.
+2. Provar browser com mesma origem nginx/duas APIs e sessão contínua, checkpoint de restart e identificação de upstream. Não persistir tokens nem fixar instância no cliente. Rollout/mistura de versões e migrations concorrentes exigem contrato próprio.
+3. Push/CI hospedada/deploy público dependem de pedido explícito. G1 conserva autorização/orçamento externos; não repetir suítes antigas para inferir cobertura nova.
+
+## Checkpoint anterior — endpoints entre duas apps PostgreSQL validados
 
 Novo `api/scripts/postgres_http_gate.py` reutiliza os guards PG existentes e aplica migrations uma vez em banco UUID vazio. Duas create_app/TestClient/lifespans/engines independentes verificam rotas reais, sem overrides: auth/JWT/refresh cruzados, replay/logout, headers, cache público compartilhado, favoritos/playlists por proprietário e teardown. Transporte ASGI em um processo; sem mudança de produção/schema/cliente ou duplicação das suítes anteriores.
 

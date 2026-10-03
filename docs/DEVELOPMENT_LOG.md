@@ -1,5 +1,35 @@
 # Registro de desenvolvimento
 
+## 2026-10-03 — Sessão vigente validada entre APIs TCP e PostgreSQL
+
+### Implementado
+- Gate opt-in inicia duas APIs Uvicorn em processos próprios, com PostgreSQL/JWT sintéticos compartilhados e identidade UUID/instância/PID em cada resposta.
+- Mesmo cliente conserva tokens em memória durante restart de B, lê conta/favorito/playlist e renova o refresh na nova B sem login; novo access é aceito em A. Logout em A impede refresh em B, conforme o contrato atual de revogação.
+- Guards, saída reconstruída e testes de falha/encerramento, configuração offline e protocolo do worker. SQL compara snapshots antes/depois e confirma AI0.
+
+### Arquivos principais alterados
+- `api/scripts/postgres_tcp_gate.py`, `api/scripts/postgres_tcp_worker.py`
+- `api/tests/test_postgres_tcp_gate.py`, `api/tests/test_postgres_tcp_worker.py`
+- `docs/backend-tcp-postgres-session-2026-10-03.md`, `docs/database-tcp-postgres-session-2026-10-03.md`, `docs/frontend-tcp-postgres-session-2026-10-03.md`
+- `docs/DEVELOPMENT_LOG.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/CI.md`
+
+### Decisões técnicas
+- Maestri coordenou reservas; os três terminais atingiram limite de uso. Maestro assumiu os arquivos incompletos após verificar que não estavam trabalhando, finalizou worker/controller e executou a prova, sem atribuir aprovação independente aos agentes.
+- Migrations serializadas uma vez antes dos workers; imports em cwd vazio/ambiente saneado, Settings explícito sem `.env`, segredo/DSN somente stdin e tokens somente em memória. Nenhuma mudança de produto/schema/frontend, serviço existente, build, provider/LLM ou push.
+- Windows venv usa redirector com PID distinto: worker executa interpretador base diretamente com `-S` e packages exclusivos do ambiente atual, mantendo igualdade estrita com o PID do Popen. Duas tentativas iniciais falharam nesse guard; não se flexibilizou a identidade. Ambas tiveram cleanup verificado.
+- Gate TCP permanece manual, fora do workflow existente; evidência local não aprova CI Ubuntu hospedada, browser multiupstream, rollout ou mistura de versões.
+
+### Estado atual
+- 57 testes focados PASS em 0,22s; Ruff e formatação dos quatro arquivos PASS. Gate final PASS/exit0 em 23:38:52–23:39:06 UTC, UUID `4328bd8e-e2fa-492f-b8f1-016fcb8394d2`: sete checks, requests A11/B11/B reiniciada8, configuração offline nas três instâncias, sessão vigente sem relogin, persistência e cleanup.
+- SQL independente PostgreSQL18.6/READ COMMITTED/head0008/vector0.8.6/citext1.8: duas contas, um favorito, uma playlist/três faixas, um resultado público, quatro refreshes/um ativo, AI0, conexões cliente residuais0 e expirados não revogados0. Container UUID/tmpfs512MiB removido por ID revalidado; porta55432 liberada, fontes75 inalteradas.
+- Artifact ignorado `.impeccable/runtime/tcp-postgres-result-4328bd8e-e2fa-492f-b8f1-016fcb8394d2.json`, SHA256 `1760293d11bd77ff1ded5bb5db8b7dd8eac3ee832f3b3a9578dcb0dd2dbcf89c`; resultado sanitizado em `.impeccable/ci/postgres-tcp-gate.json`. Integração Nginx/API/PG anterior (`1b1c9b7`) e ASGI/PG (`2d30cc7`) preservadas, sem repetir suítes antigas.
+
+### Próximos passos
+- Integrar o gate TCP ao job PostgreSQL com quarto banco UUID vazio próprio e artifact sanitizado; validar literalmente o bootstrap antes de considerar a configuração aprovada, sem repetir os gates antigos.
+- Em etapa própria, testar mesma origem nginx com duas APIs e sessão de navegador contínua, checkpoint de restart e prova de upstream. Isso não exige persistir tokens nem alterar cliente para fixar instância.
+- CI hospedada/deploy público e rollout com versões distintas continuam pendentes; push somente quando solicitado. Coleta online G1 conserva autorização/orçamento específicos.
+
+
 ## 2026-10-03 — Gate de endpoints entre duas aplicações PostgreSQL
 
 ### Implementado

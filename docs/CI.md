@@ -27,6 +27,12 @@ O gate de endpoints exige `GANDALF_HTTP_PG_ALLOW=isolated-coordinated-backend-fr
 
 Os jobs falham se algum check falhar, sem retry que esconda perdas. A comparação usa `--fail-on-case-regression`: perdas individuais também bloqueiam, mesmo que as médias não caiam. Baselines atuais: `docs/eval-reports/local-v7-piano-detective-k5.json` e `local-v7-piano-detective-k10.json`. Atualizá-los exige uma etapa de ranking validada e documentada; não regenerá-los automaticamente na CI.
 
+## Gate TCP manual validado — ainda fora do workflow
+
+`api/scripts/postgres_tcp_gate.py` exige `GANDALF_TCP_PG_ALLOW=isolated-coordinated-backend-frozen` e `GANDALF_TCP_PG_URL`, sob os mesmos guards PG loopback55432/55433/role gandalf_gate/DBUUID vazio. O operador precisa criar e conferir a instância descartável antes; este script não cria nem remove PostgreSQL. Migra uma vez, inicia processos próprios Uvicorn em portas efêmeras e encerra-os. Mantém tokens em memória durante restart B, aceita refresh na nova B e novo access em A; snapshots/ownership/logout/SQL e fontes são conferidos. Saída única JSON reconstruída em stdout; progresso em stderr e falhas somente etapa/classe/linha local, sem segredo/DSN/PII.
+
+57 testes focados e prova TCP real PostgreSQL18.6 PASS, com SQL independente/cleanup, no Windows. [Relatório](database-tcp-postgres-session-2026-10-03.md). O resultado local normalizado `.impeccable/ci/postgres-tcp-gate.json` permanece ignorado, sem upload pelo workflow atual. Para automatizar: criar quarto DBUUID vazio no serviço existente, executar somente o script novo com opt-in e adicionar artifact sanitizado; validar o bootstrap literalmente. Ainda não há aprovação Linux/CI hospedada dessa unidade nem teste nginx/browser multiupstream.
+
 ## Resultados e diagnóstico
 
 - `api-results`: relatório JUnit do pytest e relatórios JSON K=5/10, quando gerados.
