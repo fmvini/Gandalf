@@ -1,5 +1,27 @@
 # Registro de desenvolvimento
 
+## 2026-10-03 — MusicProvider consolidado e API atualizada
+
+### Implementado
+- Entregas MusicProvider Backend/Frontend/Banco revisadas e serializadas em commits locais e documentos de continuidade, sem push.
+- API recarregada para servir o código commitado, preservando api/.local e configuração online existentes.
+
+### Arquivos principais alterados
+- `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`
+- `docs/frontend-music-provider-2026-10-02.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Commits e gates são unidades distintas: e5b4d75 Backend/163 testes focados;753a9c1 Frontend/14 fixtures/browser/tipos/build. Não alegar nova suíte integral ou G1 aprovado.
+- Reload verifica proprietário/parent/executáveis da API antes de parar somente worker próprio; child mantém online, dados e modelo originais. Comparação por hash de .env/segredo confirma preservação sem expor credenciais.
+
+### Estado atual
+- API launcher34864/worker31344/127.0.0.1:8000; health/readiness/status200, database/schema ok, online/Groq configurado openai/gpt-oss-20b. Frontend25716/localhost:5173 e PG10140/5432 preservados; api.ts servido200 contém correção.55432/55433 sem listeners; PIDs são snapshot.
+- Git local sem push; testes/gates da unidade aprovados,16 capturas e bundle504,22kB/aviso não fatal. Sem recomendações externas ou consumo LLM nesta retomada. G1 e CI hospedada permanecem pendentes.
+
+### Próximos passos
+- Definir amostra por gravação/atributos e matriz/revisão humana G1 com orçamento autorizado antes de buscas externas; consultar ADR-0012 e music-provider-contract.md.
+- Revisar termos por campo e rate limit por IP entre processos antes de ativar nova fonte ou publicar. Observar CI somente após push explícito; histórico/perfil/feedback precisa contrato próprio.
+
 ## 2026-10-03 — Destinos musicais genéricos e contrato frontend validado
 
 ### Implementado

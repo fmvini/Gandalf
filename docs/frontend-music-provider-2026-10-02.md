@@ -12,7 +12,7 @@ Unidade concluída: `frontend/src/lib/api.ts`, `frontend/src/lib/format.ts`, `fr
 
 Falhas intermediárias do harness não contam como provas do produto: lote14 violava o limite10 do consumidor; timeout load na porta60667 não reproduziu rótulo; seletor h3 abrangente também coletava títulos de Explanation. Corrigido seletor para `.result-heading > h3`, mantendo a asserção exata de ordem e todos os14 casos. Probe ignorado, com API/rede externa bloqueadas, confirmou readiness/load local em aproximadamente1,3s; causa do timeout transitório não foi determinada. Não aumentamos timeouts nem alteramos produto para acomodar o harness.
 
-Limites: fixtures aprovam consumo do contrato e apresentação, não cobertura/licença/áudio de outro provider, disponibilidade online ou G1. API atual deve ser recarregada pelo Maestro após serialização; nenhuma chamada externa é necessária para conferir health/configuração.
+Limites: fixtures aprovam consumo do contrato e apresentação, não cobertura/licença/áudio de outro provider, disponibilidade online ou G1. Após commit753a9c1, Maestro recarregou somente API identificada: launcher34864/worker31344/8000, health/readiness/status200, dados/config/segredo originais preservados. Frontend25716/5173 e PG10140/5432 mantidos; módulo api.ts servido200 contém Buscar faixa. Nenhuma chamada externa/LLM nessa verificação.
 
 ## Checkpoint histórico — fixtures e rótulo search (então em andamento)
 

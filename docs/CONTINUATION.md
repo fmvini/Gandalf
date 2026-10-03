@@ -1,6 +1,24 @@
-# Ponto de retomada — 2026-10-02
+# Ponto de retomada — 2026-10-03
 
-## Etapa atual — autenticação corrigida, gates aprovados e commits locais
+## Etapa atual — MusicProvider inicial concluído e runtime atualizado
+
+Terminais existentes coordenados com reservas exclusivas; entregas Backend/Banco congeladas e Frontend finalizado pelo Maestro após limite de uso do terminal. Commits locais `e5b4d75` (port/factory/proveniência/known) e `753a9c1` (links/tipos/fixtures), sem push. [Contrato](music-provider-contract.md), relatórios [Backend](backend-music-provider-2026-10-02.md), [Banco](database-music-provider-2026-10-02.md) e [Frontend](frontend-music-provider-2026-10-02.md).
+
+**Entrega:** MusicProvider name/search/flags/envelope tipado, injetável somente online; default MusicBrainz e modo offline preservados. Adaptador mantém propriedade de recursos e responsabilidade de normalização/cache/persistência. Leitura valida adapter/envelope/item e duração real; textos/fontes dinâmicos. Tags preenchem apenas unknown com provider_tags; discovery preserva known e marca ai_estimate somente ao inferir atributo desconhecido válido. Interface conserva URLs/precedência; busca genérica usa Buscar faixa, YouTube somente para hostname correspondente. Duração null explícita nos tipos.
+
+**Validação:**163 testes Backend focados PASS (29 novos+134 afetados),29 finais após lint equivalente; três reproduções reading FAIL antes/PASS depois. Ruff/formatação7/diff-check PASS. Banco executou diagnóstico SQLite descartável de duas tabelas: nove observações esperadas e três violações sintéticas admitidas pelo store, documentadas como precondições de adaptador confiável, não corrupção atual/schema patch. Frontend14 fixtures em dois lotes10+4 PASS/requests2/zero erros/rede externa; prova de rótulo FAIL antes/PASS depois,16 capturas e revisão320px/claro/escuro. TypeScript/build2050 módulos PASS, bundle504,22kB/gzip158,18kB, aviso>500 não fatal. Não houve repetição das suítes auth/geral, PG real ou recomendações externas/LLM nesta unidade.
+
+**Runtime atual conferido:** API identificada launcher9084/worker20872 recarregada, agora launcher34864/worker31344 em127.0.0.1:8000; health/readiness/status200, database/schema ok, catálogo online e Groq configurado `openai/gpt-oss-20b`. `.env` e jwt-secret conferidos inalterados por hash, dados originais `api/.local` preservados. Frontend25716/localhost:5173 e PG10140/5432 preservados; módulo `/src/lib/api.ts` servido200 contém correção. Portas55432/55433 sem listener. PIDs são snapshot, verificar identidade antes de agir. Health/configuração não comprova busca real ou qualidade musical.
+
+Próximos passos específicos:
+
+1. Fechar desenho da avaliação G1 a partir de ADR-0012 e `music-provider-contract.md`: amostra por gravação, metadados conhecidos versus unknown, instrumental estrito, relevância e revisão humana. Definir orçamento explícito antes de chamadas externas/LLM; não ativar uma segunda fonte apenas por existir injeção.
+2. Revisar termos/licenças por campo/uso comercial e coordenação de rate limit por IP entre processos antes de publicar/ampliar operação. Matriz e limitações atuais não certificam G1.
+3. CI hospedada só após push explicitamente autorizado. Gates auth ampliados (HTTP entre duas apps, rollout e logout/refresh) continuam pendentes conforme checkpoint anterior. Histórico/perfil/feedback exige contrato próprio antes de schema/API/UI.
+
+Registros abaixo são históricos; seguir esta etapa e o topo de DEVELOPMENT_LOG para retomada.
+
+## Checkpoint anterior — autenticação corrigida, gates aprovados e commits locais
 
 Maestro coordenou os terminais existentes Frontend, Backend e Banco de Dados, com reservas exclusivas e Git/docs compartilhados serializados. Entregas auth encerradas e versionadas; nenhum push. Commits locais: `e6278dd` headers/logs/limitador, `7192c54` hash/SQL/refresh SQLite, `290eb69` submit/cancelamento frontend, `5b7f17a` serialização PG por família e `2f00bc1` regressão PG versionada/CI.
 
