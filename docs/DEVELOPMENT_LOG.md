@@ -1,5 +1,30 @@
 # Registro de desenvolvimento
 
+## 2026-10-03 — Destinos musicais genéricos e contrato frontend validado
+
+### Implementado
+- Corrigido rótulo de links.search: YouTube somente para hostname youtube.com/subdomínio, Buscar faixa para busca genérica. URLs, prioridade de links e fallback preservados.
+- MusicItem.duration_ms e duration aceitam null explicitamente; duração desconhecida permanece vazia.
+- Harness mantém14 fixtures em duas buscas10+4, fontes alternativas/known/tags/IA/unknown e verificação de snapshot/ordem/acessibilidade/URLs.
+
+### Arquivos principais alterados
+- `frontend/src/lib/api.ts`, `frontend/src/lib/format.ts`, `frontend/tests/music-metadata.mjs`
+- `docs/frontend-music-provider-2026-10-02.md`, `docs/music-provider-contract.md`
+- `docs/12-development-roadmap.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Rótulo depende do destino de busca, não do provider de metadados; hostname que só contém YouTube continua genérico.
+- Maestro assumiu a reserva congelada após limite de uso do terminal Frontend. Ajustes do harness corrigem lote acima de10 e seletor de títulos abrangente; asserções preservadas e timeout não ampliado.
+
+### Estado atual
+- Prova pré-fix porta62690 FAIL Buscar no YouTube versus Buscar faixa; pós-fix porta59552 PASS14 fixtures/requests2/zero erros ou rede externa.16 capturas;320px/light e dark revisados, contraste/overflow aprovados.
+- npm run build final único PASS TypeScript/2050 módulos/504,22kB gzip158,18kB; aviso>500kB não fatal. Sintaxe/diff-check PASS. Backend já commitado em e5b4d75,163 testes focados PASS; nenhuma nova suíte geral/auth ou chamada LLM.
+- Contrato inicial fechado neste escopo; G1/cobertura/revisão humana/licenças/operação distribuída permanecem pendentes. API existente ainda precisa recarregar código Backend após commits.
+
+### Próximos passos
+- Serializar commit frontend seletivo; recarregar somente API identificada usando dados/config originais e conferir health/readiness/status, sem recomendar ou consumir quota.
+- Atualizar CONTINUATION/IMPLEMENTATION_STATUS com runtime e commits; depois definir amostra/matriz e orçamento explícito de avaliação G1 antes de ativar outra fonte.
+
 ## 2026-10-02 — Port musical e preservação de atributos conhecidos
 
 ### Implementado

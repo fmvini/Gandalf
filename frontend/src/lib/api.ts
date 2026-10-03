@@ -1,6 +1,6 @@
 export type MusicItem = {
   id: string; title: string; artist: string; album?: string; image_url?: string | null
-  tags?: string[]; duration_ms?: number; links?: Record<string, string | null>
+  tags?: string[]; duration_ms?: number | null; links?: Record<string, string | null>
   provider?: string | null; has_vocals?: boolean | null
   energy?: 'low' | 'medium' | 'high' | null; classification_source?: string | null
 }
@@ -62,7 +62,14 @@ export function musicDestination(item: MusicItem) {
   if (item.links?.spotify) return { href: item.links.spotify, label: 'Ouvir no Spotify' }
   if (item.links?.youtube) return { href: item.links.youtube, label: 'Ouvir no YouTube' }
   if (item.links?.provider) return { href: item.links.provider, label: 'Ver fonte' }
-  if (item.links?.search) return { href: item.links.search, label: 'Buscar no YouTube' }
+  if (item.links?.search) {
+    let label = 'Buscar faixa'
+    try {
+      const hostname = new URL(item.links.search).hostname
+      if (hostname === 'youtube.com' || hostname.endsWith('.youtube.com')) label = 'Buscar no YouTube'
+    } catch { /* An unrecognized destination keeps the generic label. */ }
+    return { href: item.links.search, label }
+  }
   return {
     href: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' ' + item.artist),
     label: 'Buscar no YouTube',

@@ -1,6 +1,6 @@
 # Contrato inicial de MusicProvider — 2026-10-02
 
-**Estado:** Backend implementado e congelado, 163 testes focados aprovados; gate Frontend em curso. Não certifica G1 nem ativa uma fonte alternativa em produção. [ADR-0004](adr/0004-external-data-providers.md), [avaliação G1](adr/0012-music-provider-selection.md).
+**Estado em 2026-10-03:** Backend implementado,163 testes focados aprovados; Frontend14 fixtures/browser/TypeScript/build PASS. Não certifica G1 nem ativa uma fonte alternativa em produção. [ADR-0004](adr/0004-external-data-providers.md), [avaliação G1](adr/0012-music-provider-selection.md).
 
 ## Superfície do port
 
@@ -22,11 +22,11 @@ O item normalizado contém UUID canônico em string, título, artista, tags, lin
 
 Leitura online exige item da fonte externa correspondente ao adaptador, nunca `local`, com duração inteira informada de 90–600 segundos. Meta.sources e textos identificam a fonte efetiva. Tags só preenchem vocais/energia desconhecidos, com proveniência provider_tags; não substituem atributos conhecidos. Filtros, referências/exclusões, oito páginas, limite60/quatro por artista e duração-alvo continuam obrigatórios; uma trilha insuficiente retorna SOUNDTRACK_INCOMPLETE. O port não transforma tags em medição acústica nem permite completar tempo com duração inventada.
 
-Links preservam a precedência da interface: spotify, youtube, provider, search e fallback. `links.provider` abre a fonte de metadados. A revisão da semântica genérica de `links.search` e dos rótulos está em validação; links de reprodução não provam que o catálogo oferece áudio.
+Links preservam a precedência da interface: spotify, youtube, provider, search e fallback. `links.provider` abre a fonte de metadados. `links.search` admite busca genérica: hostname youtube.com ou subdomínio usa Buscar no YouTube; outro destino usa Buscar faixa, mantendo URL. O fallback continua busca YouTube por título/artista. Links de reprodução não provam que o catálogo oferece áudio. Tipos frontend aceitam duração null explicitamente.
 
 ## Gates e limites
 
-Backend:163 PASS no subset MusicProvider/online/continuation/reroll/ai_selection/music_filters (29 novos +134 existentes);29 PASS finais após ajuste de lint equivalente. Três reproduções reading falharam antes do patch e passaram depois. Ruff/formatação7 arquivos/diff-check PASS. Banco: nove observações esperadas e três violações sintéticas de precondições em SQLite novo, sem migration/dados reais/rede. [Relatório Backend](backend-music-provider-2026-10-02.md), [relatório Banco](database-music-provider-2026-10-02.md). Frontend em curso; fixtures e mocks não medem disponibilidade, cobertura musical, gênero ou qualidade auditiva de fontes externas.
+Backend:163 PASS no subset MusicProvider/online/continuation/reroll/ai_selection/music_filters (29 novos +134 existentes);29 PASS finais após ajuste de lint equivalente. Três reproduções reading falharam antes do patch e passaram depois. Ruff/formatação7 arquivos/diff-check PASS. Banco: nove observações esperadas e três violações sintéticas de precondições em SQLite novo, sem migration/dados reais/rede. Frontend: rótulo genérico FAIL antes/PASS depois,14 fixtures em duas buscas10+4,16 capturas/TypeScript/build2050 PASS; aviso bundle504,22kB não fatal. [Relatório Backend](backend-music-provider-2026-10-02.md), [relatório Banco](database-music-provider-2026-10-02.md), [relatório Frontend](frontend-music-provider-2026-10-02.md). Fixtures e mocks não medem disponibilidade, cobertura musical, gênero ou qualidade auditiva de fontes externas.
 
 | Critério G1 | Estado / próxima prova |
 |---|---|

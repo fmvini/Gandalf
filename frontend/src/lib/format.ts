@@ -14,7 +14,7 @@ export function musicMetadataLabel(item: MusicItem): string {
   return [source, classification, vocals, energy].filter(Boolean).join(' · ')
 }
 
-export function duration(ms?: number) {
+export function duration(ms?: number | null) {
   if (!ms) return ''
   const minutes = Math.floor(ms / 60000)
   const seconds = Math.floor((ms % 60000) / 1000)
