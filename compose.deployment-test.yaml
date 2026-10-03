@@ -1,0 +1,72 @@
+# Disposable integration gate only; third overlay after root + postgres compose.
+# Runner supplies an isolated child environment and its own empty --env-file.
+name: ${GANDALF_GATE_PROJECT:?Use the coordinated deployment gate runner}
+services:
+  api:
+    image: ${GANDALF_GATE_API_IMAGE:?Require a verified local API image}
+    build:
+      labels:
+        com.gandalf.deployment-gate: ${GANDALF_GATE_UUID:?Require a fresh gate UUID}
+    pull_policy: never
+    env_file: !reset []
+    volumes: !override []
+    environment:
+      GANDALF_ONLINE: "0"
+      ONLINE_CATALOG: "false"
+      BOOK_PROVIDER: local
+      GROQ_API_KEY: ""
+      CORS_ORIGINS: "[]"
+      GANDALF_HOST: 0.0.0.0
+      GANDALF_PORT: "8000"
+    ports: !override
+      - target: 8000
+        published: "0"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    labels:
+      com.gandalf.deployment-gate: ${GANDALF_GATE_UUID:?Require a fresh gate UUID}
+    healthcheck:
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  frontend:
+    image: ${GANDALF_GATE_FRONTEND_IMAGE:?Require a verified local frontend image}
+    build:
+      labels:
+        com.gandalf.deployment-gate: ${GANDALF_GATE_UUID:?Require a fresh gate UUID}
+    pull_policy: never
+    env_file: !reset []
+    volumes: !override []
+    ports: !override
+      - target: 80
+        published: "0"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    labels:
+      com.gandalf.deployment-gate: ${GANDALF_GATE_UUID:?Require a fresh gate UUID}
+  db:
+    pull_policy: never
+    env_file: !reset []
+    volumes: !override
+      - type: tmpfs
+        target: /var/lib/postgresql
+        tmpfs:
+          size: 536870912
+    ports: !override
+      - target: 5432
+        published: "0"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    labels:
+      com.gandalf.deployment-gate: ${GANDALF_GATE_UUID:?Require a fresh gate UUID}
+    healthcheck:
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes: !reset {}
+networks:
+  default:
+    driver: bridge
+    internal: false
+    labels:
+      com.gandalf.deployment-gate: ${GANDALF_GATE_UUID:?Require a fresh gate UUID}

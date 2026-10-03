@@ -1,0 +1,16 @@
+# Optional public CA for dependency downloads on hosts with a trusted TLS proxy.
+# Applied after the normal overlays; BuildKit mounts it only during pip/npm RUN.
+services:
+  api:
+    build:
+      secrets:
+        - source: gandalf_build_ca
+          target: gandalf_build_ca
+  frontend:
+    build:
+      secrets:
+        - source: gandalf_build_ca
+          target: gandalf_build_ca
+secrets:
+  gandalf_build_ca:
+    file: ${GANDALF_BUILD_CA_CERT:?Require a public trusted CA certificate PEM}

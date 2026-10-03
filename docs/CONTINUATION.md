@@ -1,6 +1,16 @@
 # Ponto de retomada — 2026-10-03
 
-## Etapa atual — avaliação G1 offline preparada
+## Etapa atual — integração local de deploy validada
+
+Maestro coordenou Backend/Frontend/Banco com reservas exclusivas e consolidou o runner após liberação. [Receita executável](deployment-integration.md): Compose base+PostgreSQL, entrypoint `api/deploy.py` com ambiente explícito/migrations antes de servir, build estático Nginx e proxy com DNS dinâmico. CA de builder opcional via segredo BuildKit temporário; nenhum TLS desabilitado.
+
+**Gate final ca-7 PASS/exit0:** UUID `d611ad28-dff0-4523-abc0-8b6c049891aa`; imagens atuais, PostgreSQL18.6/head0008/vector0.8.6/citext1.8, create7/verify6 checks e restart da mesma API. SQL2 contas/2 favoritos/1 playlist/11 faixas/3 caches, ownership e hashes antes/depois/verify exatos, AI0. Browser/console/externo0; aborts de logout classificados somente com Request204/UI/refresh401 comprovados. Sourcefreeze/cleanup verificados; recursos UUID/tmpfs removidos. Artefato ignorado `.impeccable/ci/deployment-gate.json`, hash `a909c28c4569410e3fcd54883a0459bc5c72598a7e4e02669106240684fce9d2`.
+
+**Checks:** Backend38 testes, runner94 guards, Node67 guards/deadlines/proof, Ruff/format98/actionlint PASS. Nginx antes502/depois200 na troca de IP com URI/Nginx preservados. Não repetir suítes gerais ou gates aprovados sem mudanças/falhas novas. Dados/config/serviços existentes e quota IA não foram usados; nenhum push.
+
+Próximos passos: executar os quatro jobs hospedados após push explicitamente autorizado; para deploy público, configurar HTTPS, segredos, backups e permissões de migrations/extensões do banco de destino. Gate aprovado cobre uma API offline/cold-start e restart; não certifica fontes online/G1, HTTP entre várias APIs, rollout pré-populado/mistura de versões ou zero downtime. Para continuar G1, seguir o checkpoint abaixo e seu requisito de coleta autorizada.
+
+## Checkpoint anterior — avaliação G1 offline preparada
 
 Maestro coordenou os mesmos três terminais: Backend implementou CLI/testes; Banco e Frontend revisaram identidade/proveniência em documentos exclusivos. Nova unidade: `api/scripts/music_provider_eval.py`, `api/tests/test_music_provider_eval.py`, [protocolo G1](music-provider-g1-evaluation.md) e três JSONs em `docs/evaluation/`. Sem alteração da aplicação, schema, dependências, CI, runtime ou dados existentes.
 

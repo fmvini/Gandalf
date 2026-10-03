@@ -1,5 +1,40 @@
 # Registro de desenvolvimento
 
+## 2026-10-03 — Integração Nginx/API/PostgreSQL validada
+
+### Implementado
+- Novo `api/deploy.py` usa configuração explícita de ambiente, preserva DATABASE_URL/JWT/CORS, valida configuração e binding antes das migrations e inicia a API somente após preparar a conexão correta.
+- Docker inclui o novo entrypoint; CMD local e os launchers existentes permanecem preservados. Overlay PostgreSQL opt-in e exemplo de ambiente acrescentados. Proxy Nginx resolve o novo IP da API após recriação e preserva caminho/query.
+- Gate frontend de produção em duas fases, sem Vite/mocks; runner stdlib com configuração/identidade UUID verificadas, prova SQL, restart, snapshots e cleanup. Workflow ampliado com job integrado e scripts npm opt-in.
+- CA pública já confiada no host pode ser montada opcionalmente pelo BuildKit apenas durante pip/npm; erro TLS do builder resolvido sem desligar verificação. Diagnósticos de navegador limitados por prazo e reconstruídos por campos/tipos públicos.
+
+### Arquivos principais alterados
+- `api/deploy.py`, `api/tests/test_deploy.py`, `api/Dockerfile`
+- `compose.postgres.yaml`, `compose.deployment-test.yaml`, `.env.postgres.example`
+- `compose.build-ca.yaml`, `scripts/deployment_gate.py`, `api/tests/test_deployment_gate.py`
+- `frontend/Dockerfile`, `frontend/nginx.conf`
+- `frontend/tests/deployment.mjs`, `frontend/package.json`, `.github/workflows/ci.yml`
+- `docs/deployment-integration.md`, `docs/11-deployment-guide.md`, `docs/CI.md`, `README.md`
+
+### Decisões técnicas
+- Entry point separado evita que o bootstrap local force SQLite/segredo local num deploy PostgreSQL. Docker padrão preservado; PG seleciona `python deploy.py` explicitamente.
+- Maestro coordena Backend/Frontend/Banco existentes com reservas exclusivas; Git e docs compartilhados serializados. Banco prepara runner descartável com Compose real, isolamento, prova SQL e restart; Frontend prepara create/verify.
+- Sem fontes externas/LLM no gate; dependências do build podem exigir rede. Serviços/dados reais não pertencem ao teste.
+- Probe descartável no Docker29.8 confirmou que rede internal deixa bindings publicados vazios; gate host passa a bridge UUID comum, catálogo/IA offline e browser sem requisições externas, sem alegar bloqueio de egress por firewall.
+- Docker pode realocar a porta publicada0 no restart: runner aceita rebind somente da mesma API/ID verificada e mantém frontend/PG estáveis. Aborts Chromium de logout só são classificados como comprovados após o mesmo Request responder204, UI encerrar sessão e refresh revogado retornar401; demais falhas continuam bloqueando.
+
+### Estado atual
+- Backend congelado: 38 testes focados PASS, Ruff e formatação PASS; um aviso TestClient registrado no relatório do agente. Compose PostgreSQL config e actionlint do workflow PASS.
+- Dockerfiles atuais API/frontend build PASS com CA pública temporária; tags UUID próprias removidas. Nginx BEFORE502/AFTER200 com troca de IP, marcador/URI exatos e mesmo nginx ID/StartedAt PASS/cleanup verificado; sem repetir build de produto nessa prova DNS.
+- Runner94 guards PASS/0,69s; Frontend67 guards/deadlines/classificação de logout PASS; Ruff/format CI PASS/98 arquivos e actionlint PASS. Backend38 testes mantidos, sem repetição da suíte geral.
+- Gate integrado final ca-7 **PASS/exit0**, UUID `d611ad28-dff0-4523-abc0-8b6c049891aa`: imagens atuais, Nginx/SPA/proxy, PostgreSQL18.6/READ COMMITTED/head0008/vector0.8.6/citext1.8, create7 checks, verify6 checks e restart real da mesma API. SQL confirmou2 contas/2 favoritos/1 playlist/11 faixas/3 resultados públicos; hashes de snapshots e cache idênticos antes/depois do restart e verify, AI0.
+- Browser/console/rede externa zero;4/2 aborts de logout correlacionados à prova completa create/verify. Sourcefreeze e cleanup verificados:3 containers/rede/tags UUID removidos, nenhum volume/dado/serviço existente usado. Artefato ignorado `.impeccable/ci/deployment-gate.json`, SHA256 `a909c28c4569410e3fcd54883a0459bc5c72598a7e4e02669106240684fce9d2`.
+- Tentativas anteriores corrigiram TLS do builder, serialização tmpfs e esperas/diagnóstico do harness; não foram convertidas em PASS. A rodada final acima aprova integração local offline de uma API, sem concluir CI hospedada, HTTPS, publicação, fontes online/G1 ou rollout com várias versões/APIs.
+
+### Próximos passos
+- Executar os quatro jobs no GitHub somente após push explicitamente autorizado; conferir artefatos e instalação limpa Ubuntu. Para publicar, preparar HTTPS/segredos/backups e permissões vector/citext/migrations do banco gerenciado.
+- Reexecutar gate integrado quando fontes/infraestrutura relevantes mudarem; conservar receita em `deployment-integration.md`. G1 permanece no protocolo offline anterior, sem coleta autorizada. Commits locais seletivos, sem push automático.
+
 ## 2026-10-03 — Avaliador offline e protocolo de coleta G1
 
 ### Implementado

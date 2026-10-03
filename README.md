@@ -1,5 +1,7 @@
 # Gandalf
 
+Para executar o build de produção com Nginx, API e PostgreSQL juntos, consulte a [receita de integração](docs/deployment-integration.md). O caminho é opt-in e preserva o iniciador local com SQLite; as configurações e os limites do teste estão documentados nessa receita.
+
 > **Estado atual (2026-09-29):** o guia abaixo descreve o modo local. Existe também um modo online experimental com MusicBrainz, Open Library e Groq opcional. Leia o [estado da implementação](docs/IMPLEMENTATION_STATUS.md) para distinguir recursos atuais, limites e funcionalidades planejadas. A [avaliação local](docs/eval-reports/2026-09-29-local-baseline.md) cobre 45 consultas, com baselines em K=5 e K=10.
 
 Para ativar explicitamente o modo online, use `./start-local.ps1 -Online`. A configuração opcional da IA fica em `api/.env` a partir de `api/.env.example`; não exponha a chave no frontend. O limite diário interno controla tentativas de chamadas, não faturamento. Sem `-Online`, o iniciador mantém o caminho local sem chamadas externas.

@@ -5,6 +5,8 @@
 > **Status:** Rascunho v1.0
 > **Relacionados:** Arquitetura do Sistema (03), Security Specification (09), Testing Strategy (10), Development Roadmap (12)
 
+> **Receita executável atual — 2026-10-03:** consulte [Integração de deploy com PostgreSQL](deployment-integration.md) para `compose.yaml` + `compose.postgres.yaml`, entrypoint `api/deploy.py`, nomes de variáveis realmente implementados e gate de Nginx/API/PostgreSQL descartável. As seções abaixo continuam sendo o desenho mais amplo de produção, incluindo opções e componentes ainda não implementados. O Compose base usa SQLite; PostgreSQL exige o overlay explícito. HTTPS, backups e publicação não são fornecidos pela receita local.
+
 ---
 
 ## 1. Objetivo

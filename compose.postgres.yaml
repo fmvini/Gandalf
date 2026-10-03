@@ -1,0 +1,32 @@
+# Opt-in PostgreSQL deployment: combine with compose.yaml.
+# See docs/deployment-integration.md for environment and verification commands.
+services:
+  api:
+    command: ["python", "deploy.py"]
+    environment:
+      DATABASE_URL: ${GANDALF_DEPLOY_DATABASE_URL:?Set GANDALF_DEPLOY_DATABASE_URL for the db service}
+      JWT_SECRET: ${JWT_SECRET:?Set a stable JWT_SECRET with at least 32 characters}
+      CORS_ORIGINS: ${CORS_ORIGINS:-[]}
+      ONLINE_CATALOG: ${ONLINE_CATALOG:-false}
+      BOOK_PROVIDER: ${BOOK_PROVIDER:-local}
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    # Same PostgreSQL 18 / pgvector 0.8.6 image used by the existing CI gate.
+    image: pgvector/pgvector@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-gandalf}
+      POSTGRES_USER: ${POSTGRES_USER:-gandalf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - gandalf_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    cpus: 1.0
+    mem_limit: 512m
+volumes:
+  gandalf_postgres_data:
