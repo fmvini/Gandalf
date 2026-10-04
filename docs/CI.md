@@ -7,7 +7,7 @@ Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Configurado
 | Job | Ambiente | Verificações |
 | --- | --- | --- |
 | `API e ranking local` | Ubuntu 24.04, Python 3.12 | Instalação da API com ferramentas de desenvolvimento, Ruff/lint e formatação, pytest com SQLite/provedores simulados, comparação estrita K=5/10 contra v7 |
-| `PostgreSQL e pgvector reais` | Ubuntu 24.04, Python 3.12, pgvector 0.8.6/PostgreSQL 18 | `scripts/postgres_gate.py`: migrations/favoritos/cache/round-trip; `scripts/postgres_auth_gate.py`: constraints/digests e concorrência; `scripts/postgres_http_gate.py`: endpoints entre duas apps ASGI/engines independentes, JWT/refresh/replay/logout e snapshots por proprietário. Cada gate usa banco vazio próprio |
+| `PostgreSQL e pgvector reais` | Ubuntu 24.04, Python 3.12, pgvector 0.8.6/PostgreSQL 18 | `scripts/postgres_gate.py`: migrations/favoritos/cache/round-trip; `scripts/postgres_auth_gate.py`: constraints/digests e concorrência; `scripts/postgres_http_gate.py`: endpoints entre duas apps ASGI/engines independentes, JWT/refresh/replay/logout e snapshots por proprietário. `scripts/postgres_tcp_gate.py`: duas APIs TCP com mesma sessão durante restart, refresh/logout cruzados e snapshots/ownership. Cada gate usa banco vazio próprio |
 | `Build e fluxos públicos` | Ubuntu 24.04, Node 24, Python 3.12, Chromium | `npm ci`, instalação do Chromium/bibliotecas, TypeScript/build e `npm test` conforme o script versionado do frontend |
 | `Nginx, API e PostgreSQL integrados` | Ubuntu 24.04, Python 3.12, Node 24, Docker Compose e Chromium | Constrói Dockerfiles do checkout, combina Compose base/overlay PG/overlay descartável, testa interface estática sem Vite/mocks, confirma migrations/dados por SQL e persistência após reiniciar a API |
 
@@ -27,17 +27,19 @@ O gate de endpoints exige `GANDALF_HTTP_PG_ALLOW=isolated-coordinated-backend-fr
 
 Os jobs falham se algum check falhar, sem retry que esconda perdas. A comparação usa `--fail-on-case-regression`: perdas individuais também bloqueiam, mesmo que as médias não caiam. Baselines atuais: `docs/eval-reports/local-v7-piano-detective-k5.json` e `local-v7-piano-detective-k10.json`. Atualizá-los exige uma etapa de ranking validada e documentada; não regenerá-los automaticamente na CI.
 
-## Gate TCP manual validado — ainda fora do workflow
+## Gate TCP integrado ao workflow
 
 `api/scripts/postgres_tcp_gate.py` exige `GANDALF_TCP_PG_ALLOW=isolated-coordinated-backend-frozen` e `GANDALF_TCP_PG_URL`, sob os mesmos guards PG loopback55432/55433/role gandalf_gate/DBUUID vazio. O operador precisa criar e conferir a instância descartável antes; este script não cria nem remove PostgreSQL. Migra uma vez, inicia processos próprios Uvicorn em portas efêmeras e encerra-os. Mantém tokens em memória durante restart B, aceita refresh na nova B e novo access em A; snapshots/ownership/logout/SQL e fontes são conferidos. Saída única JSON reconstruída em stdout; progresso em stderr e falhas somente etapa/classe/linha local, sem segredo/DSN/PII.
 
-57 testes focados e prova TCP real PostgreSQL18.6 PASS, com SQL independente/cleanup, no Windows. [Relatório](database-tcp-postgres-session-2026-10-03.md). O resultado local normalizado `.impeccable/ci/postgres-tcp-gate.json` permanece ignorado, sem upload pelo workflow atual. Para automatizar: criar quarto DBUUID vazio no serviço existente, executar somente o script novo com opt-in e adicionar artifact sanitizado; validar o bootstrap literalmente. Ainda não há aprovação Linux/CI hospedada dessa unidade nem teste nginx/browser multiupstream.
+O bootstrap do job cria um quarto DBUUID vazio exclusivo para TCP, separado de geral/auth/ASGI. Novo step usa opt-in explícito, preserva falhas com Bash/pipefail e coleta o JSON específico no artifact postgres-results/always. Prazo SQL do bootstrap15s e conexão5s. Resultados locais continuam ignorados; nenhum segredo ou arquivo de ambiente entra no artifact.
+
+57 testes do gate e prova manual anterior PostgreSQL18.6 PASS; seis testes novos do trecho literal/contrato CI, Ruff/formatação e actionlint PASS. Bootstrap final executado literalmente em um PG UUID novo: três bancos distintos/vazios conferidos por SQL no mesmo servidor, somente TCP executado, sete checks/30 requests PASS e SQL independente/cleanup/GITHUB_ENV removido. [Relatório CI](ci-tcp-postgres-session-2026-10-03.md) e [gate anterior](database-tcp-postgres-session-2026-10-03.md). Isso não aprova workflow inteiro, Linux/CI hospedada ou browser nginx multiupstream.
 
 ## Resultados e diagnóstico
 
 - `api-results`: relatório JUnit do pytest e relatórios JSON K=5/10, quando gerados.
 - `frontend-screenshots`: somente PNGs de `.impeccable/review/`, quando gerados pelos testes.
-- `postgres-results`: JSONs finais `postgres-gate.json`, `postgres-auth-gate.json` e `postgres-http-gate.json`, com versões/checks/hashes/etapa segura, sem credenciais/banco bruto.
+- `postgres-results`: JSONs finais `postgres-gate.json`, `postgres-auth-gate.json`, `postgres-http-gate.json` e `postgres-tcp-gate.json`, com versões/checks/hashes/etapa segura, sem credenciais/banco bruto.
 - `deployment-results`: `deployment-gate.json`, resultado final sanitizado do teste integrado, incluindo checks e limpeza. Sem tokens, emails, senha, DSN ou dados brutos do banco.
 - Os artefatos são coletados mesmo após falha e retidos por sete dias. Se uma etapa anterior impedir sua geração, o upload avisa; o check que falhou permanece vermelho.
 - Logs das etapas ficam no run do GitHub Actions. Não há upload de `.env`, banco, segredo JWT ou da pasta `.impeccable/` inteira.
@@ -74,4 +76,4 @@ O teste de carregamento responsivo espera o layout se ajustar após mudar viewpo
 
 **Ainda não há execução validada no runner hospedado.** O workflow está preparado para um futuro push autorizado; não foi enviado automaticamente. Depois desse envio, verificar os quatro jobs e os artefatos. Ubuntu, instalação limpa de dependências, build Docker e bibliotecas do Chromium precisam dessa confirmação remota.
 
-O gate G6 permanece aberto: CI hospedada verde, auditoria final e deploy público não estão concluídos. O job cobre apenas os cenários PostgreSQL descritos acima; HTTP TCP entre processos, stress multiprocessos auth, corrida logout/refresh/desativação/exclusão, falhas reais de commit PG, demais constraints, rollout pré-populado/mistura de versões, mypy e avaliações online reais continuam fora de sua cobertura. O exemplo mais amplo de `docs/11-deployment-guide.md` continua um desenho futuro.
+O gate G6 permanece aberto: CI hospedada verde, auditoria final e deploy público não estão concluídos. O job cobre apenas os cenários PostgreSQL descritos acima; stress multiprocessos auth, corrida logout/refresh/desativação/exclusão, falhas reais de commit PG, demais constraints, rollout pré-populado/mistura de versões, mypy e avaliações online reais continuam fora de sua cobertura. O exemplo mais amplo de `docs/11-deployment-guide.md` continua um desenho futuro.

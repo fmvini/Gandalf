@@ -1,5 +1,31 @@
 # Registro de desenvolvimento
 
+## 2026-10-03 — Gate TCP integrado à CI com banco exclusivo
+
+### Implementado
+- Job PostgreSQL cria quarto banco UUID vazio para o gate TCP, separado dos bancos geral/auth/ASGI, e coleta seu JSON sanitizado no artifact postgres-results.
+- Bootstrap ganha prazo SQL15s, além do connect timeout5s. Seis testes verificam seu trecho literal, identidade antes de escrita, bancos distintos, falha parcial sem publicação e vínculo step/opt-in/artifact.
+
+### Arquivos principais alterados
+- `.github/workflows/ci.yml`, `api/tests/test_ci_postgres_bootstrap.py`
+- `docs/CI.md`, `docs/CONTINUATION.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/DEVELOPMENT_LOG.md`
+- `docs/ci-tcp-postgres-session-2026-10-03.md`
+
+### Decisões técnicas
+- Reutilizar o mesmo serviço PG descartável com banco vazio próprio para cada gate; nenhuma duplicação de instância ou reaproveitamento de schema migrado. CREATE DATABASE autocommit não é atômico; publicação das URLs só ocorre após completar a criação e o serviço é descartado em falhas.
+- Maestro implementou/validou CI/testes/documentos ao retomar terminais que exibiam limite da sessão anterior. Os três agentes depois responderam e concluíram revisões RO sem achados: Backend step/processos/imports, Banco bootstrap/isolation, Frontend artifact/limites. Não executaram testes nem alteraram arquivos. Gate/worker/produto/frontend/schema preservados; sem push, build, suítes antigas, fontes externas ou LLM.
+- A prova local executa apenas o bootstrap literal e o gate TCP; não é execução do workflow inteiro ou aprovação da CI hospedada.
+
+### Estado atual
+- Seis testes PASS0,49s, Ruff/formatação PASS; actionlint1.7.12 PASS. Prova real PASS/exit0, UUID `f819a195-4344-4d38-bf92-fa087f51676c`, 2026-10-04 02:33:07–02:33:37 UTC (03/10 no Brasil): três bancos novos distintos/vazios no mesmo PG; somente TCP executado.
+- Sete checks/30 requests, sessão vigente e refresh na nova B sem login; SQL independente PG18.6/READ COMMITTED/head0008/vector0.8.6/citext1.8: users2/fav1/playlist1/tracks3/cache1/refresh4/ativo1/AI0/conexões0. Fonte75/CI/teste/lifecycle inalterados; GITHUB_ENV privado removido e container UUID/tmpfs removido por ID revalidado, porta55432 livre.
+- Trecho CI SHA256 `abbe8e738853a62323973d063b626dfc2962a73b0d18ddbc4dba7d32b320a46d`; detalhes, fontes e artifact em `docs/ci-tcp-postgres-session-2026-10-03.md`. Evidências fullstack/ASGI/TCP anteriores preservadas.
+
+### Próximos passos
+- Em unidade própria, testar browser com mesma origem nginx/duas APIs e sessão contínua, checkpoint de restart e prova de upstream; conservar tokens em memória e não alterar cliente para fixar instância.
+- Após pedido explícito de push, verificar CI hospedada, job PostgreSQL e artifact com quatro JSONs. Rollout/mistura de versões, migrations concorrentes, HTTPS/deploy remoto continuam pendentes.
+
+
 ## 2026-10-03 — Sessão vigente validada entre APIs TCP e PostgreSQL
 
 ### Implementado

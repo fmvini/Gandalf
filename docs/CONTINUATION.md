@@ -1,6 +1,14 @@
 # Ponto de retomada — 2026-10-03
 
-## Etapa atual — TCP e sessão vigente após restart validados
+## Etapa atual — CI com gate TCP e banco exclusivo preparados
+
+Workflow cria agora bancos vazios distintos para auth/ASGI/TCP, além do banco do gate geral; TCP usa opt-in e coleta somente seu JSON no artifact PostgreSQL. Bootstrap15s/connect5s, URLs publicadas após criar todos os bancos. Seis testes do literal/identidade/falha parcial/step/artifact, Ruff/formatação e actionlint PASS.
+
+**Prova local PASS:** UUID `f819a195-4344-4d38-bf92-fa087f51676c`, trecho CI literal seguido apenas de TCP: três bancos novos distintos/vazios no mesmo PG, sete checks/30 requests, sessão vigente durante restart B sem login, SQL PG18.6/head0008/fav1/playlist1/tracks3/cache1/refresh4/ativo1/AI0/conexões0. Fontes/CI/teste/lifecycle congelados, GITHUB_ENV removido, container/porta limpos por identidade. [Relatório](ci-tcp-postgres-session-2026-10-03.md). Maestro executou a prova; Backend/Banco/Frontend retomaram e concluíram revisões RO sem achados. Nenhuma suíte antiga/build/browser/serviço existente/push.
+
+Próximos passos: browser de mesma origem nginx com duas APIs, sessão contínua, checkpoint de restart e prova de upstream; tokens só em memória. Depois de pedido explícito de push, verificar workflow hospedado e artifact PostgreSQL com quatro JSONs. Rollout/mistura de versões, migrations concorrentes e deploy remoto precisam provas próprias; G1 conserva orçamento/autorização de coleta. Não reexecutar gates antigos para inferir nova cobertura.
+
+## Checkpoint anterior — TCP e sessão vigente após restart validados
 
 `api/scripts/postgres_tcp_gate.py` e worker de teste validam duas APIs Uvicorn em processos reais/loopback, PG/JWT comuns e identidade por resposta UUID/instância/PID. Migrations uma vez antes dos workers; tokens no mesmo cliente durante restart B, sem login. Nova B aceita conta/recursos/refresh; access novo funciona em A, logout A impede refresh B. Ownership e snapshots preservados. Sem `.env`, mocks ou mudança de produto.
 
