@@ -1,5 +1,31 @@
 # Registro de desenvolvimento
 
+## 2026-10-04 — Vercel Hobby e Neon Free preparados para publicação
+
+### Implementado
+- Configuração Vercel Services reúne Vite/FastAPI no mesmo domínio, API relativa e fallback SPA separado; Python 3.12, upload sem credenciais/dados locais.
+- Entrypoint ASGI env-only exige PostgreSQL Neon/TLS/JWT, sem migrations no cold start; CLI serial de migrations com identidade/lock/TLS/SQL RO e diagnóstico sanitizado.
+- Projeto Vercel `fmvini-projects/gandalf` criado no Hobby. Projeto Neon fornecido pelo usuário `round-rice-47636561`, production/São Paulo/Free, vinculado; CLI/skills/MCP e neon.ts vazio instalados conforme pedido. Plan/deploy Neon PASS sem alterações adicionais.
+
+### Arquivos principais alterados
+- `vercel.json`, `.vercelignore`, `.gitignore`, `api/.python-version`, `neon.ts`, `package.json`, `package-lock.json`
+- `api/vercel_app.py`, `api/tests/test_vercel_app.py`, `api/scripts/neon_migrate.py`, `api/tests/test_neon_migrate.py`
+- `docs/vercel-neon-deployment.md`, `docs/backend-vercel-session-2026-10-03.md`, `docs/frontend-vercel-session-2026-10-03.md`, `docs/database-neon-session-2026-10-03.md`, `docs/CONTINUATION.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Orçamento estritamente gratuito: sem upgrade/trial pago; banco fornecido preservado, sem nova integração marketplace. Migrations externas pela URL direta; API pooled. Segredo JWT novo/protegido via stdin, nenhuma credencial em Git/upload/CLI argv.
+- Catálogo online/Open Library; Groq ausente/AI_DAILY_LIMIT=0 nesta publicação, fallback de regras existente. Não migrar contas/dados locais nem usar api/.env real. Auth/schema/clientes atuais preservados.
+- Maestri coordenou Backend (entrypoint/testes), Banco (migration CLI/testes) e Frontend (build/revisão RO); Maestro configura provedores/raiz/Git/shared docs. Services em beta e limiter/pooling por instância são limites preservados.
+
+### Estado atual
+- Backend43 e Banco60 testes focados PASS, Ruff/formatação PASS; frontend build PASS relativo e 49 fontes intactos, aviso não fatal de chunk504kB. CLI dry inicial privado-safe PASS; revisão Frontend root/ignore sem achados.
+- Neon real PG18.6, schema inicialmente vazio/URLs pareadas/TLS cliente PASS. Trial head0008/citext1.8/vector0.8.6 PASS + branch removida por identidade; production migrou head0008 com identity/TLS/lock/SQL RO PASS.
+- GitHub conectado pelo usuário; commits locais não enviados. Publicação Vercel, HTTPS e integração pela origem pública ainda pendentes; nenhum PASS remoto fullstack alegado.
+
+### Próximos passos
+- Finalizar variáveis de produção, conferir upload final e publicar fontes atuais pela CLI. Testar assets/SPA/API JSON/readiness, sessão/refresh/logout e ownership/persistência no Neon; atualizar URLs/evidências reais antes de concluir hospedagem.
+- Push permanece dependente de pedido explícito; conexão GitHub não sincroniza os commits locais. IA necessita chave gratuita/orçamento próprios, sem habilitar serviços pagos automaticamente.
+
 ## 2026-10-03 — Gate TCP integrado à CI com banco exclusivo
 
 ### Implementado

@@ -1,0 +1,37 @@
+# Never upload local credentials, personal data, or agent artifacts.
+.git/
+.github/
+.agents/
+.codex/
+.aws/
+.neon
+neon.ts
+skills-lock.json
+.impeccable/
+.vercel/
+**/.env
+**/.env.*
+**/.secrets/
+**/secrets*.json
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/.local/
+**/*.db
+**/*.db-*
+**/*.sqlite*
+**/*.log
+**/logs/
+# Dependencies and build outputs are created by the hosted build.
+**/.venv/
+**/node_modules/
+**/dist/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.tsbuildinfo
+docs/
+scripts/
+api/scripts/
+**/tests/

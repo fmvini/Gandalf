@@ -1,4 +1,7 @@
 .impeccable/
+.vercel/
+.agents/
+skills-lock.json
 
 # Credentials and private local configuration (examples remain versioned).
 .env
@@ -31,3 +34,4 @@ __pycache__/
 node_modules/
 dist/
 *.tsbuildinfo
+.neon

@@ -1,6 +1,14 @@
-# Ponto de retomada — 2026-10-03
+# Ponto de retomada — 2026-10-04
 
-## Etapa atual — CI com gate TCP e banco exclusivo preparados
+## Etapa atual — publicação gratuita Vercel/Neon em andamento
+
+Usuário pediu hospedagem na Vercel e banco online com orçamento 100% gratuito, depois forneceu Neon `round-rice-47636561`/branch production e conectou GitHub. Projeto Vercel `fmvini-projects/gandalf` Hobby criado/vinculado; Neon Free/São Paulo/PG18.6 confirmado. CLI Neon8.0.5, skills/MCP, link/config init/neon.ts vazio/plan/deploy concluídos; nenhum serviço adicional provisionado.
+
+Infra/frontend/API preparados em `vercel.json` Services (beta), mesma origem `/api/v1`, Python3.12, `api/vercel_app.py` env-only sem migrate/uvicorn. Backend43/Banco60 testes PASS + Ruff; build frontend relativo PASS, fontes intactas. URL direta migrada separadamente: trial temporário PASS/cleanup por identidade, depois production head0008/citext1.8/vector0.8.6/TLS/identity/lock/SQL RO PASS. Secrets somente arquivos ignorados/stdin; não ler api/.env real ou mover dados locais.
+
+**Próximo passo concreto:** concluir vars Vercel (pooled/JWT novo/CORS same-origin, catálogo online/Open Library/Groq ausente/AI0), verificar lista final `vercel deploy --dry --json`, publicar pela CLI e testar HTTPS/assets/SPA/health+auth/refresh/logout/favorites/playlists/ownership/persistência. Hospedagem pública ainda não certificada. [Receita e evidências](vercel-neon-deployment.md). Commit local obrigatório antes de encerrar; não fazer push sem pedido explícito, mesmo com GitHub conectado.
+
+## Checkpoint anterior — CI com gate TCP e banco exclusivo preparados
 
 Workflow cria agora bancos vazios distintos para auth/ASGI/TCP, além do banco do gate geral; TCP usa opt-in e coleta somente seu JSON no artifact PostgreSQL. Bootstrap15s/connect5s, URLs publicadas após criar todos os bancos. Seis testes do literal/identidade/falha parcial/step/artifact, Ruff/formatação e actionlint PASS.
 
