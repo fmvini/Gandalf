@@ -1,6 +1,16 @@
 # Ponto de retomada — 2026-10-04
 
-## Etapa atual — publicação gratuita Vercel/Neon em andamento
+## Etapa atual — aplicativo online na Vercel e Neon Free
+
+**Publicado:** https://gandalf-gray.vercel.app, deployment READY `dpl_4dWeCn2dWxYoWUgRbprmJ4hd62kY`, revisão813436c, execução gru1. Build hospedado Vite/Python3.12 PASS; frontend/API mesma origem, Neon Free/São Paulo/PG18.6/head0008/citext1.8/vector0.8.6. Secrets via stdin; catálogo online/Open Library, Groq ausente/AI0, recomendação por regras.
+
+**Prova pública concluída:** HTTPS/ready/JSON/SPA200; browser7 checks/8 rotas/assets/MIME/5 POSTs auth, sessão em memória, logout revoga refresh. HTTP6 checks/24 requests verifica Open Library, favorito/playlist/ownership/refresh/logout; SQL independente canônico do mesmo projeto/branch confirma users2/fav1/playlist1/tracks2/refresh3/AI0 e todas as próprias contas de teste removidas. Primeiro smoke ajustou expectativa404 de favorito estrangeiro ao contrato204 existente e comprovou favorito do dono preservado; FAIL anterior/cleanup mantidos. [Receita, artifacts e limites](vercel-neon-deployment.md).
+
+**Próximo passo:** usar/monitorar quotas gratuitas; IA só com chave Free/orçamento específico. GitHub foi conectado, mas **nenhum push**: publicação atual usa CLI/fontes locais do813436c. Pedir autorização explícita antes de enviar commits para automatizar futuros deploys GitHub. Não repetir gates antigos; carga/escala/rollout/IA seguem fora da prova pública atual.
+
+**Cleanup final:** SQL somente leitura com identidade/TLS revalidados confirmou zero registros das três contas finais e dos seus dependentes, AI calls0; artifact `vercel-final-cleanup-sql.json`. Nenhuma repetição de browser/HTTP após a limpeza.
+
+## Checkpoint anterior — preparação Vercel/Neon
 
 Usuário pediu hospedagem na Vercel e banco online com orçamento 100% gratuito, depois forneceu Neon `round-rice-47636561`/branch production e conectou GitHub. Projeto Vercel `fmvini-projects/gandalf` Hobby criado/vinculado; Neon Free/São Paulo/PG18.6 confirmado. CLI Neon8.0.5, skills/MCP, link/config init/neon.ts vazio/plan/deploy concluídos; nenhum serviço adicional provisionado.
 

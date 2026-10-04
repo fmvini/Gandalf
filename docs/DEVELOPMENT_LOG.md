@@ -1,5 +1,29 @@
 # Registro de desenvolvimento
 
+## 2026-10-04 — Aplicativo publicado e integração Neon validada por HTTPS
+
+### Implementado
+- Publicação Vercel Hobby pela CLI da revisão813436c: https://gandalf-gray.vercel.app; frontend e API no mesmo domínio, execução gru1 próxima do Neon Free em São Paulo.
+- Variáveis de produção: URL pooled/JWT novo protegidos via stdin, CORS mesma origem, catálogo online/Open Library. Groq ausente/AI0 para orçamento gratuito; recomendações por regras funcionam.
+
+### Arquivos principais alterados
+- `docs/vercel-neon-deployment.md`, `docs/frontend-vercel-session-2026-10-03.md`, `docs/CONTINUATION.md`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Publicar pela CLI sem push, conforme regra do usuário. GitHub conectado conserva os commits remotos anteriores; sincronização desta configuração exige pedido explícito de push.
+- Contas de prova sintéticas/UUID, credenciais apenas em memória; SQL canônico do projeto/branch/endpoint/TLS conferidos antes da execução e do cleanup. Remover somente as próprias contas; conservar catálogo/cache público gerado.
+
+### Estado atual
+- Deployment READY/production `dpl_4dWeCn2dWxYoWUgRbprmJ4hd62kY`, revisão813436c, região gru1 confirmada; build hospedado frontend/Python3.12 PASS. Dry final146 arquivos não vazios/3,23MB sem privados.
+- HTTPS200 para frontend/SPA, API JSON e ready database/schema/pgvector. Browser PASS7 checks/8 SPA/assets/fontes MIME/5 POSTs auth, sessão só memória e erros inesperados0; conta removida por identidade.
+- HTTP PASS6 checks/24 requests: duas contas, busca Open Library real, favoritos/playlists persistentes/isolados, refresh e revogação. SQL PG18.6/head0008/citext1.8/vector0.8.6: users2/fav1/playlist1/tracks2/refresh3/AI0 antes de remover fixtures; cleanup confirmado. Primeiro smoke esperou404 em favorito estrangeiro, contrariando contrato204 idempotente; corrigido apenas harness e preservado FAIL anterior/cleanup.
+- Backend/Frontend revisaram configuração RO; Banco identificou guard SQL incompleto, corrigido antes do PASS final com resolução canônica autenticada do branch. Evidências/hashes/limites na receita; nenhuma mudança adicional de produto/schema nem chamadas LLM.
+- SQL final somente leitura confirmou zero registros das três contas finais e dos seus dependentes após cleanup, com identidade/TLS revalidados; AI calls0. Evidência `vercel-final-cleanup-sql.json`, sem nova rodada HTTP/browser.
+
+### Próximos passos
+- Usar a URL publicada; monitorar limites Hobby/Free sem contratar upgrade. IA opcional exige chave gratuita/orçamento antes de habilitar.
+- Após autorização explícita de push, enviar os commits para que deploys GitHub usem a configuração atual; não habilitar migrations concorrentes/automáticas em cold starts. Carga, escala e rollout exigem unidade de teste própria.
+
 ## 2026-10-04 — Vercel Hobby e Neon Free preparados para publicação
 
 ### Implementado
