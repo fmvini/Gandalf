@@ -1,5 +1,27 @@
 # Registro de desenvolvimento
 
+## 2026-10-04 — Favicon de chapéu de mago
+
+### Implementado
+- Favicon SVG com chapéu de ponta curvada em lavanda sobre fundo ameixa, seguindo a paleta do Gandalf.
+- Referência do favicon no HTML de entrada, disponível em todas as rotas da aplicação.
+
+### Arquivos principais alterados
+- `frontend/public/favicon.svg`
+- `frontend/index.html`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- SVG autocontido com formas preenchidas e poucos detalhes para legibilidade em tamanhos pequenos; servido pelo diretório público do Vite.
+
+### Estado atual
+- Validação local do XML, namespace, viewBox, ausência de recursos externos e referência no HTML: PASS. TypeScript (`tsc -b`): PASS.
+- `npm test` completo e `npm run build`: PASS após execução autorizada fora do sandbox que bloqueava esbuild. Inclui E2E com API real e SQLite temporário; favicon no build idêntico ao SVG fonte e referência confirmada no HTML de produção. Aviso preexistente de chunk acima de 500 kB, sem falha de build.
+- Alteração implementada no código local; publicação não executada nesta tarefa.
+
+### Próximos passos
+- Conferir o favicon na aba após a próxima publicação do projeto.
+
 ## 2026-10-04 — Aplicativo publicado e integração Neon validada por HTTPS
 
 ### Implementado
