@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Gandalf — chapéu de mago</title>
+  <rect width="512" height="512" rx="112" fill="#171321" />
+  <g id="wizard-hat">
+    <ellipse cx="256" cy="367" rx="180" ry="43" fill="#ad8bd2" />
+    <path d="M144 348 215 148Q232 99 277 94q39-4 79 21l-41 21q-24 10-20 33l75 179Z" fill="#b99cda" />
+    <path d="m158 310-14 38q112 25 226 0l-16-38q-98 21-196 0Z" fill="#67478c" />
+  </g>
+</svg>

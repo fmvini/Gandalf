@@ -1,5 +1,26 @@
 # Registro de desenvolvimento
 
+## 2026-10-09 — Correção do SVG vazio na raiz
+
+### Implementado
+- Preenchido `favicon.svg`, que estava vazio (0 bytes) e não podia ser aberto, com o mesmo SVG usado pelo frontend.
+- Preservado o chapéu de mago roxo com a ponta dobrada e fundo ameixa.
+
+### Arquivos principais alterados
+- `favicon.svg`
+- `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Reutilizado o desenho válido de `frontend/public/favicon.svg`; esse arquivo continua sendo o favicon servido pela aplicação. O arquivo da raiz permite abrir a logo diretamente.
+
+### Estado atual
+- `npm run build`: PASS. Chromium abriu o SVG local sem erro de XML; favicon no build retornou HTTP 200 com `image/svg+xml` e renderizou em 256, 64, 32 e 16 px.
+- SVG da raiz equivalente ao arquivo público; arquivo de produção idêntico ao público. Aviso preexistente de chunk acima de 500 kB no build.
+- Validação local concluída; nenhuma publicação executada.
+
+### Próximos passos
+- Usar `frontend/public/favicon.svg` como origem em futuras alterações da logo e atualizar a cópia da raiz junto.
+
 ## 2026-10-04 — Favicon de chapéu de mago
 
 ### Implementado
