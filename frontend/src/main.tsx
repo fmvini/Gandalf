@@ -10,6 +10,7 @@ import './components/ui/components.css'
 import './account.css'
 import './playlists.css'
 import './favorites.css'
+import './legal.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

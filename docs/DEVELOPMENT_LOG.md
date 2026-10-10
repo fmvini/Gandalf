@@ -1,5 +1,35 @@
 # Registro de desenvolvimento
 
+## 2026-10-10 — Políticas de cookies, privacidade e termos de uso
+
+### Implementado
+- Páginas públicas em `/politica-de-cookies`, `/politica-de-privacidade` e `/termos-de-uso`, com data de versão, índice por âncoras e navegação entre documentos.
+- Links no rodapé global e aviso com acesso aos termos e à privacidade antes da criação de conta.
+- Responsável informado pelo usuário: Vinícius F. Marrocos; contato: viniciusfmarrocos@gmail.com.
+- Textos descrevem tema no localStorage, tokens apenas em memória, conta, favoritos, playlists, caches, provedores e canal manual para solicitações sobre dados.
+- Tema tolera leitura e gravação bloqueadas no armazenamento do navegador, mantendo a interface utilizável.
+
+### Arquivos principais alterados
+- `frontend/src/pages/Legal.tsx`, `frontend/src/lib/legal.ts`, `frontend/src/legal.css`
+- `frontend/src/App.tsx`, `frontend/src/pages/Authentication.tsx`, `frontend/src/main.tsx`
+- `frontend/tests/legal.mjs`, `frontend/package.json`, `docs/DEVELOPMENT_LOG.md`
+
+### Decisões técnicas
+- Reutilizar React Router, fontes e tokens existentes, com leitura em coluna e índice lateral no desktop; navegação e conteúdo empilhados no celular.
+- Política de cookies distingue localStorage de cookies. Não foi adicionado um banner de consentimento fictício: o código auditado não define cookies próprios nem incorpora analytics/publicidade.
+- Privacidade informa limites atuais de retenção e exclusão de conta, sem prometer recursos inexistentes. A integração opcional Groq e sua configuração desabilitada na publicação de outubro são descritas explicitamente.
+- Referências consultadas: LGPD compilada no Planalto e guia de cookies da ANPD; links incluídos nas páginas. Aviso no cadastro não representa consentimento geral para novos tratamentos.
+
+### Estado atual
+- `npm run test:legal`, `npm run test:auth-state` e `npm run build`: PASS após o usuário alterar as permissões. TypeScript sem diagnósticos; build Vite concluído com o aviso já existente de chunk acima de 500 kB.
+- Teste de rotas renderiza a aplicação com React/MemoryRouter, valida três URLs diretas, cabeçalhos, contato, versão, links e âncoras; também executa leitura/gravação de tema com storage bloqueado. Demais páginas e sessão são substituídas por fixtures nesse teste; não constitui E2E no navegador.
+- Conferência no Chromium contra o build de produção: PASS para as três rotas em 1440 px/tema escuro e 320 px/tema claro, títulos/foco, ausência de overflow, âncoras/reload, links entre documentos, rodapé e cadastro, navegação com storage bloqueado e zero erros de página. Seis capturas revisadas visualmente em `frontend/.impeccable/legal-review/` (diretório ignorado). Sem envio de cadastro, publicação ou uso da API de produção.
+- Implementação validada localmente; commit solicitado pelo usuário após ajustar as permissões. Sem push ou publicação.
+
+### Próximos passos
+- Na próxima publicação autorizada, conferir as três rotas públicas e seus links no rodapé/cadastro pela URL hospedada.
+- Revisar retenção, aviso de IA e fornecedores antes de habilitar novos tratamentos; atender solicitações de titulares pelo e-mail informado. Publicar somente em tarefa autorizada; não fazer push automaticamente.
+
 ## 2026-10-09 — Correção do SVG vazio na raiz
 
 ### Implementado

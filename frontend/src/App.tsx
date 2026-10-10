@@ -8,6 +8,8 @@ import Authentication from './pages/Authentication'
 import Account from './pages/Account'
 import Playlist from './pages/Playlist'
 import Favorites from './pages/Favorites'
+import Legal from './pages/Legal'
+import { legalLinks } from './lib/legal'
 import { useSession } from './lib/useSession'
 
 const links = [
@@ -19,8 +21,11 @@ const links = [
 type Theme = 'light' | 'dark'
 
 function getInitialTheme(): Theme {
-  const saved = localStorage.getItem('gandalf-theme')
-  return saved === 'light' ? 'light' : 'dark'
+  try {
+    return localStorage.getItem('gandalf-theme') === 'light' ? 'light' : 'dark'
+  } catch {
+    return 'dark'
+  }
 }
 
 export default function App() {
@@ -31,7 +36,11 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('gandalf-theme', theme)
+    try {
+      localStorage.setItem('gandalf-theme', theme)
+    } catch {
+      // Keep the interface usable when browser storage is blocked.
+    }
   }, [theme])
 
   useEffect(() => {
@@ -71,11 +80,15 @@ export default function App() {
           <Route path="/account" element={<Account />} />
           <Route path="/account/playlists/:id" element={<Playlist />} />
           <Route path="/account/favorites" element={<Favorites />} />
+          {legalLinks.map(link => <Route key={link.kind} path={link.to} element={<Legal kind={link.kind} />} />)}
           <Route path="*" element={<section className="not-found container"><h1>Esse caminho não existe.</h1><p>Volte ao início para encontrar música, livros ou uma trilha para ler.</p><Link className="button button-primary" to="/">Voltar ao início <ArrowUpRight size={18} /></Link></section>} />
         </Routes>
       </main>
       <footer className="site-footer">
         <div className="container footer-inner"><span className="footer-brand">gandalf<span>.</span></span><p>Para descobrir o que ouvir, ler e sentir depois.</p><span>Feito para começar pela curiosidade.</span></div>
+        <nav className="container footer-legal" aria-label="Políticas e termos">
+          {legalLinks.map(link => <Link key={link.kind} to={link.to}>{link.label}</Link>)}
+        </nav>
       </footer>
     </>
   )
